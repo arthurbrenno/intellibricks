@@ -6,6 +6,7 @@ import abc
 import asyncio
 import typing
 import uuid
+
 import aiocache
 import msgspec
 from google.generativeai.types import HarmBlockThreshold, HarmCategory
@@ -45,6 +46,7 @@ from .schema import (
     Usage,
 )
 from .types import TraceParams
+from .util import count_tokens
 
 
 @typing.runtime_checkable
@@ -577,10 +579,10 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
         )
 
         prompt_tokens = sum(
-            util.count_tokens(model=model, text=msg.content or "") for msg in messages
+            count_tokens(model=model, text=msg.content or "") for msg in messages
         )
 
-        completion_tokens = util.count_tokens(
+        completion_tokens = count_tokens(
             model=model, text=chat_response.message.content
         )
 
