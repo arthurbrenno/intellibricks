@@ -4,6 +4,9 @@ from datetime import datetime
 from typing import Any, Optional, TypedDict, Union
 
 import langfuse
+import langfuse.api
+import langfuse.model
+import langfuse.types
 from pydantic import BaseModel
 
 

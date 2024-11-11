@@ -21,11 +21,11 @@ Examples:
     from intellibricks.models.forge import Forge
     from intellibricks.models.repositories.impl import LocalSupervisedModelRepository
     from intellibricks.models.schema import TrainingConfig, CategoricalColumn
-    from intellibricks.llms import ObservableCompletionEngine
+    from intellibricks.llms import CompletionEngine
 
     # Initialize Forge
     forge = Forge(
-        completion_engine=ObservableCompletionEngine(),
+        completion_engine=CompletionEngine(),
         repository=LocalSupervisedModelRepository(),
     )
 
@@ -81,12 +81,12 @@ Dependencies:
 - pandas: For data manipulation.
 - msgspec: For data validation and serialization.
 - joblib: For saving and loading model artifacts.
-- ObservableCompletionEngine: For AI-assisted configuration when enabled.
+- CompletionEngine: For AI-assisted configuration when enabled.
 
 Note:
 
 - Ensure that the necessary exception handling and validation are in place.
-- The `ObservableCompletionEngine` should be properly configured and integrated if Generative AI Assistance is used.
+- The `CompletionEngine` should be properly configured and integrated if Generative AI Assistance is used.
 
 """
 

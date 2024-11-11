@@ -123,7 +123,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
     The Forge class provides an interface to train and use machine learning models dynamically.
 
     Example:
-        forge = Forge(completion_engine=ObservableCompletionEngine(), repository=LocalSupervisedModelRepository())
+        forge = Forge(completion_engine=CompletionEngine(), repository=LocalSupervisedModelRepository())
         training_result = await forge.train(
             b64_file=base64_encoded_dataset,
             uid="model_uid",
@@ -359,7 +359,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         self, df: pd.DataFrame, config: TrainingConfig
     ) -> TrainingConfig:
         """
-        Use the ObservableCompletionEngine to get AI-assisted training configuration.
+        Use the CompletionEngine to get AI-assisted training configuration.
 
         Args:
             df (pd.DataFrame): The dataset as a pandas DataFrame.
@@ -417,9 +417,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
             config = ai_config
         else:
             logger.error("Failed to get AI-assisted config")
-            raise ValueError(
-                "Failed to get AI-assisted config from ObservableCompletionEngine"
-            )
+            raise ValueError("Failed to get AI-assisted config from CompletionEngine")
 
         return config
 

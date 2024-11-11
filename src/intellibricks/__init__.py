@@ -1,6 +1,6 @@
 from .llms import (
     AIModel,
-    ObservableCompletionEngine,
+    CompletionEngine,
     CompletionEngineProtocol,
     CompletionOutput,
     Delta,
@@ -14,7 +14,7 @@ from .llms import (
 )
 
 __all__: list[str] = [
-    "ObservableCompletionEngine",
+    "CompletionEngine",
     "CompletionOutput",
     "TempFile",
     "AIModel",

@@ -21,7 +21,7 @@ from langfuse.client import (
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import LLM
 from weavearc import BaseModel, DynamicDict, Meta
-from weavearc.logging import logger
+from weavearc.logging import LoggerFactory
 from weavearc.utils.creators import DynamicInstanceCreator
 
 from intellibricks import util
@@ -48,6 +48,10 @@ from .schema import (
 from .types import TraceParams
 from .util import count_tokens
 
+logger = LoggerFactory.create(__name__)
+
+T = typing.TypeVar("T", bound=msgspec.Struct)
+
 
 @typing.runtime_checkable
 class CompletionEngineProtocol(typing.Protocol):
@@ -64,9 +68,7 @@ class CompletionEngineProtocol(typing.Protocol):
         *,
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Optional[
-            typing.Union[dict[str, typing.Any], typing.Type[BaseModel]]
-        ] = None,
+        response_format: typing.Optional[typing.Type[T]] = None,
         model: typing.Optional[AIModel] = None,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
@@ -80,16 +82,14 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[typing.Any]: ...
+    ) -> CompletionOutput[T]: ...
 
     @abc.abstractmethod
     async def chat_async(
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[
-            typing.Union[dict[str, typing.Any], typing.Type[BaseModel]]
-        ] = None,
+        response_format: typing.Optional[typing.Type[T]] = None,
         model: typing.Optional[AIModel] = None,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
@@ -103,10 +103,10 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[typing.Any]: ...
+    ) -> CompletionOutput[T]: ...
 
 
-class ObservableCompletionEngine(CompletionEngineProtocol):
+class CompletionEngine(CompletionEngineProtocol):
     """
     Provider for AI model completions with fallback capability retry management.
 
@@ -151,13 +151,13 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
     def __init__(
         self,
         *,
-        langfuse: Langfuse,
-        json_encoder: msgspec.json.Encoder,
-        json_decoder: msgspec.json.Decoder,
+        langfuse: typing.Optional[Langfuse],
+        json_encoder: typing.Optional[msgspec.json.Encoder] = None,
+        json_decoder: typing.Optional[msgspec.json.Decoder] = None,
         vertex_credentials: typing.Optional[service_account.Credentials] = None,
     ) -> None:
         """
-        Initialize the ObservableCompletionEngine.
+        Initialize the CompletionEngine.
 
         Args:
             langfuse: The Langfuse instance for generating observable completions
@@ -165,9 +165,9 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
             json_decoder: JSON decoder for deserializing structured responses
             vertex_credentials: Optional Google Cloud credentials for models using Google Cloud services
         """
-        self.langfuse = langfuse
-        self.json_encoder = json_encoder
-        self.json_decoder = json_decoder
+        self.langfuse = langfuse or Langfuse()
+        self.json_encoder = json_encoder or msgspec.json.Encoder()
+        self.json_decoder = json_decoder or msgspec.json.Decoder()
         self.vertex_credentials = vertex_credentials
 
     async def complete_async(
@@ -175,9 +175,7 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
         *,
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Optional[
-            typing.Union[dict[str, typing.Any], typing.Type[BaseModel]]
-        ] = None,
+        response_format: typing.Optional[typing.Type[T]] = None,
         model: typing.Optional[AIModel] = None,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
@@ -191,7 +189,7 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[typing.Any]:
+    ) -> CompletionOutput[T]:
         if system_prompt is None:
             system_prompt = "You are a helpful assistant. Answer in the same language the user asked."
 
@@ -227,9 +225,7 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[
-            typing.Union[dict[str, typing.Any], typing.Type[BaseModel]]
-        ] = None,
+        response_format: typing.Optional[typing.Type[T]] = None,
         model: typing.Optional[AIModel] = None,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
@@ -243,7 +239,7 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[typing.Any]:
+    ) -> CompletionOutput[T]:
         """
         Asynchronously generate a chat completion using the configured models.
 
@@ -661,7 +657,7 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
             return None
 
         if isinstance(response_format, dict):
-            LLMResponse: typing.Type[BaseModel] = util.get_struct_from_schema(
+            LLMResponse: typing.Type[msgspec.Struct] = util.get_struct_from_schema(
                 response_format, bases=(BaseModel,), name="ResponseModel"
             )
 
@@ -807,3 +803,11 @@ class ObservableCompletionEngine(CompletionEngineProtocol):
         return DynamicInstanceCreator.create_instance(
             AIModel.get_llama_index_model_cls(model), **constructor_params
         )
+
+
+engine = CompletionEngine(langfuse=Langfuse())
+
+
+# async def test():
+#     res = await engine.complete_async(prompt="teste", response_format=dict[str, str])
+#     parsed = res.get_parsed()

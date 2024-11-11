@@ -7,13 +7,12 @@ import re
 import typing
 import uuid
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from llama_index.core.base.llms.types import MessageRole as LlamaIndexMessageRole
 from llama_index.core.llms import ChatMessage as LlamaIndexChatMessage
 from tiktoken.core import Encoding
 from weavearc import BaseModel, Meta, field
 from weavearc.logging import logger
-
 
 from intellibricks.util import deserialize_json
 
@@ -29,7 +28,7 @@ T = typing.TypeVar("T")
 class Tag(BaseModel):
     tag_name: str
     content: typing.Optional[str] = field(default=None)
-    attributes: dict[str, str] = field(default_factory=dict)
+    attributes: dict[str, typing.Optional[str]] = field(default_factory=dict)
 
     @classmethod
     def from_string(
@@ -37,7 +36,7 @@ class Tag(BaseModel):
         string: str,
         *,
         tag_name: typing.Optional[str] = None,
-        attributes: typing.Optional[dict[str, str]] = None,
+        attributes: typing.Optional[dict[str, typing.Optional[str]]] = None,
     ) -> typing.Optional[Tag]:
         """
         Create a Tag instance from a string containing a tag.
@@ -98,8 +97,11 @@ class Tag(BaseModel):
         else:
             elem = soup.find()
 
+        if isinstance(elem, NavigableString):
+            raise ValueError("Element cannot be instance of NavigableString")
+
         if elem is not None:
-            elem_attributes = dict(elem.attrs)
+            elem_attributes: dict[str, typing.Optional[str]] = dict(elem.attrs)
             # Get the inner HTML content of the tag
             content = "".join(str(child) for child in elem.contents).strip()
 
@@ -108,7 +110,7 @@ class Tag(BaseModel):
                 content = content.replace(placeholder, code_block)
 
             return cls(
-                tag_name=elem.name,
+                tag_name=elem.name or "",
                 content=content,
                 attributes=elem_attributes,
             )
@@ -649,7 +651,7 @@ class Message(BaseModel):
         self,
         *,
         name: typing.Optional[str] = None,
-        attributes: typing.Optional[dict[str, str]] = None,
+        attributes: typing.Optional[dict[str, typing.Optional[str]]] = None,
     ) -> typing.Optional[Tag]:
         """
         Extracts a tag from the message content based on tag name and/or identifier.
@@ -719,7 +721,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
             description="The message content for this choice, including role and text.",
             examples=[
                 Message(
-                    role="assistant",
+                    role=MessageRole.ASSISTANT,
                     content="Hello there, how may I assist you today?",
                 )
             ],
@@ -780,7 +782,7 @@ class StreamChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
             description="Partial contents (token) of the final message",
             examples=[
                 Delta(
-                    role="assistant",
+                    role=MessageRole.ASSISTANT,
                     content="\n\nHello there, how may I assist you today?",
                 )
             ],

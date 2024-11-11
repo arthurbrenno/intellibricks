@@ -1389,7 +1389,7 @@ def get_struct_from_schema(
         name = resolved_schema.get("title", "DynamicStruct")
 
     # Ensure the name is a valid Python identifier
-    name = re.sub(r"\W|^(?=\d)", "_", name)
+    name = re.sub(r"\W|^(?=\d)", "_", string=name)
 
     # Step 4: Define the type mapping within the function
     type_mapping: dict[str, typing.Any] = {

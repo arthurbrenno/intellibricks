@@ -1,6 +1,6 @@
 from .config import CacheConfig
 from .constants import AIModel
-from .engines import CompletionEngineProtocol, ObservableCompletionEngine
+from .engines import CompletionEngineProtocol, CompletionEngine
 from .schema import (
     CompletionOutput,
     Delta,
@@ -15,7 +15,7 @@ from .schema import (
 from .types import ObservationParams, TraceParams
 
 __all__ = [
-    "ObservableCompletionEngine",
+    "CompletionEngine",
     "AIModel",
     "CompletionOutput",
     "Message",
