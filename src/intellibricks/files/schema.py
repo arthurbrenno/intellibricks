@@ -152,7 +152,7 @@ class PageContent(BaseModel):
     ] = []
 
 
-class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg]
+class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
     credits_used: Annotated[
         float,
         Meta(
@@ -198,7 +198,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg]
     ] = False
 
 
-class Schema(BaseModel, frozen=True):  # type: ignore[call-arg]
+class Schema(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
     """
     A class representing the schema of entities and relations present in a document.
 
@@ -341,14 +341,14 @@ class DocumentArtifact(BaseModel):
     def __post_init__(self) -> None:
         # Serialize relevant parts of the document to JSON
         content_dict = {
-            "pages": [page.to_dict() for page in self.pages],
-            "job_metadata": self.job_metadata.to_dict() if self.job_metadata else {},
+            "pages": [page.as_dict() for page in self.pages],
+            "job_metadata": self.job_metadata.as_dict() if self.job_metadata else {},
             "file_path": self.file_path,
         }
         # Convert the dictionary to a JSON string with sorted keys to ensure consistency
         content_json = msgspec.json.encode(content_dict, order="sorted")
         # Compute the SHA-256 hash of the JSON string
-        self.id = hashlib.sha256(content_json.encode("utf-8")).hexdigest()
+        self.id = hashlib.sha256(content_json).hexdigest()
 
     async def get_schema_async(
         self, completion_engine: CompletionEngineProtocol
@@ -388,7 +388,7 @@ class DocumentArtifact(BaseModel):
             }
 
             content: str = page.md
-            adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))
+            adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))  # type: ignore[call-arg]
 
         return adapted_docs
 
@@ -417,12 +417,14 @@ class DocumentArtifact(BaseModel):
             for document in raw_docs:
                 split_operation: int = 0
                 transformed_documents.append(
-                    LangchainDocument(
-                        page_content=text,
-                        id=f"{document.id}-{split_operation}",
-                        metadata=document.metadata,
-                    )
-                    for text in splitter.split_text(document.page_content)
+                    [
+                        LangchainDocument(
+                            page_content=text,
+                            id=f"{document.id}-{split_operation}",
+                            metadata=document.metadata,
+                        )
+                        for text in splitter.split_text(document.page_content)
+                    ][0]
                 )
                 split_operation += 1
 

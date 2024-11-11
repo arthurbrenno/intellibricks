@@ -24,7 +24,7 @@ dependencies = [
     "matplotlib>=3.9.2",
     "types-beautifulsoup4>=4.12.0.20241020",
     "vertexai>=1.71.1",
-    "weavearc>=0.1.0",
+    "weavearc==0.1.1",
 ]
 
 [build-system]

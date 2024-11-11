@@ -26,12 +26,13 @@ from llama_index.llms.vertex import Vertex
 from vertexai.generative_models import ChatSession, Content, GenerationResponse, Part
 from vertexai.generative_models._generative_models import SafetySettingsType
 from vertexai.preview import caching
-from vertexai.preview.generative_models import GenerativeModel, GenerationConfig
-
-from weavearc.logging import logger
+from vertexai.preview.generative_models import GenerationConfig, GenerativeModel
+from weavearc.logging import LoggerFactory
 
 from .config import CacheConfig
 from .runtime_mappings import CACHE_KEY_TO_ID
+
+logger = LoggerFactory.create(__name__)
 
 
 class EnhancedVertexAI(Vertex):
@@ -86,18 +87,22 @@ class EnhancedVertexAI(Vertex):
             output_parser=output_parser,
         )
 
-        if cache_config is None:
-            cache_config = CacheConfig.from_defaults()
+        cfg = cache_config or CacheConfig.from_defaults()
 
-        self.cache_config = cache_config
+        self.cache_config = cfg
 
     @llm_chat_callback()  # type: ignore[misc]
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         system_instruction: str = next(
-            filter(lambda message: message.role == MessageRole.SYSTEM, messages)
-        ).content
+            (
+                message.content or ""
+                for message in messages
+                if message.role == MessageRole.SYSTEM
+            ),
+            "",
+        )
 
         cache_is_enabled: bool = self.cache_config.enabled
         if cache_is_enabled:
@@ -107,10 +112,7 @@ class EnhancedVertexAI(Vertex):
                     ttl=self.cache_config.ttl,
                 )
             except Exception as e:
-                logger.error(
-                    "Failed to load GenerativeModel from cache. Error: {error}",
-                    error=e,
-                )
+                logger.error(f"Failed to load GenerativeModel from cache. Error: {e}")
                 model = GenerativeModel(
                     model_name=self.model,
                     safety_settings=self.safety_settings,
@@ -155,22 +157,14 @@ class EnhancedVertexAI(Vertex):
         self, system_instruction: str, ttl: datetime.timedelta
     ) -> GenerativeModel:
         cache_key = self.cache_config.cache_key
-        logger.debug(
-            "Attempting to retrieve cache ID for cache_key: {cache_key}",
-            cache_key=cache_key,
-        )
+        logger.debug(f"Attempting to retrieve cache ID for cache_key: {cache_key}")
 
         google_cache_id = CACHE_KEY_TO_ID.get(cache_key, None)
-        logger.debug(
-            "Current CACHE_KEY_TO_ID state: {cache_key} -> {google_cache_id}",
-            cache_key=cache_key,
-            google_cache_id=google_cache_id,
-        )
+        logger.debug(f"Current CACHE_KEY_TO_ID state: {cache_key} -> {google_cache_id}")
 
         if google_cache_id is None:
             logger.debug(
-                "Cache key '{cache_key}' not found in CACHE_KEY_TO_ID. Creating new CachedContent.",
-                cache_key=cache_key,
+                f"Cache key '{cache_key}' not found in CACHE_KEY_TO_ID. Creating new CachedContent.",
             )
 
             system_instruction_content = Content(
@@ -185,23 +179,17 @@ class EnhancedVertexAI(Vertex):
                 display_name=cache_key,
             )
 
-            logger.debug(
-                "Created new CachedContent with name: {cached_content_name}",
-                cached_content_name=cached_content.name,
-            )
+            logger.debug(f"Created new CachedContent with name: {cached_content.name}")
 
             # Store the cached content name in the container
             CACHE_KEY_TO_ID[cache_key] = cached_content.name
             logger.debug(
-                "Updated CACHE_KEY_TO_ID with {cache_key} -> {cached_content_name}",
-                cache_key=cache_key,
-                cached_content_name=cached_content.name,
+                f"Updated CACHE_KEY_TO_ID with {cache_key} -> {cached_content.name}"
             )
 
         try:
             logger.debug(
-                "Attempting to retrieve CachedContent using cache_key: {cache_key}",
-                cache_key=cache_key,
+                f"Attempting to retrieve CachedContent using cache_key: {cache_key}"
             )
 
             cached_content = caching.CachedContent(
@@ -211,41 +199,26 @@ class EnhancedVertexAI(Vertex):
             # Reset expire_time to now + ttl
             new_expire_time = datetime.datetime.utcnow() + ttl
 
-            logger.debug(
-                "Current expire_time: {expire_time}",
-                expire_time=cached_content.expire_time,
-            )
-            logger.debug(
-                "Updating expire_time to {new_expire_time}",
-                new_expire_time=new_expire_time,
-            )
+            logger.debug(f"Current expire_time: {cached_content.expire_time}")
+            logger.debug(f"Updating expire_time to {new_expire_time}")
             # cached_content.update(expire_time=new_expire_time)
 
-            logger.debug(
-                "Successfully retrieved CachedContent: {cached_content_name}",
-                cached_content_name=cached_content.name,
-            )
+            logger.debug(f"Successfully retrieved CachedContent: {cached_content.name}")
 
         except Exception as e:
             logger.exception(e)
             logger.debug(
-                "Failed to retrieve CachedContent for cache_key: {cache_key}. Error: {error}",
-                cache_key=cache_key,
-                error=e,
+                f"Failed to retrieve CachedContent for cache_key: {cache_key}. Error: {e}"
             )
 
             # Cache ID is stored in the container, but probably failed because it expired
             CACHE_KEY_TO_ID[cache_key] = None
             logger.debug(
-                "Set CACHE_KEY_TO_ID[{cache_key}] to None due to retrieval failure",
-                cache_key=cache_key,
+                f"Set CACHE_KEY_TO_ID[{cache_key}] to None due to retrieval failure"
             )
 
             # Create a new cache ID
-            logger.debug(
-                "Creating new CachedContent for cache_key: {cache_key}",
-                cache_key=cache_key,
-            )
+            logger.debug(f"Creating new CachedContent for cache_key: {cache_key}")
 
             cached_content = caching.CachedContent.create(
                 model_name=self.model,
@@ -255,22 +228,16 @@ class EnhancedVertexAI(Vertex):
                 display_name=cache_key,
             )
 
-            logger.debug(
-                "Created new CachedContent with name: {cached_content_name}",
-                cached_content_name=cached_content.name,
-            )
+            logger.debug(f"Created new CachedContent with name: {cached_content.name}")
 
             # Store the new cached content name in the container
             CACHE_KEY_TO_ID[cache_key] = cached_content.name
             logger.debug(
-                "Updated CACHE_KEY_TO_ID with new cache ID: {cache_key} -> {cached_content_name}",
-                cache_key=cache_key,
-                cached_content_name=cached_content.name,
+                f"Updated CACHE_KEY_TO_ID with new cache ID: {cache_key} -> {cached_content.name}"
             )
 
         logger.debug(
-            "Loading GenerativeModel from CachedContent: {cached_content_name}",
-            cached_content_name=cached_content.name,
+            f"Loading GenerativeModel from CachedContent: {cached_content.name}"
         )
 
         model: GenerativeModel = GenerativeModel.from_cached_content(
@@ -278,8 +245,7 @@ class EnhancedVertexAI(Vertex):
         )
 
         logger.debug(
-            "Successfully loaded GenerativeModel from cache. Model details: {model}",
-            model=model,
+            f"Successfully loaded GenerativeModel from cache. Model details: {model}"
         )
 
         return model

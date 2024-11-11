@@ -13,7 +13,7 @@ from llama_index.core.llms import ChatMessage as LlamaIndexChatMessage
 from tiktoken.core import Encoding
 from weavearc import BaseModel, Meta, field
 from weavearc.logging import logger
-from weavearc.typing import T
+
 
 from intellibricks.util import deserialize_json
 
@@ -22,6 +22,8 @@ from .constants import (
     FinishReason,
     MessageRole,
 )
+
+T = typing.TypeVar("T")
 
 
 class Tag(BaseModel):
@@ -36,7 +38,7 @@ class Tag(BaseModel):
         *,
         tag_name: typing.Optional[str] = None,
         attributes: typing.Optional[dict[str, str]] = None,
-    ) -> typing.Optional["Tag"]:
+    ) -> typing.Optional[Tag]:
         """
         Create a Tag instance from a string containing a tag.
 
@@ -644,7 +646,10 @@ class Message(BaseModel):
     ] = None
 
     def extract_tag(
-        self, *, name: typing.Optional[str] = None, attributes: typing.Optional[dict[str, str]] = None
+        self,
+        *,
+        name: typing.Optional[str] = None,
+        attributes: typing.Optional[dict[str, str]] = None,
     ) -> typing.Optional[Tag]:
         """
         Extracts a tag from the message content based on tag name and/or identifier.
@@ -675,7 +680,7 @@ class Message(BaseModel):
 
     @classmethod
     def from_llama_index_message(cls, message: LlamaIndexChatMessage) -> Message:
-        return cls(role=message.role, content=message.content)
+        return cls(role=MessageRole(message.role.value), content=message.content)
 
     def count_tokens(self, encoder: Encoding) -> int:
         return len(self.get_tokens(encoder=encoder))
@@ -754,7 +759,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
             self.finish_reason = FinishReason(self.finish_reason)
 
 
-class Delta(Message, typing.Generic[T]):
+class Delta(CompletionMessage, typing.Generic[T]):
     """Stream message"""
 
 
@@ -905,6 +910,12 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
             output_cost=0.0,
             total_cost=0.0,
             total_tokens=0,
+            prompt_tokens_details=PromptTokensDetails(
+                audio_tokens=None, cached_tokens=None
+            ),
+            completion_tokens_details=CompletionTokensDetails(
+                audio_tokens=None, reasoning_tokens=None
+            ),
         )
     )
 
@@ -916,7 +927,25 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
                 raise ValueError(f"Invalid Unix timestamp: {self.created}") from e
 
     def get_message(self, choice: int = 0) -> Message:
-        return self.choices[choice].message
+        selected_choice: typing.Union[MessageChoice, StreamChoice] = self.choices[
+            choice
+        ]
+
+        match selected_choice:
+            case MessageChoice():
+                return selected_choice.message
+            case StreamChoice():
+                return Message.from_dict(
+                    selected_choice.delta.as_dict() if selected_choice.delta else {}
+                )
 
     def get_parsed(self, choice: int = 0) -> typing.Optional[T]:
-        return self.choices[choice].message.parsed
+        selected_choice: typing.Union[MessageChoice, StreamChoice] = self.choices[
+            choice
+        ]
+
+        match selected_choice:
+            case MessageChoice():
+                return selected_choice.message.parsed
+            case StreamChoice():
+                return selected_choice.delta.parsed if selected_choice.delta else None
