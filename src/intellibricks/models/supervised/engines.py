@@ -27,16 +27,16 @@ from weavearc.data import AsyncRepository
 from weavearc.logging import logger
 from weavearc.utils.creators import DynamicInstanceCreator
 
-from intellibricks.llms import CompletionEngineProtocol
+from intellibricks.llms import CompletionEngineProtocol, CompletionOutput
 
-from ..data.entities import ForgedModel
-from ..data.schema import (
+from .entities import ForgedModel
+from .schema import (
     TrainingConfig,
     TrainingResult,
 )
-from ..data.value_objects import ColumnInfo
-from ..infra.constants import AlgorithmType
-from ..infra.exceptions import (
+from .value_objects import ColumnInfo
+from .constants import AlgorithmType
+from .exceptions import (
     InvalidBase64Exception,
     InvalidFileException,
     MissingColumnsException,
@@ -381,7 +381,9 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
 
         ai_input = f"{prompt}\nDataset Preview:\n{data_preview}"
 
-        response = await self.completion_engine.complete_async(
+        response: CompletionOutput[
+            TrainingConfig
+        ] = await self.completion_engine.complete_async(
             prompt=ai_input,
             system_prompt="""
             You are an AI assistant designed to provide detailed, step-by-step responses. Your outputs should follow this structure:

@@ -820,11 +820,3 @@ class CompletionEngine(CompletionEngineProtocol):
         return DynamicInstanceCreator(
             AIModel.get_llama_index_model_cls(model)
         ).create_instance(**constructor_params)
-
-
-engine = CompletionEngine(langfuse=Langfuse())
-
-
-# async def test():
-#     res = await engine.complete_async(prompt="teste", response_format=dict[str, str])
-#     parsed = res.get_parsed()

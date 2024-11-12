@@ -874,7 +874,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
     ] = "fp_none"
 
     choices: typing.Annotated[
-        list[typing.Union[MessageChoice[T], StreamChoice[T]]],
+        typing.Sequence[typing.Union[MessageChoice[T], StreamChoice[T]]],
         Meta(
             title="Choices",
             description="""The choices made by the language model. 
