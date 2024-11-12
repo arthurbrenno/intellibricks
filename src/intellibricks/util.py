@@ -944,7 +944,7 @@ def graphviz_to_base64(
     >>> print(base64_image)  # Outputs the Base64 encoded PNG image as a string
 
     """
-    logger.debug("Parsing DOT string: {string}", string=dot_string)
+    logger.debug(f"Parsing DOT string: {dot_string}")
 
     def replace_literal_newlines(dot_str: str) -> str:
         """
@@ -1388,8 +1388,10 @@ def get_struct_from_schema(
     if name is None:
         name = resolved_schema.get("title", "DynamicStruct")
 
+    nm = name or ""
+
     # Ensure the name is a valid Python identifier
-    name = re.sub(r"\W|^(?=\d)", "_", string=name)
+    name = re.sub(pattern=r"\W|^(?=\d)", repl="_", string=nm)
 
     # Step 4: Define the type mapping within the function
     type_mapping: dict[str, typing.Any] = {

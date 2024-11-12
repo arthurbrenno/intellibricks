@@ -13,14 +13,15 @@ from google.generativeai.types import HarmBlockThreshold, HarmCategory
 from google.oauth2 import service_account
 from langfuse import Langfuse
 from langfuse.client import (
-    StatefulClient,
     StatefulGenerationClient,
     StatefulSpanClient,
     StatefulTraceClient,
 )
+from langfuse.model import ModelUsage
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import LLM
 from weavearc import BaseModel, DynamicDict, Meta
+from weavearc.extensions import Maybe
 from weavearc.logging import LoggerFactory
 from weavearc.utils.creators import DynamicInstanceCreator
 
@@ -114,21 +115,19 @@ class CompletionEngine(CompletionEngineProtocol):
     handling API keys, and providing fallback options if the primary model fails.
     """
 
-    vertex_credentials: typing.Annotated[
-        typing.Optional[
-            service_account.Credentials
-        ],  # Nota: Ou voce tira esse trem da interface, o que nao faz nem sentido, ou refatora essa classe pra receber algum outro tipo de objeto que faz mais sentido em receber as credenciais por construtor. Alem disso, deixei essas credenciais opcionais agora
-        Meta(
-            title="Google Cloud Credentials",
-            description="The Google Cloud credentials to use for models that use Google Cloud services",
-        ),
-    ]
-
     langfuse: typing.Annotated[
-        Langfuse,
+        Maybe[Langfuse],
         Meta(
             title="Langfuse",
             description="The Langfuse instance to use for generating observable completions",
+        ),
+    ]
+
+    vertex_credentials: typing.Annotated[
+        Maybe[service_account.Credentials],
+        Meta(
+            title="Google Cloud Credentials",
+            description="The Google Cloud credentials to use for models that use Google Cloud services",
         ),
     ]
 
@@ -151,7 +150,7 @@ class CompletionEngine(CompletionEngineProtocol):
     def __init__(
         self,
         *,
-        langfuse: typing.Optional[Langfuse],
+        langfuse: typing.Optional[Langfuse] = None,
         json_encoder: typing.Optional[msgspec.json.Encoder] = None,
         json_decoder: typing.Optional[msgspec.json.Decoder] = None,
         vertex_credentials: typing.Optional[service_account.Credentials] = None,
@@ -165,10 +164,10 @@ class CompletionEngine(CompletionEngineProtocol):
             json_decoder: JSON decoder for deserializing structured responses
             vertex_credentials: Optional Google Cloud credentials for models using Google Cloud services
         """
-        self.langfuse = langfuse or Langfuse()
+        self.langfuse = Maybe(langfuse or None)
         self.json_encoder = json_encoder or msgspec.json.Encoder()
         self.json_decoder = json_decoder or msgspec.json.Decoder()
-        self.vertex_credentials = vertex_credentials
+        self.vertex_credentials = Maybe(vertex_credentials or None)
 
     async def complete_async(
         self,
@@ -204,7 +203,7 @@ class CompletionEngine(CompletionEngineProtocol):
             Message(role=MessageRole.USER, content=prompt),
         ]
 
-        output: CompletionOutput[typing.Any] = await self.chat_async(
+        output: CompletionOutput[T] = await self.chat_async(
             messages=messages,
             response_format=response_format,
             model=model,
@@ -261,13 +260,15 @@ class CompletionEngine(CompletionEngineProtocol):
             trace_params = {}
 
         if cache_config is None:
-            cache_config = CacheConfig.from_defaults()
+            cache_config = CacheConfig()
+
+        trace_params["input"] = messages
 
         # An unique ID for the completion
         completion_id: uuid.UUID = uuid.uuid4()
 
-        trace: StatefulTraceClient = self.langfuse.trace(
-            id=completion_id.__str__(), input=messages, **trace_params
+        trace: Maybe[StatefulTraceClient] = self.langfuse.map(
+            lambda langfuse: langfuse.trace(id=completion_id.__str__(), **trace_params)
         )
 
         choices: list[MessageChoice] = []
@@ -299,14 +300,19 @@ class CompletionEngine(CompletionEngineProtocol):
             f"Starting chat completion. Main model: {model}, Fallback models: {fallback_models}"
         )
 
+        maybe_span: Maybe[StatefulSpanClient] = Maybe(None)
         for model in models:
             for retry in range(max_retries):
                 try:
                     span_id: str = f"sp-{completion_id}-{retry}"
-                    span: StatefulSpanClient = trace.span(
-                        id=span_id,
-                        input=messages,
-                        name="Geração de Resposta",
+                    maybe_span = Maybe(
+                        trace.map(
+                            lambda trace: trace.span(
+                                id=span_id,
+                                input=messages,
+                                name="Geração de Resposta",
+                            )
+                        ).unwrap()
                     )
                     choices, usage = await self._agen_choices(
                         model=model,
@@ -319,7 +325,7 @@ class CompletionEngine(CompletionEngineProtocol):
                         max_tokens=max_tokens,
                         cache_config=cache_config,
                         trace=trace,
-                        span=span,
+                        span=maybe_span,
                         postergate_token_counting=postergate_token_counting,
                     )
 
@@ -327,17 +333,17 @@ class CompletionEngine(CompletionEngineProtocol):
                         f"Successfully generated completion with model {model} in retry {retry}"
                     )
 
-                    output: CompletionOutput[typing.Any] = CompletionOutput(
+                    output: CompletionOutput[T] = CompletionOutput(
                         id=completion_id,
                         model=model,
                         choices=choices,
                         usage=usage,
                     )
 
-                    span.end(output=output.choices)
+                    maybe_span.end(output=output.choices)
 
-                    span.score(
-                        id=f"sc-{span}",
+                    maybe_span.score(
+                        id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
                         name="Sucesso",
                         value=1.0,
                         comment="Escolhas geradas com sucesso!",
@@ -347,18 +353,16 @@ class CompletionEngine(CompletionEngineProtocol):
                     return output
                 except Exception as e:
                     # Log the error in span and continue to the next one
-                    span.end(output={})
-                    span.update(status_message="Erro na geração.", level="ERROR")
-                    span.score(
-                        id=f"sc-{span}",
+                    maybe_span.end(output={})
+                    maybe_span.update(status_message="Erro na geração.", level="ERROR")
+                    maybe_span.score(
+                        id=f"sc-{maybe_span.unwrap()}",
                         name="Sucesso",
                         value=0.0,
                         comment=f"Erro ao gerar escolhas: {e}",
                     )
                     logger.error(
                         "An error ocurred in retry {retry}: {e}. CONTINUING...",
-                        retry=retry,
-                        e=e,
                     )
                     continue
 
@@ -374,12 +378,12 @@ class CompletionEngine(CompletionEngineProtocol):
         temperature: float,
         stream: bool,
         max_tokens: int,
-        trace: StatefulTraceClient,
-        span: StatefulSpanClient,
+        trace: Maybe[StatefulTraceClient],
+        span: Maybe[StatefulSpanClient],
         cache_config: CacheConfig,
         postergate_token_counting: bool,
-        response_format: typing.Optional[typing.Union[dict, typing.Type[BaseModel]]],
-    ) -> typing.Tuple[list[MessageChoice[typing.Any]], Usage]:
+        response_format: typing.Optional[typing.Type[T]],
+    ) -> typing.Tuple[list[MessageChoice[typing.Optional[T]]], Usage]:
         """
         Internal method to generate chat completions for a specific model.
 
@@ -401,7 +405,7 @@ class CompletionEngine(CompletionEngineProtocol):
             typing.Tuple[list[MessageChoice[typing.Any]], Usage]: A tuple containing a list of generated message choices and a Usage object with token usage statistics.
         """
         # Initialize variables
-        choices: list[MessageChoice] = []
+        choices: list[MessageChoice[typing.Optional[T]]] = []
         model_input_cost, model_output_cost = model.ppm()
         total_prompt_tokens: int = 0
         total_completion_tokens: int = 0
@@ -424,14 +428,16 @@ class CompletionEngine(CompletionEngineProtocol):
                     response_format=response_format,
                 )
 
-            generation: StatefulGenerationClient = span.generation(
-                id=f"gen-{uuid.uuid4()}-{i}",
-                model=model.value,
-                input=current_messages,
-                model_parameters={
-                    "max_tokens": max_tokens,
-                    "temperature": temperature,
-                },
+            generation: Maybe[StatefulGenerationClient] = span.map(
+                lambda span: span.generation(
+                    id=f"gen-{uuid.uuid4()}-{i}",
+                    model=model.value,
+                    input=current_messages,
+                    model_parameters={
+                        "max_tokens": max_tokens,
+                        "temperature": str(temperature),
+                    },
+                )
             )
 
             chat_response: ChatResponse = await llm.achat(
@@ -474,15 +480,17 @@ class CompletionEngine(CompletionEngineProtocol):
                 total_input_cost += usage.input_cost or 0.0
                 total_output_cost += usage.output_cost or 0.0
 
-            completion_message: CompletionMessage = CompletionMessage(
-                role=MessageRole(chat_response.message.role.value),
-                content=chat_response.message.content,
-                parsed=self._get_parsed(
-                    response_format,
-                    chat_response.message.content,
-                    trace=trace,
-                    span=span,
-                ),
+            completion_message: CompletionMessage[typing.Optional[T]] = (
+                CompletionMessage(
+                    role=MessageRole(chat_response.message.role.value),
+                    content=chat_response.message.content,
+                    parsed=self._get_parsed(
+                        response_format,
+                        chat_response.message.content,
+                        trace=trace,
+                        span=span,
+                    ),
+                )
             )
 
             choices.append(
@@ -536,8 +544,8 @@ class CompletionEngine(CompletionEngineProtocol):
         model: AIModel,
         messages: list[Message],
         chat_response: ChatResponse,
-        generation: StatefulGenerationClient,
-        span: StatefulSpanClient,
+        generation: Maybe[StatefulGenerationClient],
+        span: Maybe[StatefulSpanClient],
         index: int,
         model_input_cost: float,
         model_output_cost: float,
@@ -553,8 +561,8 @@ class CompletionEngine(CompletionEngineProtocol):
             model (AIModel): The AI model used for completion.
             messages (list[Message]): The input messages for the chat completion.
             chat_response (ChatResponse): The response from the LLM.
-            generation (StatefulGenerationClient): The generation object for observability.
-            span (StatefulSpanClient): The parent span for observability.
+            generation (Maybe[StatefulGenerationClient]): The generation object for observability.
+            span (Maybe[StatefulSpanClient]): The parent span for observability.
             index (int): The index of the current choice in the loop.
             model_input_cost (float): The per-token input cost of the model.
             model_output_cost (float): The per-token output cost of the model.
@@ -563,15 +571,18 @@ class CompletionEngine(CompletionEngineProtocol):
             Usage: An object containing token usage statistics.
         """
         # Perform token counting
-        prompt_counting_span: StatefulSpanClient = span.span(
-            id=f"sp-prompt-{span.id}-{index}",
-            name="Contagem de Tokens",
-            input={
-                "mensagens": [
-                    message.as_dict(encoder=self.json_encoder) for message in messages
-                ]
-                + [chat_response.model_dump()]
-            },
+        prompt_counting_span: Maybe[StatefulSpanClient] = span.map(
+            lambda span: span.span(
+                id=f"sp-prompt-{span.id}-{index}",
+                name="Contagem de Tokens",
+                input={
+                    "mensagens": [
+                        message.as_dict(encoder=self.json_encoder)
+                        for message in messages
+                    ]
+                    + [chat_response.model_dump()]
+                },
+            )
         )
 
         prompt_tokens = sum(
@@ -579,7 +590,7 @@ class CompletionEngine(CompletionEngineProtocol):
         )
 
         completion_tokens = count_tokens(
-            model=model, text=chat_response.message.content
+            model=model, text=chat_response.message.content or ""
         )
 
         prompt_counting_span.end(
@@ -591,15 +602,17 @@ class CompletionEngine(CompletionEngineProtocol):
         )
 
         # Perform cost calculation
-        prompt_cost_span: StatefulSpanClient = span.span(
-            id=f"sp-sum-prompt-{span.id}-{index}",
-            name="Determinando preço dos tokens",
-            input={
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "model_input_cost": model_input_cost,
-                "model_output_cost": model_output_cost,
-            },
+        prompt_cost_span: Maybe[StatefulSpanClient] = span.map(
+            lambda span: span.span(
+                id=f"sp-sum-prompt-{span.id}-{index}",
+                name="Determinando preço dos tokens",
+                input={
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "model_input_cost": model_input_cost,
+                    "model_output_cost": model_output_cost,
+                },
+            )
         )
 
         scale = 1 / 1_000_000
@@ -617,13 +630,15 @@ class CompletionEngine(CompletionEngineProtocol):
 
         # Update the generation with usage
         generation.update(
-            usage={
-                "input": prompt_tokens,
-                "output": completion_tokens,
-                "unit": "TOKENS",
-                "input_cost": completion_input_cost,
-                "output_cost": completion_output_cost,
-            }
+            usage=ModelUsage(
+                unit="TOKENS",
+                input=prompt_tokens,
+                output=completion_tokens,
+                total=prompt_tokens + completion_tokens,
+                input_cost=completion_input_cost,
+                output_cost=completion_output_cost,
+                total_cost=completion_input_cost + completion_output_cost,
+            )
         )
 
         usage = Usage(
@@ -645,15 +660,17 @@ class CompletionEngine(CompletionEngineProtocol):
 
     def _get_parsed(
         self,
-        response_format: typing.Optional[
-            typing.Union[dict[str, typing.Any], typing.Type[BaseModel]]
-        ],
-        content: str,
-        trace: StatefulTraceClient,
-        span: StatefulSpanClient,
-    ) -> typing.Optional[BaseModel]:
+        response_format: typing.Optional[typing.Type[T]],
+        content: typing.Optional[str],
+        trace: Maybe[StatefulTraceClient],
+        span: Maybe[StatefulSpanClient],
+    ) -> typing.Optional[T]:
         if response_format is None:
-            logger.debug("Response format is None")
+            logger.warning("Response format is None")
+            return None
+
+        if content is None:
+            logger.warning("Contents of the message are none")
             return None
 
         if isinstance(response_format, dict):
@@ -668,13 +685,15 @@ class CompletionEngine(CompletionEngineProtocol):
         ) or Tag.from_string(content, tag_name="output")
 
         if tag is None:
-            event: StatefulClient = span.event(  # NOQA: F841
-                id=f"ev-{trace.id}",
-                name="Obtendo resposta estruturada",
-                input=content,
-                output=None,
-                level="ERROR",
-                metadata={"response_format": response_format, "content": content},
+            span.map(
+                lambda span: span.event(  # NOQA: F841
+                    id=f"ev-{trace.id}",
+                    name="Obtendo resposta estruturada",
+                    input=content,
+                    output=None,
+                    level="ERROR",
+                    metadata={"response_format": response_format, "content": content},
+                )
             )
             return None
 
@@ -684,19 +703,21 @@ class CompletionEngine(CompletionEngineProtocol):
         # logger.debug("Tag content: {tag_content}", tag_content=tag.content)
         # logger.debug("Structured content: {structured}", structured=structured)
 
-        model: typing.Optional[BaseModel] = (
-            response_format.from_dict(structured, encoder=self.json_encoder)
+        model: typing.Optional[T] = (
+            msgspec.json.decode(msgspec.json.encode(structured), type=response_format)
             if structured
             else None
         )
 
-        event = span.event(  # NOQA: F841
-            id=f"ev-{trace.id}",
-            name="Obtendo resposta estruturada",
-            input=f"<structured>\n{tag.content}\n</structured>",
-            output=model,
-            level="DEBUG",
-            metadata={"response_format": response_format, "content": content},
+        span.map(
+            lambda span: span.event(
+                id=f"ev-{trace.id}",
+                name="Obtendo resposta estruturada",
+                input=f"<structured>\n{tag.content}\n</structured>",
+                output=model,
+                level="DEBUG",
+                metadata={"response_format": response_format, "content": content},
+            )
         )
 
         return model
@@ -705,7 +726,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Union[dict[str, typing.Any], typing.Type[BaseModel]],
+        response_format: typing.Optional[typing.Type[T]],
         prompt_role: typing.Optional[MessageRole] = None,
     ) -> list[Message]:
         """
@@ -718,11 +739,7 @@ class CompletionEngine(CompletionEngineProtocol):
         if prompt_role is None:
             prompt_role = MessageRole.SYSTEM
 
-        match response_format:
-            case type() if issubclass(response_format, BaseModel):
-                basemodel_schema = response_format.to_json_schema()
-            case dict():
-                basemodel_schema = response_format
+        basemodel_schema = msgspec.json.schema(response_format)
 
         new_prompt: str = f"""
         <saida>
@@ -800,9 +817,9 @@ class CompletionEngine(CompletionEngineProtocol):
             .at_last("generate_kwargs", equals_to={"timeout": 120})
         )
 
-        return DynamicInstanceCreator.create_instance(
-            AIModel.get_llama_index_model_cls(model), **constructor_params
-        )
+        return DynamicInstanceCreator(
+            AIModel.get_llama_index_model_cls(model)
+        ).create_instance(**constructor_params)
 
 
 engine = CompletionEngine(langfuse=Langfuse())

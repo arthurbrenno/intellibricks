@@ -8,6 +8,7 @@ import typing
 import uuid
 
 from bs4 import BeautifulSoup, NavigableString
+from llama_index.core.base.llms.types import LogProb
 from llama_index.core.base.llms.types import MessageRole as LlamaIndexMessageRole
 from llama_index.core.llms import ChatMessage as LlamaIndexChatMessage
 from tiktoken.core import Encoding
@@ -729,7 +730,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
     ]
 
     logprobs: typing.Annotated[
-        None,
+        typing.Optional[list[list[LogProb]]],
         Meta(
             title="Log Probability",
             description="Log probability of the choice. Currently always None, reserved for future use.",
@@ -790,7 +791,7 @@ class StreamChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
     ] = None
 
     logprobs: typing.Annotated[
-        None,
+        typing.Optional[list[list[LogProb]]],
         Meta(
             title="Log Probability",
             description='log probability of the choice. For now, always "null"',

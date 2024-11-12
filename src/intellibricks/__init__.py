@@ -16,7 +16,6 @@ from .llms import (
 __all__: list[str] = [
     "CompletionEngine",
     "CompletionOutput",
-    "TempFile",
     "AIModel",
     "Usage",
     "Message",
