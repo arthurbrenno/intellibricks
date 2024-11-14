@@ -219,9 +219,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
             sample_value = df[col].iloc[0] if not df[col].empty else None
             dtype = str(df[col].dtype)
             # Restrict dtype to allowed Literals
-            dtype_literal: typing.Literal[
-                "int64", "float64", "object", "bool", "datetime64", "object"
-            ] = typing.cast(
+            dtype_literal = typing.cast(
                 typing.Literal[
                     "int64", "float64", "object", "bool", "datetime64", "object"
                 ],
@@ -229,6 +227,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
                 if dtype in ["int64", "float64", "object", "bool", "datetime64"]
                 else "object",
             )
+
             columns_info.append(
                 ColumnInfo(name=col, dtype=dtype_literal, sample_value=sample_value)
             )
