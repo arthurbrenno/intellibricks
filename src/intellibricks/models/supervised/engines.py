@@ -31,7 +31,6 @@ from weavearc.utils.creators import ModuleClassLoader
 from intellibricks.llms import CompletionEngineProtocol, CompletionOutput
 
 from .constants import AlgorithmType
-from .entities import ForgedModel
 from .exceptions import (
     InvalidBase64Exception,
     InvalidFileException,
@@ -39,7 +38,7 @@ from .exceptions import (
     TargetColumnNotFoundException,
 )
 from .repositories import LocalSupervisedModelRepository
-from .schema import ColumnInfo, TrainingConfig, TrainingResult
+from .schema import ColumnInfo, ForgedModel, TrainingConfig, TrainingResult
 
 logger = LoggerFactory.create(__name__)
 

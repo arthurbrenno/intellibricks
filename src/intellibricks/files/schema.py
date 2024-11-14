@@ -393,7 +393,7 @@ class DocumentArtifact(BaseModel):
         return adapted_docs
 
     def as_langchain_documents(
-        self, text_splitters: list[TextSplitter]
+        self, transformers: list[TextSplitter]
     ) -> list[LangchainDocument]:
         """Converts itself representation to a List of Langchain Document"""
         filename: Optional[str] = self.file_path
@@ -413,7 +413,7 @@ class DocumentArtifact(BaseModel):
         ]
 
         transformed_documents: list[LangchainDocument] = []
-        for splitter in text_splitters:
+        for splitter in transformers:
             for document in raw_docs:
                 split_operation: int = 0
                 transformed_documents.append(
