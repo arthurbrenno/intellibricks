@@ -5,8 +5,9 @@ import datetime
 import io
 import json
 import os
-from typing import Annotated, Any, Optional, Sequence
+import typing
 
+import joblib
 import magic
 import numpy as np
 import pandas as pd
@@ -24,24 +25,23 @@ from sklearn.pipeline import Pipeline
 from typing_extensions import Doc
 from weavearc import ReadAllResult, ReadResult
 from weavearc.data import AsyncRepository
-from weavearc.logging import logger
-from weavearc.utils.creators import DynamicInstanceCreator
+from weavearc.logging import LoggerFactory
+from weavearc.utils.creators import ModuleClassLoader
 
 from intellibricks.llms import CompletionEngineProtocol, CompletionOutput
 
-from .entities import ForgedModel
-from .schema import (
-    TrainingConfig,
-    TrainingResult,
-)
-from .value_objects import ColumnInfo
 from .constants import AlgorithmType
+from .entities import ForgedModel
 from .exceptions import (
     InvalidBase64Exception,
     InvalidFileException,
     MissingColumnsException,
     TargetColumnNotFoundException,
 )
+from .repositories import LocalSupervisedModelRepository
+from .schema import ColumnInfo, TrainingConfig, TrainingResult
+
+logger = LoggerFactory.create(__name__)
 
 
 class SupervisedLearningEngine(abc.ABC):
@@ -49,18 +49,26 @@ class SupervisedLearningEngine(abc.ABC):
     Protocol for SKLearnSupervisedLearningEngine classes.
 
     This protocol defines the contract for training and using supervised machine learning models.
-    Any class implementing this protocol should provide concrete implementations for the defined methods.
+    typing.Any class implementing this protocol should provide concrete implementations for the defined methods.
     """
 
-    completion_engine: Annotated[
-        CompletionEngineProtocol,
+    completion_engine: typing.Annotated[
+        typing.Optional[CompletionEngineProtocol],
         Doc("Completion Engine instance to use when AI assistance is activated."),
     ]
 
-    repository: Annotated[
+    repository: typing.Annotated[
         AsyncRepository[ForgedModel],
         Doc("Repository to store the trained models."),
     ]
+
+    def __init__(
+        self,
+        completion_engine: typing.Optional[CompletionEngineProtocol] = None,
+        repository: typing.Optional[AsyncRepository[ForgedModel]] = None,
+    ):
+        self.completion_engine = completion_engine
+        self.repository = repository or LocalSupervisedModelRepository()
 
     @abc.abstractmethod
     async def train(
@@ -68,9 +76,9 @@ class SupervisedLearningEngine(abc.ABC):
         *,
         b64_file: str,
         uid: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        config: Optional[TrainingConfig] = None,
+        name: typing.Optional[str] = None,
+        description: typing.Optional[str] = None,
+        config: typing.Optional[TrainingConfig] = None,
     ) -> TrainingResult:
         """
         Train a machine learning model based on the provided configuration and dataset.
@@ -78,9 +86,9 @@ class SupervisedLearningEngine(abc.ABC):
         Args:
             b64_file (str): Base64-encoded dataset file.
             uid (str): Unique identifier for the model.
-            name (Optional[str]): Name of the model.
-            description (Optional[str]): Description of the model.
-            config (Optional[TrainingConfig]): Configuration for training.
+            name (typing.Optional[str]): Name of the model.
+            description (typing.Optional[str]): Description of the model.
+            config (typing.Optional[TrainingConfig]): Configuration for training.
 
         Returns:
             TrainingResult: Result of the training process.
@@ -94,23 +102,23 @@ class SupervisedLearningEngine(abc.ABC):
     async def get_model(self, model_id: str) -> ForgedModel: ...
 
     @abc.abstractmethod
-    async def get_models(self) -> Sequence[ForgedModel]: ...
+    async def get_models(self) -> typing.Sequence[ForgedModel]: ...
 
     @abc.abstractmethod
     async def predict(
         self,
         uid: str,
-        input_data: dict[str, Any],
-    ) -> np.ndarray:
+        input_data: dict[str, typing.Any],
+    ) -> np.ndarray | tuple[np.ndarray]:
         """
         Load a model by UID and make predictions on new data.
 
         Args:
             uid (str): The unique identifier of the model.
-            input_data (dict[str, Any]): Input data as a dictionary.
+            input_data (dict[str, typing.Any]): Input data as a dictionary.
 
         Returns:
-            np.ndarray: Predictions made by the model.
+            np.ndarray | tuple[np.ndarray]: Predictions made by the model.
 
         Raises:
             NotImplementedError: If the method is not implemented in the subclass.
@@ -146,9 +154,9 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         *,
         b64_file: str,
         uid: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        config: Optional[TrainingConfig] = None,
+        name: typing.Optional[str] = None,
+        description: typing.Optional[str] = None,
+        config: typing.Optional[TrainingConfig] = None,
     ) -> TrainingResult:
         """
         Train a machine learning model based on the provided configuration and dataset.
@@ -156,9 +164,9 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         Args:
             b64_file (str): Base64-encoded dataset file.
             uid (str): Unique identifier for the model.
-            name (Optional[str]): Name of the model.
-            description (Optional[str]): Description of the model.
-            config (Optional[TrainingConfig]): Configuration for training.
+            name (typing.Optional[str]): Name of the model.
+            description (typing.Optional[str]): Description of the model.
+            config (typing.Optional[TrainingConfig]): Configuration for training.
 
         Returns:
             TrainingResult: Result of the training process.
@@ -211,10 +219,15 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
             sample_value = df[col].iloc[0] if not df[col].empty else None
             dtype = str(df[col].dtype)
             # Restrict dtype to allowed Literals
-            dtype_literal = (
+            dtype_literal: typing.Literal[
+                "int64", "float64", "object", "bool", "datetime64", "object"
+            ] = typing.cast(
+                typing.Literal[
+                    "int64", "float64", "object", "bool", "datetime64", "object"
+                ],
                 dtype
                 if dtype in ["int64", "float64", "object", "bool", "datetime64"]
-                else "object"
+                else "object",
             )
             columns_info.append(
                 ColumnInfo(name=col, dtype=dtype_literal, sample_value=sample_value)
@@ -253,21 +266,21 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         result: ReadResult[ForgedModel] = await self.repository.read(q=model_id)
         return result.entity
 
-    async def get_models(self) -> Sequence[ForgedModel]:
+    async def get_models(self) -> typing.Sequence[ForgedModel]:
         result: ReadAllResult[ForgedModel] = await self.repository.read_all()
         return result.entities
 
     async def predict(
         self,
         uid: str,
-        input_data: dict[str, Any],
+        input_data: dict[str, typing.Any],
     ) -> np.ndarray:
         """
         Load a model by UID and make predictions on new data.
 
         Args:
             uid (str): The unique identifier of the model.
-            input_data (dict[str, Any]): Input data as a dictionary.
+            input_data (dict[str, typing.Any]): Input data as a dictionary.
 
         Returns:
             np.ndarray: Predictions made by the model.
@@ -281,7 +294,6 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
 
         model_dir = os.path.join("cortex", "core", "models", "store", uid)
         model_path = os.path.join(model_dir, "pipe.joblib")
-        import joblib
 
         try:
             model_pipeline: Pipeline = joblib.load(model_path)
@@ -296,13 +308,19 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
             input_df = input_df[model.feature_names]
 
             predictions = model_pipeline.predict(input_df)
+
+            if not isinstance(predictions, np.ndarray):
+                raise RuntimeError("Predictions are not of type ndarray.")
+
             return predictions
         except (FileNotFoundError, NotFittedError) as e:
             raise ValueError(
                 f"Model artifacts not found or model not fitted: {str(e)}"
             ) from e
 
-    async def _get_df(self, b64_file: str, sep: Optional[str] = None) -> pd.DataFrame:
+    async def _get_df(
+        self, b64_file: str, sep: typing.Optional[str] = None
+    ) -> pd.DataFrame:
         """
         Decode base64-encoded data and load it into a pandas DataFrame.
 
@@ -325,23 +343,18 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         f = magic.Magic(mime=True)
         mime = f.from_buffer(file_bytes)
 
-        logger.debug("mime: {mime}", mime=mime)
+        logger.debug(f"mime: {mime}")
 
         # Load the data into pandas based on MIME type
         df_loaders = {
             "text/csv": lambda: pd.read_csv(io.BytesIO(file_bytes), sep=sep),
-            "application/json": lambda: pd.read_json(io.BytesIO(file_bytes), sep=sep),
+            "application/json": lambda: pd.read_json(io.BytesIO(file_bytes)),
             "text/plain": lambda: pd.read_csv(io.BytesIO(file_bytes), sep=sep),
-            "application/vnd.ms-excel": lambda: pd.read_excel(
-                io.BytesIO(file_bytes), sep=sep
-            ),
+            "application/vnd.ms-excel": lambda: pd.read_excel(io.BytesIO(file_bytes)),
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": lambda: pd.read_excel(
-                io.BytesIO(file_bytes), sep=sep
+                io.BytesIO(file_bytes)
             ),
-            "application/parquet": lambda: pd.read_parquet(
-                io.BytesIO(file_bytes), sep=sep
-            ),
-            "application/x-hdf": lambda: pd.read_hdf(io.BytesIO(file_bytes), sep=sep),
+            "application/parquet": lambda: pd.read_parquet(io.BytesIO(file_bytes)),
         }
 
         df_loader = df_loaders.get(mime)
@@ -381,6 +394,11 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
 
         ai_input = f"{prompt}\nDataset Preview:\n{data_preview}"
 
+        if self.completion_engine is None:
+            raise ValueError(
+                "An instance of CompletionEngineProtocol is required to use AI Assistance."
+            )
+
         response: CompletionOutput[
             TrainingConfig
         ] = await self.completion_engine.complete_async(
@@ -411,11 +429,9 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
             response_format=TrainingConfig,
         )
 
-        ai_config: Optional[TrainingConfig] = response.get_parsed()
+        ai_config: typing.Optional[TrainingConfig] = response.get_parsed()
         if ai_config is not None:
-            logger.debug(
-                "AI-assisted config received: {ai_config}", ai_config=ai_config
-            )
+            logger.debug(f"AI-assisted config received: {ai_config}")
             config = ai_config
         else:
             logger.error("Failed to get AI-assisted config")
@@ -442,8 +458,8 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         if config.categorical_columns:
             categorical_transformers = []
             for cat_col in config.categorical_columns:
-                encoder_cls = DynamicInstanceCreator.create_from_module(
-                    "sklearn.preprocessing", cat_col.encoder, return_class_only=True
+                encoder_cls = ModuleClassLoader(cat_col.encoder).get_class_from_module(
+                    "sklearn.preprocessing"
                 )
                 categorical_transformers.append(
                     (cat_col.name, encoder_cls(), [cat_col.name])
@@ -464,8 +480,8 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
             if col not in [cat_col.name for cat_col in config.categorical_columns]
         ]
         if config.scaler and numerical_columns:
-            scaler_cls = DynamicInstanceCreator.create_from_module(
-                "sklearn.preprocessing", config.scaler, return_class_only=True
+            scaler_cls = ModuleClassLoader(config.scaler).get_class_from_module(
+                "sklearn.preprocessing"
             )
             transformers.append(("numerical", scaler_cls(), numerical_columns))
 
@@ -503,8 +519,8 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         if not module_name:
             raise ValueError(f"Algorithm {config.algorithm.value} is not supported.")
 
-        algorithm_cls = DynamicInstanceCreator.create_from_module(
-            module_name, config.algorithm.value, return_class_only=True
+        algorithm_cls = ModuleClassLoader(config.algorithm.value).get_class_from_module(
+            module_name
         )
 
         model_instance = algorithm_cls(**config.hyperparameters)
@@ -523,9 +539,9 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         model_pipeline: Pipeline,
         X_test: pd.DataFrame,
         y_test: pd.Series,
-        metrics_list: Sequence[str],
+        metrics_list: typing.Sequence[str],
         algorithm: AlgorithmType,
-    ) -> dict[str, float]:
+    ) -> dict[str, typing.Any]:
         """
         Evaluate the trained model using the specified metrics.
 
@@ -533,7 +549,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
             model_pipeline (Pipeline): Trained model pipeline.
             X_test (pd.DataFrame): Test features.
             y_test (pd.Series): Test labels.
-            metrics_list (Sequence[str]): List of metrics to compute.
+            metrics_list (typing.Sequence[str]): List of metrics to compute.
             algorithm (AlgorithmType): Algorithm used.
 
         Returns:
@@ -541,7 +557,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
         """
         y_pred = model_pipeline.predict(X_test)
 
-        metrics: dict[str, float] = {}
+        metrics: dict[str, typing.Any] = {}
         for metric_name in metrics_list:
             if metric_name == "accuracy":
                 metrics["accuracy"] = accuracy_score(y_test, y_pred)

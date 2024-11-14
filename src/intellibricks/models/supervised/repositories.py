@@ -13,7 +13,7 @@ from weavearc.data import (
     DeleteResult,
 )
 
-from ...data.entities import ForgedModel
+from .schema import ForgedModel
 
 
 class LocalSupervisedModelRepository(AsyncRepository[ForgedModel]):
@@ -26,9 +26,10 @@ class LocalSupervisedModelRepository(AsyncRepository[ForgedModel]):
     async def create(
         self, entity: ForgedModel, *, filters: Optional[dict[str, Any]] = None
     ) -> CreateResult:
-        model_dir = os.path.join(
-            "cortex", "core", "models", "supervised", "store", entity.uid
-        )
+        if filters is None:
+            filters = {}
+
+        model_dir = filters.get("model_dir", "store")
         os.makedirs(model_dir, exist_ok=True)
         model_info_path = os.path.join(model_dir, "model_info.json")
         with open(model_info_path, "w") as f:
@@ -38,8 +39,11 @@ class LocalSupervisedModelRepository(AsyncRepository[ForgedModel]):
     async def read(
         self, q: str, *, filters: Optional[dict[str, Any]] = None
     ) -> ReadResult[ForgedModel]:
-        model_dir = os.path.join("cortex", "core", "models", "supervised", "store", q)
-        model_info_path = os.path.join(model_dir, "model_info.json")
+        if filters is None:
+            filters = {}
+
+        model_dir = filters.get("model_dir", "store")
+        model_info_path = os.path.join(model_dir + os.sep + "q", "model_info.json")
         if not os.path.exists(model_info_path):
             raise ModuleNotFoundError
 
@@ -51,8 +55,11 @@ class LocalSupervisedModelRepository(AsyncRepository[ForgedModel]):
     async def read_all(
         self, *, filters: Optional[dict[str, Any]] = None
     ) -> ReadAllResult[ForgedModel]:
-        models = []
-        models_dir = os.path.join("cortex", "core", "models", "supervised", "store")
+        if filters is None:
+            filters = {}
+
+        models: list[ForgedModel] = []
+        models_dir = filters.get("model_dir", "store")
         for model_dir in os.listdir(models_dir):
             model_info_path = os.path.join(models_dir, model_dir, "model_info.json")
             with open(model_info_path, "r") as f:
