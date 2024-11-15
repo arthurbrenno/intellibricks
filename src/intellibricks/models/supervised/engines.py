@@ -209,7 +209,7 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
 
         logger.debug("Evaluating model.")
         metrics = self._evaluate_model(
-            model_pipeline, X_test, y_test, config.evaluation_metrics, config.algorithm
+            model_pipeline, typing.cast(pd.DataFrame, X_test), typing.cast(pd.Series, y_test), config.evaluation_metrics, config.algorithm
         )
 
         # Collect dataset information
@@ -565,11 +565,11 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
                 metrics["mean_squared_error"] = mean_squared_error(y_test, y_pred)
             elif metric_name == "precision":
                 metrics["precision"] = precision_score(
-                    y_test, y_pred, average="weighted", zero_division=0
+                    y_test, y_pred, average="weighted", zero_division="warn"
                 )
             elif metric_name == "recall":
                 metrics["recall"] = recall_score(
-                    y_test, y_pred, average="weighted", zero_division=0
+                    y_test, y_pred, average="weighted", zero_division="warn"
                 )
             # Add more metrics as needed
 

@@ -2,7 +2,7 @@ import abc
 import typing
 
 from langchain_community.vectorstores import Clickhouse, ClickhouseSettings
-from langchain_core.documents import Document
+from langchain_core.documents import Document as LangchainDocument
 from langchain_core.documents.transformers import BaseDocumentTransformer
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -32,7 +32,7 @@ class RAGDocumentRepository(abc.ABC):
         """Stores the document in the database and returns the document ids."""
         vector_store: VectorStore = self._get_vector_store()
 
-        documents: list[Document] = document.as_langchain_documents(
+        documents: list[LangchainDocument] = document.as_langchain_documents(
             transformations=transformations
             or [SemanticChunker(embeddings=self.embeddings)]
         )
@@ -42,8 +42,10 @@ class RAGDocumentRepository(abc.ABC):
         )
         return ingested_documents_ids
 
-    async def similarity_search_async(self, query: str) -> None:
+    async def similarity_search_async(self, query: str, k: int = 4) -> list[LangchainDocument]:
+        #TODO: make more robust implementation
         vector_store: VectorStore = self._get_vector_store()
+        return await vector_store.asimilarity_search(query, k=k)
 
     @abc.abstractmethod
     def _get_vector_store(

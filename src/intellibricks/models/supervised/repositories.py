@@ -34,7 +34,7 @@ class LocalSupervisedModelRepository(AsyncRepository[ForgedModel]):
         model_info_path = os.path.join(model_dir, "model_info.json")
         with open(model_info_path, "w") as f:
             json.dump(entity.as_dict(), f, indent=4)
-        return CreateResult(uid=entity.uid)
+        return CreateResult(uid=str(entity.uid))
 
     async def read(
         self, q: str, *, filters: Optional[dict[str, Any]] = None
