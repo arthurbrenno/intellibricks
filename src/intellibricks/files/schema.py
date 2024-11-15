@@ -3,29 +3,28 @@
 from __future__ import annotations
 
 import hashlib
+import typing
 import uuid
-from typing import Annotated, Literal, Optional
 
 import msgspec
 from langchain_core.documents import Document as LangchainDocument
-from langchain_text_splitters.base import TextSplitter
+from langchain_core.documents.transformers import BaseDocumentTransformer
 from llama_index.core.schema import Document as LlamaIndexDocument
-
 from weavearc import BaseModel, Meta, field
 
-from intellibricks.llms import CompletionOutput, AIModel, CompletionEngineProtocol
+from intellibricks.llms import AIModel, CompletionEngineProtocol, CompletionOutput
 
 
 class Image(BaseModel):
-    name: Annotated[
-        Optional[str],
+    name: typing.Annotated[
+        typing.Optional[str],
         Meta(
             title="Name",
             description="The name of the image file present in the pdf.",
         ),
     ] = ""
 
-    height: Annotated[
+    height: typing.Annotated[
         float,
         Meta(
             title="Height",
@@ -33,7 +32,7 @@ class Image(BaseModel):
         ),
     ] = 0
 
-    width: Annotated[
+    width: typing.Annotated[
         float,
         Meta(
             title="Width",
@@ -43,56 +42,56 @@ class Image(BaseModel):
 
 
 class PageItem(BaseModel):
-    type: Annotated[
-        Literal["text", "heading", "table"],
+    type: typing.Annotated[
+        typing.Literal["text", "heading", "table"],
         Meta(
             title="Type",
             description="Type of the item",
         ),
     ] = "text"
 
-    rows: Annotated[
-        Optional[list[list[str]]],
+    rows: typing.Annotated[
+        typing.Optional[typing.Sequence[typing.Sequence[str]]],
         Meta(
             title="Rows",
             description="Rows of the table, if the item is a table.",
         ),
     ] = []
 
-    is_perfect_table: Annotated[
-        Optional[bool],
+    is_perfect_table: typing.Annotated[
+        typing.Optional[bool],
         Meta(
             title="Is Perfect Table",
             description="Whether the table is a perfect table",
         ),
     ] = False
 
-    value: Annotated[
-        Optional[str],
+    value: typing.Annotated[
+        typing.Optional[str],
         Meta(
             title="Value",
             description="Value of the item",
         ),
     ] = ""
 
-    md: Annotated[
-        Optional[str],
+    md: typing.Annotated[
+        typing.Optional[str],
         Meta(
             title="Markdown Representation",
             description="Markdown representation of the item",
         ),
     ] = ""
 
-    lvl: Annotated[
-        Optional[int],
+    lvl: typing.Annotated[
+        typing.Optional[int],
         Meta(
             title="Level",
             description="Level of the heading",
         ),
     ] = None
 
-    csv: Annotated[
-        Optional[str],
+    csv: typing.Annotated[
+        typing.Optional[str],
         Meta(
             title="CSV Representation",
             description="CSV representation of the table",
@@ -101,7 +100,7 @@ class PageItem(BaseModel):
 
 
 class PageContent(BaseModel):
-    id: Annotated[
+    id: typing.Annotated[
         str,
         Meta(
             title="ID",
@@ -111,15 +110,15 @@ class PageContent(BaseModel):
         ),
     ] = field(default_factory=lambda: uuid.uuid4().__str__())
 
-    page: Annotated[
-        Optional[int],
+    page: typing.Annotated[
+        typing.Optional[int],
         Meta(
             title="Page",
             description="Page number",
         ),
     ] = 0
 
-    text: Annotated[
+    text: typing.Annotated[
         str,
         Meta(
             title="Text",
@@ -127,7 +126,7 @@ class PageContent(BaseModel):
         ),
     ] = ""
 
-    md: Annotated[
+    md: typing.Annotated[
         str,
         Meta(
             title="Markdown Representation",
@@ -135,15 +134,15 @@ class PageContent(BaseModel):
         ),
     ] = ""
 
-    images: Annotated[
-        list[Optional[Image]],
+    images: typing.Annotated[
+        list[typing.Optional[Image]],
         Meta(
             title="Images",
             description="Images present in the page",
         ),
     ] = []
 
-    items: Annotated[
+    items: typing.Annotated[
         list[PageItem],
         Meta(
             title="Items",
@@ -153,7 +152,7 @@ class PageContent(BaseModel):
 
 
 class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
-    credits_used: Annotated[
+    credits_used: typing.Annotated[
         float,
         Meta(
             title="Credits Used",
@@ -162,7 +161,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0.0
 
-    credits_max: Annotated[
+    credits_max: typing.Annotated[
         int,
         Meta(
             title="Credits Max",
@@ -171,7 +170,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0
 
-    job_credits_usage: Annotated[
+    job_credits_usage: typing.Annotated[
         int,
         Meta(
             title="Job Credits Usage",
@@ -180,7 +179,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0
 
-    job_pages: Annotated[
+    job_pages: typing.Annotated[
         int,
         Meta(
             title="Job Pages",
@@ -189,7 +188,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0
 
-    job_is_cache_hit: Annotated[
+    job_is_cache_hit: typing.Annotated[
         bool,
         Meta(
             title="Job Is Cache Hit",
@@ -260,7 +259,7 @@ class Schema(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
 
     """
 
-    entities: Annotated[
+    entities: typing.Annotated[
         list[str],
         Meta(
             title="Entities",
@@ -270,7 +269,7 @@ class Schema(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ]
 
-    relations: Annotated[
+    relations: typing.Annotated[
         list[str],
         Meta(
             title="Relations",
@@ -280,7 +279,7 @@ class Schema(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ]
 
-    validation_schema: Annotated[
+    validation_schema: typing.Annotated[
         dict[str, list[str]],
         Meta(
             title="Validation Schema",
@@ -297,7 +296,7 @@ class Schema(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
 
 
 class DocumentArtifact(BaseModel):
-    pages: Annotated[
+    pages: typing.Annotated[
         list[PageContent],
         Meta(
             title="Pages",
@@ -305,15 +304,15 @@ class DocumentArtifact(BaseModel):
         ),
     ]
 
-    job_metadata: Annotated[
-        Optional[JobMetadata],
+    job_metadata: typing.Annotated[
+        typing.Optional[JobMetadata],
         Meta(
             title="Job Metadata",
             description="Metadata of the job",
         ),
     ] = None
 
-    job_id: Annotated[
+    job_id: typing.Annotated[
         str,
         Meta(
             title="Job ID",
@@ -321,15 +320,15 @@ class DocumentArtifact(BaseModel):
         ),
     ] = field(default_factory=lambda: str(uuid.uuid4()))
 
-    file_path: Annotated[
-        Optional[str],
+    file_path: typing.Annotated[
+        typing.Optional[str],
         Meta(
             title="File Path",
             description="Path of the file",
         ),
     ] = field(default=None)
 
-    uid: Annotated[
+    uid: typing.Annotated[
         str,
         Meta(
             title="UID",
@@ -364,7 +363,7 @@ class DocumentArtifact(BaseModel):
                 "user_id": "cortex_content_extractor",
             },
         )
-        possible_schema: Optional[Schema] = output.get_parsed()
+        possible_schema: typing.Optional[Schema] = output.get_parsed()
         if possible_schema is None:
             raise ValueError(
                 "The entities and relationships could not be extracted from this document."
@@ -375,10 +374,10 @@ class DocumentArtifact(BaseModel):
     def as_llamaindex_documents(self) -> list[LlamaIndexDocument]:
         adapted_docs: list[LlamaIndexDocument] = []
 
-        filename: Optional[str] = self.file_path
+        filename: typing.Optional[str] = self.file_path
         for page in self.pages:
             page_number: int = page.page or 0
-            images: list[Optional[Image]] = page.images
+            images: list[typing.Optional[Image]] = page.images
 
             metadata = {
                 "page_number": page_number,
@@ -393,10 +392,10 @@ class DocumentArtifact(BaseModel):
         return adapted_docs
 
     def as_langchain_documents(
-        self, transformers: list[TextSplitter]
+        self, transformations: list[BaseDocumentTransformer]
     ) -> list[LangchainDocument]:
         """Converts itself representation to a List of Langchain Document"""
-        filename: Optional[str] = self.file_path
+        filename: typing.Optional[str] = self.file_path
 
         # May contain a whole page as document.page_content.
         # If text splitters are provided, this problem
@@ -413,19 +412,7 @@ class DocumentArtifact(BaseModel):
         ]
 
         transformed_documents: list[LangchainDocument] = []
-        for splitter in transformers:
-            for document in raw_docs:
-                split_operation: int = 0
-                transformed_documents.append(
-                    [
-                        LangchainDocument(
-                            page_content=text,
-                            id=f"{document.id}-{split_operation}",
-                            metadata=document.metadata,
-                        )
-                        for text in splitter.split_text(document.page_content)
-                    ][0]
-                )
-                split_operation += 1
+
+        # TODO
 
         return transformed_documents or raw_docs
