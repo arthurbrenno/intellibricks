@@ -4,12 +4,13 @@ IntelliBricks provides a streamlined set of tools for developing AI-powered appl
 
 ## Key Features
 
-* **Simplified LLM Interaction:** Easily interact with multiple AI providers through a unified interface. Switch between models with a simple enum change.  Supports both single prompt completion and chat-based interactions.
-* **Effortless Model Training:** Train machine learning models with minimal code using the intuitive `SupervisedLearningEngine`.  Includes data preprocessing, model selection, evaluation, and artifact management.
+* **Simplified LLM Interaction:** Easily interact with multiple AI providers through a unified interface. Switch between models with a simple enum change. Supports both single prompt completion and chat-based interactions.
+* **Effortless Model Training:** Train machine learning models with minimal code using the intuitive `SupervisedLearningEngine`. Includes data preprocessing, model selection, evaluation, and artifact management.
 * **Retrieval Augmented Generation (RAG):** Connect to your knowledge bases for context-aware AI responses (currently under development).
 * **Built-in Parsing:** Eliminate boilerplate parsing code with automatic response deserialization directly into your defined data structures.
-* **Langfuse Integration:**  Gain deep insights into your LLM usage with seamless integration with Langfuse. Monitor traces, events, and model costs effortlessly. IntelliBricks automatically calculates and logs model costs for you.
+* **Langfuse Integration:** Gain deep insights into your LLM usage with seamless integration with Langfuse. Monitor traces, events, and model costs effortlessly. IntelliBricks automatically calculates and logs model costs for you.
 * **Transparent Cost Tracking:** IntelliBricks automatically calculates and tracks LLM usage costs, providing valuable insights into your spending.
+* **Fully Typed:**  Enjoy a smooth development experience with complete type hints for `mypy`, `pyright`, and `pylance`, ensuring no type errors.
 
 
 ## Getting Started
@@ -186,7 +187,15 @@ engine = CompletionEngine(langfuse=langfuse_client)
 ## Coming Soon
 
 * **Enhanced RAG:** A more robust RAG implementation for seamless integration with diverse knowledge sources.
+* **Unified Document Parsing** Stop wasting time choosing the right library for parsing pdfs. We will chose the right one for you (and let you choose to of course), with our DocumentArtifact model, it will be easily convertable to llama_index and langchain documents. You can pass your transformations too. We will offer support for NER and Relations extraction too. Example: 
 
+```py
+extractor: FileExtractorProtocol = ... # In development
+document = extractor.extract(RawFile.from_dir("./documents")) # or RawFile.from_upload_file(fastapi and litestar objects goes here). RawFile will be a powerful class
+document.as_langchain_docs(transformations=[SemanticChunker(...)])
+# Done. Now you can ingest your doc into 
+vector_store.add_documents(documents)
+```
 
 ## Documentation
 
