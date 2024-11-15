@@ -36,9 +36,10 @@ from intellibricks import CompletionEngine
 from msgspec import Struct # Serialization is faster than Pydantic.
 import os
 import getpass
+import asyncio
 
 # Your Google AI Studio API key (free Gemini)
-os.envirom["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google API Key: ")
+os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google API Key: ")
 
 # Define your response structure
 class President(Struct):
@@ -51,13 +52,16 @@ class PresidentsResponse(Struct):
 # Instantiate the CompletionEngine (defaults to Google's free Gemini model)
 engine = CompletionEngine()
 
-# Generate and parse the response
-response: PresidentsResponse = engine.complete_async(
-    prompt="What were the presidents of the USA until your knowledge?",
-    response_format=PresidentsResponse,
-).get_parsed()
+async def main():
+    # Generate and parse the response
+    response: PresidentsResponse = await engine.complete_async(
+        prompt="What were the presidents of the USA until your knowledge?",
+        response_format=PresidentsResponse,
+    ).get_parsed()
 
-print(response)
+    print(response)
+
+asyncio.run(main)
 ```
 
 **Switching Providers:** Change AI providers by simply modifying the `model` parameter. Ensure the necessary environment variables for your chosen provider are set.

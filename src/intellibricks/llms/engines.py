@@ -55,7 +55,7 @@ T = typing.TypeVar("T", bound=msgspec.Struct)
 
 
 @typing.runtime_checkable
-class CompletionEngineProtocol(typing.Protocol):
+class CompletionEngineProtocol(typing.Protocol): # TODO: make this an abstract class, with template methods and make the CompletionEngine inherit from it
     """
     Interface for AI Completion Engines.
 
@@ -362,8 +362,9 @@ class CompletionEngine(CompletionEngineProtocol):
                         comment=f"Erro ao gerar escolhas: {e}",
                     )
                     logger.error(
-                        "An error ocurred in retry {retry}: {e}. CONTINUING...",
+                       f"An error ocurred in retry {retry}",
                     )
+                    logger.exception(e)
                     continue
 
         raise MaxRetriesReachedException()
