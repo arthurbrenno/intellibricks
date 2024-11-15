@@ -17,7 +17,7 @@ IntelliBricks provides a streamlined set of tools for developing AI-powered appl
 ### Installation
 
 ```bash
-pip install intellibricks[langfuse] # Installs with Langfuse support
+pip install intellibricks
 ```
 
 
