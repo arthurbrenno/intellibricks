@@ -1,4 +1,4 @@
-# 🧠🧱 IntelliBricks: Building Blocks for Intelligent Applications
+# 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
 
 IntelliBricks provides a streamlined set of tools for developing AI-powered applications. It simplifies complex tasks such as interacting with LLMs, training machine learning models, and implementing Retrieval Augmented Generation (RAG). Focus on building your application logic, not wrestling with boilerplate.  IntelliBricks empowers you to build intelligent applications faster and more efficiently.
 
