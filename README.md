@@ -2,6 +2,11 @@
 
 IntelliBricks provides a streamlined set of tools for developing AI-powered applications. It simplifies complex tasks such as interacting with LLMs, training machine learning models, and implementing Retrieval Augmented Generation (RAG). Focus on building your application logic, not wrestling with boilerplate.  IntelliBricks empowers you to build intelligent applications faster and more efficiently.
 
+> ⚠️ **Warning:**  
+> This project is currently under development and is **not ready for production**.  
+> If you like the idea, please consider supporting the project to help bring it to life! This was a personal project I've been doing for months and decided to open source it.
+
+
 ## Key Features
 
 * **Simplified LLM Interaction:** Easily interact with multiple AI providers through a unified interface. Switch between models with a simple enum change. Supports both single prompt completion and chat-based interactions.
@@ -199,9 +204,9 @@ vector_store.add_documents(documents)
 
 ## Documentation
 
-For more detailed information and API references, please refer to the comprehensive [IntelliBricks documentation](link-to-docs).  *(Documentation link placeholder)*
+For more detailed information and API references, please refer to the comprehensive [IntelliBricks documentation](link-to-docs).  *(In development)*
 
 
 ## Contributing
 
-We welcome contributions to IntelliBricks!  Please see our [contribution guidelines](link-to-contribution-guidelines). *(Contribution guidelines link placeholder)*
+We welcome contributions to IntelliBricks!  Please see our [contribution guidelines](link-to-contribution-guidelines). *(In development)*
