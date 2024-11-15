@@ -658,14 +658,12 @@ Notes
 """
 
 import base64
-import hashlib
 import inspect
 import io
 import os
 import re
 import typing
 from pathlib import Path
-from types import CodeType, FrameType
 
 import imgkit
 import markdown2
@@ -673,13 +671,16 @@ import matplotlib.pyplot as plt
 import msgspec
 from bs4 import BeautifulSoup
 from graphviz import Source
-from matplotlib import rcParams
+from matplotlib import rcParams, use
+from matplotlib.backend_bases import FigureCanvasBase
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import get_lexer_by_name
 from pygments.util import ClassNotFound
 from typing_extensions import TypedDict
-from weavearc.logging import logger
+from weavearc.logging import LoggerFactory
+
+logger = LoggerFactory.create(__name__)
 
 
 class CallerInfo(TypedDict):
@@ -747,6 +748,7 @@ def render_latex_to_base64(
     fontsize: float = 13.0,  # Slightly reduced font size
     dpi: int = 120,  # Slightly reduced DPI
 ) -> str:
+    use("Agg")
     # Configure Matplotlib parameters to use LaTeX
     rcParams.update(
         {
@@ -771,7 +773,10 @@ def render_latex_to_base64(
         )
 
         # Adjust figure size based on text bounding box
-        renderer = fig.canvas.get_renderer()
+        canvas: FigureCanvasBase = fig.canvas
+        
+        # Thanks matplotlib for this wonderful implementation of stubs
+        renderer = canvas.get_renderer() # type: ignore
         bbox = text.get_window_extent(renderer=renderer)
         width, height = bbox.width / dpi, bbox.height / dpi
         fig.set_size_inches(width, height)
@@ -1065,6 +1070,9 @@ def table_to_base64(table_string: str) -> str:
 
     # Convert HTML string to image
     img_data = imgkit.from_string(html_content, False)
+
+    if isinstance(img_data, bool):
+        raise ValueError("IMGDATA is True") # TODO: Check the impacts of this
 
     # Convert image data to base64
     img_str = base64.b64encode(img_data).decode()
@@ -1481,179 +1489,6 @@ def get_struct_from_schema(
             cache_hash=cache_hash,
         ),
     )
-
-
-def get_caller_info() -> CallerInfo:
-    """
-    Retrieve information about the caller, including class name, method/function name,
-    file name, line number, and a unique caller ID generated from this information.
-
-    The unique caller ID is consistent across multiple calls from the same location in the code,
-    making it useful for identifying code paths or for caching mechanisms.
-
-    Returns
-    -------
-    CallerInfo
-        A dictionary containing the following keys:
-        - 'caller_class' (typing.Optional[str]): The name of the caller's class if applicable.
-        - 'caller_method' (typing.Optional[str]): The name of the caller's method or function.
-        - 'filename' (typing.Optional[str]): The file name where the caller is located.
-        - 'line_number' (typing.Optional[int]): The line number in the source file where the call was made.
-        - 'caller_id' (typing.Optional[str]): A unique ID generated from the caller's information.
-
-    Raises
-    ------
-    Exception
-        If an error occurs while retrieving caller information.
-
-    Examples
-    --------
-    Basic usage:
-
-    >>> # In utils.py
-    >>> def get_caller_info() -> CallerInfo:
-    >>>     # Function implementation...
-
-    >>> # In main.py
-    >>> from utils import get_caller_info
-    >>> import logging
-
-    >>> logging.basicConfig(level=logging.DEBUG)
-    >>> logger = logging.getLogger(__name__)
-
-    >>> class MyClass:
-    ...     def my_method(self):
-    ...         caller_info = get_caller_info()
-    ...         logger.debug("Caller info: {caller_info}", caller_info=caller_info)
-
-    >>> obj = MyClass()
-    >>> obj.my_method()
-    DEBUG:utils:Entering get_caller_info function
-    DEBUG:utils:Current frame retrieved: <frame at 0x..., file 'utils.py', line ..., code get_caller_info>
-    DEBUG:utils:Caller frame retrieved: <frame at 0x..., file 'main.py', line ..., code my_method>
-    DEBUG:utils:Caller local variables: {'self': <__main__.MyClass object at 0x...>}
-    DEBUG:utils:Caller is an instance method of class: MyClass
-    DEBUG:utils:Caller method/function name: my_method
-    DEBUG:utils:Caller file name: main.py
-    DEBUG:utils:Caller line number: 15
-    DEBUG:utils:Identifier string: main.py:15:MyClass:my_method
-    DEBUG:utils:Generated unique caller ID: e4c1b6b5b2c4d4d5e6f7a8b9c0d1e2f3...
-    DEBUG:utils:Exiting get_caller_info function with caller_class: MyClass, caller_method: my_method, filename: main.py, line_number: 15, caller_id: e4c1b6b5b2c4d4d5e6f7a8b9c0d1e2f3...
-    DEBUG:__main__:Caller info: {'caller_class': 'MyClass', 'caller_method': 'my_method', 'filename': 'main.py', 'line_number': 15, 'caller_id': 'e4c1b6b5b2c4d4d5e6f7a8b9c0d1e2f3...'}
-
-    Notes
-    -----
-    - If the caller is a standalone function or a static method, 'caller_class' will be `None`.
-    - The unique 'caller_id' is generated using SHA-256 hashing of the caller's information.
-    - Be cautious when using line numbers in the identifier, as changes to the code structure
-      (such as adding or removing lines) will change the 'caller_id'.
-
-    """
-    logger.debug("Entering get_caller_info function")
-
-    try:
-        # Get the current frame
-        current_frame: typing.Optional[FrameType] = inspect.currentframe()
-        if current_frame is None:
-            logger.error("Failed to retrieve the current frame.")
-            raise RuntimeError("Failed to retrieve the current frame.")
-        logger.debug(
-            "Current frame retrieved: {current_frame}", current_frame=current_frame
-        )
-
-        # Get the caller's frame (one level up)
-        caller_frame: typing.Optional[FrameType] = current_frame.f_back
-        if caller_frame is None:
-            logger.error("Failed to retrieve the caller's frame.")
-            raise RuntimeError("Failed to retrieve the caller's frame.")
-        logger.debug(
-            "Caller frame retrieved: {caller_frame}", caller_frame=caller_frame
-        )
-
-        # Initialize default values
-        caller_class: typing.Optional[str] = None
-        caller_method: typing.Optional[str] = None
-        filename: typing.Optional[str] = None
-        line_number: typing.Optional[int] = None
-
-        # Get caller's local variables
-        caller_locals: dict[str, typing.Any] = caller_frame.f_locals
-        logger.debug(
-            "Caller local variables: {caller_locals}", caller_locals=caller_locals
-        )
-
-        # Attempt to retrieve 'self' or 'cls' from caller's locals
-        if "self" in caller_locals:
-            instance = caller_locals["self"]
-            caller_class = instance.__class__.__name__
-            logger.debug(
-                "Caller is an instance method of class: {caller_class}",
-                caller_class=caller_class,
-            )
-        elif "cls" in caller_locals:
-            cls = caller_locals["cls"]
-            caller_class = cls.__name__
-            logger.debug(
-                "Caller is a class method of class: {caller_class}",
-                caller_class=caller_class,
-            )
-        else:
-            logger.debug("Caller is a function or static method")
-
-        # Get the caller's code object
-        code_object: CodeType = caller_frame.f_code
-        caller_method = code_object.co_name
-        filename = code_object.co_filename
-        line_number = caller_frame.f_lineno
-
-        logger.debug(
-            "Caller method/function name: {caller_method}", caller_method=caller_method
-        )
-        logger.debug("Caller file name: {filename}", filename=filename)
-        logger.debug("Caller line number: {line_number}", line_number=line_number)
-
-        # Create an identifier string
-        identifier_str: str = f"{filename}:{line_number}:{caller_class}:{caller_method}"
-        logger.debug(
-            "Identifier string: {identifier_str}", identifier_str=identifier_str
-        )
-
-        # Generate a unique ID using SHA-256 hash
-        caller_id: str = hashlib.sha256(identifier_str.encode()).hexdigest()
-        logger.debug("Generated unique caller ID: {caller_id}", caller_id=caller_id)
-
-        logger.debug(
-            "Exiting get_caller_info function with caller_class: {caller_class}, "
-            "caller_method: {caller_method}, filename: {filename}, "
-            "line_number: {line_number}, caller_id: {caller_id}",
-            caller_class=caller_class,
-            caller_method=caller_method,
-            filename=filename,
-            line_number=line_number,
-            caller_id=caller_id,
-        )
-
-        return CallerInfo(
-            caller_class=caller_class,
-            caller_method=caller_method,
-            filename=filename,
-            line_number=line_number,
-            caller_id=caller_id,
-        )
-
-    except Exception as e:
-        logger.exception("An error occurred in get_caller_info: {error}", error=e)
-        return CallerInfo(
-            caller_class=None,
-            caller_method=None,
-            filename=None,
-            line_number=None,
-            caller_id=None,
-        )
-    finally:
-        # Clean up to avoid reference cycles
-        del current_frame
-        del caller_frame
 
 
 def deserialize_json(content: str) -> dict[str, typing.Any]:

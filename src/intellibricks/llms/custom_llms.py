@@ -24,7 +24,10 @@ from llama_index.core.llms.callbacks import llm_chat_callback
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.vertex import Vertex
 from vertexai.generative_models import ChatSession, Content, GenerationResponse, Part
-from vertexai.generative_models._generative_models import SafetySettingsType
+from vertexai.generative_models._generative_models import (
+    SafetySettingsType,
+    _GenerativeModel,
+)
 from vertexai.preview import caching
 from vertexai.preview.generative_models import GenerationConfig, GenerativeModel
 from weavearc.logging import LoggerFactory
@@ -107,7 +110,7 @@ class EnhancedVertexAI(Vertex):
         cache_is_enabled: bool = self.cache_config.enabled
         if cache_is_enabled:
             try:
-                model: GenerativeModel = self._get_cached_model(
+                model: _GenerativeModel = self._get_cached_model(
                     system_instruction=system_instruction,
                     ttl=self.cache_config.ttl,
                 )
@@ -134,7 +137,9 @@ class EnhancedVertexAI(Vertex):
         last_message = messages[-1]
 
         chat_history: Sequence[Content] = [
-            Content(role=message.role.value, parts=[Part.from_text(message.content)])
+            Content(
+                role=message.role.value, parts=[Part.from_text(str(message.content))]
+            )
             for message in filter(
                 lambda message: message.role != MessageRole.SYSTEM, messages[:-1]
             )
@@ -146,7 +151,7 @@ class EnhancedVertexAI(Vertex):
         )
 
         generation: GenerationResponse = await chat_session.send_message_async(
-            content=Part.from_text(last_message.content)
+            content=Part.from_text(str(last_message.content))
         )
 
         return ChatResponse(
@@ -155,9 +160,13 @@ class EnhancedVertexAI(Vertex):
 
     def _get_cached_model(
         self, system_instruction: str, ttl: datetime.timedelta
-    ) -> GenerativeModel:
+    ) -> _GenerativeModel:
         cache_key = self.cache_config.cache_key
         logger.debug(f"Attempting to retrieve cache ID for cache_key: {cache_key}")
+
+        system_instruction_content = Content(
+            role="system", parts=[Part.from_text(system_instruction)]
+        )
 
         google_cache_id = CACHE_KEY_TO_ID.get(cache_key, None)
         logger.debug(f"Current CACHE_KEY_TO_ID state: {cache_key} -> {google_cache_id}")
@@ -167,14 +176,10 @@ class EnhancedVertexAI(Vertex):
                 f"Cache key '{cache_key}' not found in CACHE_KEY_TO_ID. Creating new CachedContent.",
             )
 
-            system_instruction_content = Content(
-                role="system", parts=[Part.from_text(system_instruction)]
-            )
-
             cached_content: caching.CachedContent = caching.CachedContent.create(
                 model_name=self.model,
                 system_instruction=system_instruction_content,
-                contents=[Part.from_text(" ")],
+                contents=[Content(parts=[Part.from_text(" ")])],
                 ttl=ttl,
                 display_name=cache_key,
             )
@@ -192,8 +197,13 @@ class EnhancedVertexAI(Vertex):
                 f"Attempting to retrieve CachedContent using cache_key: {cache_key}"
             )
 
+            cached_content_name = CACHE_KEY_TO_ID[cache_key]
+
+            if cached_content_name is None:
+                raise ValueError("Cached content name is None.")
+
             cached_content = caching.CachedContent(
-                cached_content_name=CACHE_KEY_TO_ID[cache_key],
+                cached_content_name=cached_content_name,
             )
 
             # Reset expire_time to now + ttl
@@ -223,7 +233,7 @@ class EnhancedVertexAI(Vertex):
             cached_content = caching.CachedContent.create(
                 model_name=self.model,
                 system_instruction=system_instruction_content,
-                contents=[Part.from_text(" ")],
+                contents=[Content(parts=[Part.from_text(" ")])],
                 ttl=ttl,
                 display_name=cache_key,
             )
@@ -240,7 +250,7 @@ class EnhancedVertexAI(Vertex):
             f"Loading GenerativeModel from CachedContent: {cached_content.name}"
         )
 
-        model: GenerativeModel = GenerativeModel.from_cached_content(
+        model: _GenerativeModel = GenerativeModel.from_cached_content(
             cached_content=cached_content, safety_settings=self.safety_settings
         )
 

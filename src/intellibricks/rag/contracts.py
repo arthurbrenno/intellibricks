@@ -1,10 +1,11 @@
-from typing import Protocol, runtime_checkable
 import abc
+import typing
+
 from .results import QueryResult
 
 
-@runtime_checkable
-class RAGQueriable(Protocol):
+@typing.runtime_checkable
+class RAGQueriable(typing.Protocol):
     @abc.abstractmethod
     async def query_async(self, query: str) -> QueryResult: ...
 
