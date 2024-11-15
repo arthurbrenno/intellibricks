@@ -32,8 +32,13 @@ pip install intellibricks
 IntelliBricks abstracts away the complexities of interacting with different LLM providers. Specify your prompt, desired response format, and model, and IntelliBricks handles the rest.
 
 ```python
-from intellibricks import CompletionEngine, AIModel
-from msgspec import Struct
+from intellibricks import CompletionEngine
+from msgspec import Struct # Serialization is faster than Pydantic.
+import os
+import getpass
+
+# Your Google AI Studio API key (free Gemini)
+os.envirom["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google API Key: ")
 
 # Define your response structure
 class President(Struct):
@@ -48,9 +53,8 @@ engine = CompletionEngine()
 
 # Generate and parse the response
 response: PresidentsResponse = engine.complete_async(
-    prompt="Based on your current knowledge, what were the presidents of the USA until today?",
+    prompt="What were the presidents of the USA until your knowledge?",
     response_format=PresidentsResponse,
-    model=AIModel.VERTEX_GEMINI_1P5_FLASH_002 # Specify the desired model
 ).get_parsed()
 
 print(response)

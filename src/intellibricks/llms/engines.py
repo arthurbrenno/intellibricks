@@ -274,7 +274,7 @@ class CompletionEngine(CompletionEngineProtocol):
         choices: list[MessageChoice] = []
 
         if model is None:
-            model = AIModel.VERTEX_GEMINI_1P5_FLASH_002
+            model = AIModel.STUDIO_GEMINI_1P5_FLASH
 
         if fallback_models is None:
             fallback_models = []
