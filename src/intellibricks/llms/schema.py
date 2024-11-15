@@ -14,6 +14,7 @@ from llama_index.core.llms import ChatMessage as LlamaIndexChatMessage
 from tiktoken.core import Encoding
 from weavearc import BaseModel, Meta, field
 from weavearc.logging import logger
+from .exceptions import MessageNotParsedError
 
 from intellibricks.util import deserialize_json
 
@@ -942,13 +943,25 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
                     selected_choice.delta.as_dict() if selected_choice.delta else {}
                 )
 
-    def get_parsed(self, choice: int = 0) -> typing.Optional[T]:
+    def get_parsed(self, choice: int = 0) -> T:
         selected_choice: typing.Union[MessageChoice, StreamChoice] = self.choices[
             choice
         ]
 
         match selected_choice:
             case MessageChoice():
-                return selected_choice.message.parsed
+                parsed: typing.Optional[T] = selected_choice.message.parsed
+                if parsed is None:
+                    raise MessageNotParsedError("Message could not be parsed. Parsed content is None.")
+
+                return parsed
             case StreamChoice():
-                return selected_choice.delta.parsed if selected_choice.delta else None
+                if not selected_choice.delta:
+                    raise RuntimeError("Delta is None.")
+
+                parsed = selected_choice.delta.parsed
+
+                if not parsed:
+                    raise MessageNotParsedError("Message could not be parsed. Parsed content is None.")
+
+                return parsed
