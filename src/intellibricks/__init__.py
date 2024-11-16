@@ -11,7 +11,7 @@ from .llms import (
     StreamChoice,
     TraceParams,
     Usage,
-    Prompt
+    Prompt,
 )
 
 __all__: list[str] = [
@@ -27,5 +27,5 @@ __all__: list[str] = [
     "CompletionEngineProtocol",
     "TraceParams",
     "ObservationParams",
-    "Prompt"
+    "Prompt",
 ]

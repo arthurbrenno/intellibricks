@@ -115,9 +115,9 @@ def render_latex_to_base64(
 
         # Adjust figure size based on text bounding box
         canvas: FigureCanvasBase = fig.canvas
-        
+
         # Thanks matplotlib for this wonderful implementation of stubs
-        renderer = canvas.get_renderer() # type: ignore
+        renderer = canvas.get_renderer()  # type: ignore
         bbox = text.get_window_extent(renderer=renderer)
         width, height = bbox.width / dpi, bbox.height / dpi
         fig.set_size_inches(width, height)
@@ -413,7 +413,7 @@ def table_to_base64(table_string: str) -> str:
     img_data = imgkit.from_string(html_content, False)
 
     if isinstance(img_data, bool):
-        raise ValueError("IMGDATA is True") # TODO: Check the impacts of this
+        raise ValueError("IMGDATA is True")  # TODO: Check the impacts of this
 
     # Convert image data to base64
     img_str = base64.b64encode(img_data).decode()

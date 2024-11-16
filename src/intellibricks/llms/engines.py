@@ -55,7 +55,9 @@ T = typing.TypeVar("T", bound=msgspec.Struct)
 
 
 @typing.runtime_checkable
-class CompletionEngineProtocol(typing.Protocol): # TODO: make this an abstract class, with template methods and make the CompletionEngine inherit from it
+class CompletionEngineProtocol(
+    typing.Protocol
+):  # TODO: make this an abstract class, with template methods and make the CompletionEngine inherit from it
     """
     Interface for AI Completion Engines.
 
@@ -362,7 +364,7 @@ class CompletionEngine(CompletionEngineProtocol):
                         comment=f"Erro ao gerar escolhas: {e}",
                     )
                     logger.error(
-                       f"An error ocurred in retry {retry}",
+                        f"An error ocurred in retry {retry}",
                     )
                     logger.exception(e)
                     continue
@@ -481,17 +483,15 @@ class CompletionEngine(CompletionEngineProtocol):
                 total_input_cost += usage.input_cost or 0.0
                 total_output_cost += usage.output_cost or 0.0
 
-            completion_message: CompletionMessage[T] = (
-                CompletionMessage(
-                    role=MessageRole(chat_response.message.role.value),
-                    content=chat_response.message.content,
-                    parsed=self._get_parsed(
-                        response_format,
-                        chat_response.message.content,
-                        trace=trace,
-                        span=span,
-                    ),
-                )
+            completion_message: CompletionMessage[T] = CompletionMessage(
+                role=MessageRole(chat_response.message.role.value),
+                content=chat_response.message.content,
+                parsed=self._get_parsed(
+                    response_format,
+                    chat_response.message.content,
+                    trace=trace,
+                    span=span,
+                ),
             )
 
             choices.append(
@@ -794,7 +794,9 @@ class CompletionEngine(CompletionEngineProtocol):
             .as_well_as("model_name", equals_to=model.value)
             .also(
                 "project",
-                equals_to=self.vertex_credentials.map(lambda credentials: credentials.project_id).unwrap(),
+                equals_to=self.vertex_credentials.map(
+                    lambda credentials: credentials.project_id
+                ).unwrap(),
             )
             .also("model", equals_to=model.value)
             .also(

@@ -953,7 +953,9 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
             case MessageChoice():
                 parsed: typing.Optional[T] = selected_choice.message.parsed
                 if parsed is None:
-                    raise MessageNotParsedError("Message could not be parsed. Parsed content is None.")
+                    raise MessageNotParsedError(
+                        "Message could not be parsed. Parsed content is None."
+                    )
 
                 return parsed
             case StreamChoice():
@@ -963,6 +965,8 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
                 parsed = selected_choice.delta.parsed
 
                 if not parsed:
-                    raise MessageNotParsedError("Message could not be parsed. Parsed content is None.")
+                    raise MessageNotParsedError(
+                        "Message could not be parsed. Parsed content is None."
+                    )
 
                 return parsed

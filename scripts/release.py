@@ -52,7 +52,7 @@ def display_ascii_art():
     from pyfiglet import Figlet
 
     f = Figlet(font="big")
-    ascii_art = f.renderText("Weavearc")
+    ascii_art = f.renderText("Intellibrics")
     console.print(Text(ascii_art, style="bold magenta"), justify="center")
 
 

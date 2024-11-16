@@ -209,7 +209,11 @@ class SKLearnSupervisedLearningEngine(SupervisedLearningEngine):
 
         logger.debug("Evaluating model.")
         metrics = self._evaluate_model(
-            model_pipeline, typing.cast(pd.DataFrame, X_test), typing.cast(pd.Series, y_test), config.evaluation_metrics, config.algorithm
+            model_pipeline,
+            typing.cast(pd.DataFrame, X_test),
+            typing.cast(pd.Series, y_test),
+            config.evaluation_metrics,
+            config.algorithm,
         )
 
         # Collect dataset information

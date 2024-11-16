@@ -42,8 +42,10 @@ class RAGDocumentRepository(abc.ABC):
         )
         return ingested_documents_ids
 
-    async def similarity_search_async(self, query: str, k: int = 4) -> list[LangchainDocument]:
-        #TODO: make more robust implementation
+    async def similarity_search_async(
+        self, query: str, k: int = 4
+    ) -> list[LangchainDocument]:
+        # TODO: make more robust implementation
         vector_store: VectorStore = self._get_vector_store()
         return await vector_store.asimilarity_search(query, k=k)
 
