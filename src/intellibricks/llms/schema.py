@@ -7,6 +7,7 @@ import re
 import typing
 import uuid
 
+import msgspec
 from bs4 import BeautifulSoup, NavigableString
 from llama_index.core.base.llms.types import LogProb
 from llama_index.core.base.llms.types import MessageRole as LlamaIndexMessageRole
@@ -14,7 +15,6 @@ from llama_index.core.llms import ChatMessage as LlamaIndexChatMessage
 from tiktoken.core import Encoding
 from weavearc import BaseModel, Meta, field
 from weavearc.logging import logger
-from .exceptions import MessageNotParsedError
 
 from intellibricks.util import deserialize_json
 
@@ -23,8 +23,9 @@ from .constants import (
     FinishReason,
     MessageRole,
 )
+from .exceptions import MessageNotParsedError
 
-T = typing.TypeVar("T")
+T = typing.TypeVar("T", bound=msgspec.Struct)
 
 
 class Tag(BaseModel):
@@ -944,7 +945,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
                 )
 
     def get_parsed(self, choice: int = 0) -> T:
-        selected_choice: typing.Union[MessageChoice, StreamChoice] = self.choices[
+        selected_choice: typing.Union[MessageChoice[T], StreamChoice[T]] = self.choices[
             choice
         ]
 

@@ -1,6 +1,8 @@
 import asyncio
-import os
 import getpass
+import os
+import pprint
+
 from msgspec import Struct  # Serialization is faster than Pydantic.
 
 from intellibricks import CompletionEngine, CompletionOutput
@@ -25,7 +27,8 @@ async def main():
         response_format=PresidentsResponse,
     )
 
-    print(response.get_parsed())
+    structured_response = response.get_parsed()
+    pprint.pprint(structured_response)
 
 def run_async_main():
     try:

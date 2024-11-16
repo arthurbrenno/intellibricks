@@ -27,6 +27,9 @@ def count_tokens(model: AIModel, text: str) -> int:
             total_tokens: int = token_info.total_tokens
             return total_tokens
         case AIModel.STUDIO_GEMINI_1P5_FLASH:
+            temp_encoding: tiktoken.core.Encoding = tiktoken.encoding_for_model("gpt-4o")
+            total_tokens = len(temp_encoding.encode(text=text))
+            return total_tokens
             model_name = model.value.replace("models/", "")
             generative_model = GenerativeModel(model_name)
             token_info = generative_model.count_tokens(text)

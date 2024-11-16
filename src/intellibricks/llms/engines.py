@@ -384,7 +384,7 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: CacheConfig,
         postergate_token_counting: bool,
         response_format: typing.Optional[typing.Type[T]],
-    ) -> typing.Tuple[list[MessageChoice[typing.Optional[T]]], Usage]:
+    ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
         """
         Internal method to generate chat completions for a specific model.
 
@@ -406,7 +406,7 @@ class CompletionEngine(CompletionEngineProtocol):
             typing.Tuple[list[MessageChoice[typing.Any]], Usage]: A tuple containing a list of generated message choices and a Usage object with token usage statistics.
         """
         # Initialize variables
-        choices: list[MessageChoice[typing.Optional[T]]] = []
+        choices: list[MessageChoice[T]] = []
         model_input_cost, model_output_cost = model.ppm()
         total_prompt_tokens: int = 0
         total_completion_tokens: int = 0
@@ -481,7 +481,7 @@ class CompletionEngine(CompletionEngineProtocol):
                 total_input_cost += usage.input_cost or 0.0
                 total_output_cost += usage.output_cost or 0.0
 
-            completion_message: CompletionMessage[typing.Optional[T]] = (
+            completion_message: CompletionMessage[T] = (
                 CompletionMessage(
                     role=MessageRole(chat_response.message.role.value),
                     content=chat_response.message.content,
@@ -794,16 +794,12 @@ class CompletionEngine(CompletionEngineProtocol):
             .as_well_as("model_name", equals_to=model.value)
             .also(
                 "project",
-                equals_to=self.vertex_credentials.project_id
-                if self.vertex_credentials is not None
-                else None,
+                equals_to=self.vertex_credentials.map(lambda credentials: credentials.project_id).unwrap(),
             )
             .also("model", equals_to=model.value)
             .also(
                 "credentials",
-                equals_to=self.vertex_credentials
-                if self.vertex_credentials is not None
-                else None,
+                equals_to=self.vertex_credentials.unwrap(),
             )
             .also(
                 "safety_settings",

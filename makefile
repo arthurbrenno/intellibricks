@@ -1,11 +1,8 @@
-include .env
+# Creates a new release in the GitHub repository.
+release:
+	uv run python scripts/release.py
 
-build:
-	uv build
-
-publish:
-	uv publish --token ${UV_PUBLISH_TOKEN}
-
+# Runs typechecks using mypy and pyright.
 typecheck:
-	uvx mypy --python-executable "./.venv/bin/python3.10" .
-	uvx pyright --pythonpath "./.venv/bin/python3.10"
+	uvx mypy --python-executable "./.venv/bin/python3.10" src
+	uvx pyright --pythonpath "./.venv/bin/python3.10" src
