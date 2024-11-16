@@ -3,7 +3,7 @@ import getpass
 import os
 import pprint
 
-from msgspec import Struct  # Serialization is faster than Pydantic.
+from msgspec import Struct
 
 from intellibricks import CompletionEngine, CompletionOutput
 
