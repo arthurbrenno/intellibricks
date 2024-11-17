@@ -127,3 +127,17 @@ class CacheConfig(BaseModel):
         >>> print(cache_config.cache_key)
         'user_session_prompt'
     """
+
+    def __hash__(self) -> int:
+        """Generate a hash based on the instance's attributes."""
+        return hash((self.enabled, self.ttl.total_seconds(), self.cache_key))
+
+    def __eq__(self, other: object) -> bool:
+        """Equality check to complement hash."""
+        if not isinstance(other, CacheConfig):
+            return NotImplemented
+        return (
+            self.enabled == other.enabled
+            and self.ttl == other.ttl
+            and self.cache_key == other.cache_key
+        )

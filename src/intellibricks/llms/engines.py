@@ -1,7 +1,7 @@
 """LLM engines module"""
 
 from __future__ import annotations
-
+import functools
 import abc
 import asyncio
 import typing
@@ -64,6 +64,47 @@ class CompletionEngineProtocol(
     This interface defines the contract for AI model completions with fallback capability
     and retry management.
     """
+
+    def complete(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: typing.Optional[typing.Type[T]] = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    def chat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: typing.Optional[typing.Type[T]] = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
 
     @abc.abstractmethod
     async def complete_async(
@@ -157,19 +198,193 @@ class CompletionEngine(CompletionEngineProtocol):
         json_decoder: typing.Optional[msgspec.json.Decoder] = None,
         vertex_credentials: typing.Optional[service_account.Credentials] = None,
     ) -> None:
-        """
-        Initialize the CompletionEngine.
-
-        Args:
-            langfuse: The Langfuse instance for generating observable completions
-            json_encoder: JSON encoder for serializing structured responses
-            json_decoder: JSON decoder for deserializing structured responses
-            vertex_credentials: Optional Google Cloud credentials for models using Google Cloud services
-        """
         self.langfuse = Maybe(langfuse or None)
         self.json_encoder = json_encoder or msgspec.json.Encoder()
         self.json_decoder = json_decoder or msgspec.json.Decoder()
         self.vertex_credentials = Maybe(vertex_credentials or None)
+
+    def complete(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: typing.Optional[typing.Type[T]] = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]:
+        if system_prompt is None:
+            system_prompt = "You are a helpful assistant. Answer in the same language the user asked."
+
+        if isinstance(prompt, Prompt):
+            prompt = prompt.content
+
+        if isinstance(system_prompt, Prompt):
+            system_prompt = system_prompt.content
+
+        messages: list[Message] = [
+            Message(role=MessageRole.SYSTEM, content=system_prompt),
+            Message(role=MessageRole.USER, content=prompt),
+        ]
+
+        output: CompletionOutput[T] = self.chat(
+            messages=messages,
+            response_format=response_format,
+            model=model,
+            fallback_models=fallback_models,
+            n=n,
+            temperature=temperature,
+            stream=stream,
+            max_tokens=max_tokens,
+            max_retries=max_retries,
+            cache_config=cache_config,
+            trace_params=trace_params,
+            postergate_token_counting=postergate_token_counting,
+        )
+
+        return output
+
+    def chat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: typing.Optional[typing.Type[T]] = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]:
+        if trace_params is None:
+            trace_params = {}
+
+        if cache_config is None:
+            cache_config = CacheConfig()
+
+        trace_params["input"] = messages
+
+        # An unique ID for the completion
+        completion_id: uuid.UUID = uuid.uuid4()
+
+        trace: Maybe[StatefulTraceClient] = self.langfuse.map(
+            lambda langfuse: langfuse.trace(id=completion_id.__str__(), **trace_params)
+        )
+
+        choices: list[MessageChoice] = []
+
+        if model is None:
+            model = AIModel.STUDIO_GEMINI_1P5_FLASH
+
+        if fallback_models is None:
+            fallback_models = []
+
+        if n is None:
+            n = 1
+
+        if temperature is None:
+            temperature = 0.7
+
+        if stream is None:
+            stream = False
+
+        if max_tokens is None:
+            max_tokens = 5000
+
+        if max_retries is None:
+            max_retries = 1
+
+        models: list[AIModel] = [model] + fallback_models
+
+        logger.info(
+            f"Starting chat completion. Main model: {model}, Fallback models: {fallback_models}"
+        )
+
+        maybe_span: Maybe[StatefulSpanClient] = Maybe(None)
+        for model in models:
+            for retry in range(max_retries):
+                try:
+                    span_id: str = f"sp-{completion_id}-{retry}"
+                    maybe_span = Maybe(
+                        trace.map(
+                            lambda trace: trace.span(
+                                id=span_id,
+                                input=messages,
+                                name="Geração de Resposta",
+                            )
+                        ).unwrap()
+                    )
+                    choices, usage = self._gen_choices(
+                        model=model,
+                        messages=messages,
+                        response_format=response_format,
+                        fallback_models=fallback_models,
+                        n=n,
+                        temperature=temperature,
+                        stream=stream,
+                        max_tokens=max_tokens,
+                        cache_config=cache_config,
+                        trace=trace,
+                        span=maybe_span,
+                        postergate_token_counting=postergate_token_counting,
+                    )
+
+                    logger.info(
+                        f"Successfully generated completion with model {model} in retry {retry}"
+                    )
+
+                    output: CompletionOutput[T] = CompletionOutput(
+                        id=completion_id,
+                        model=model,
+                        choices=choices,
+                        usage=usage,
+                    )
+
+                    maybe_span.end(output=output.choices)
+
+                    maybe_span.score(
+                        id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
+                        name="Sucesso",
+                        value=1.0,
+                        comment="Escolhas geradas com sucesso!",
+                    )
+
+                    trace.update(output=output.choices)
+                    return output
+                except Exception as e:
+                    # Log the error in span and continue to the next one
+                    maybe_span.end(output={})
+                    maybe_span.update(status_message="Erro na geração.", level="ERROR")
+                    maybe_span.score(
+                        id=f"sc-{maybe_span.unwrap()}",
+                        name="Sucesso",
+                        value=0.0,
+                        comment=f"Erro ao gerar escolhas: {e}",
+                    )
+                    logger.error(
+                        f"An error ocurred in retry {retry}",
+                    )
+                    logger.exception(e)
+                    continue
+
+        raise MaxRetriesReachedException()
 
     async def complete_async(
         self,
@@ -241,23 +456,6 @@ class CompletionEngine(CompletionEngineProtocol):
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]:
-        """
-        Asynchronously generate a chat completion using the configured models.
-
-        This method attempts to use the main model first, then falls back to other models
-        if necessary. It iterates through available API keys for each model until a
-        successful completion is generated or all options are exhausted.
-
-        Args:
-            messages (list[Message]): The input messages for the chat completion.
-            response_format (typing.Optional[typing.Union[json_schema_t, typing.Type[BaseModel]]]): The desired format for the response.
-
-        Returns:
-            CompletionOutput: The generated completion output.
-
-        Raises:
-            OutOfAPIKeysException: If all API keys for all models have been exhausted without success.
-        """
         if trace_params is None:
             trace_params = {}
 
@@ -371,6 +569,164 @@ class CompletionEngine(CompletionEngineProtocol):
 
         raise MaxRetriesReachedException()
 
+    def _gen_choices(
+        self,
+        *,
+        model: AIModel,
+        messages: list[Message],
+        fallback_models: list[AIModel],
+        n: int,
+        temperature: float,
+        stream: bool,
+        max_tokens: int,
+        trace: Maybe[StatefulTraceClient],
+        span: Maybe[StatefulSpanClient],
+        cache_config: CacheConfig,
+        postergate_token_counting: bool,
+        response_format: typing.Optional[typing.Type[T]],
+    ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
+        # Initialize variables
+        choices: list[MessageChoice[T]] = []
+        model_input_cost, model_output_cost = model.ppm()
+        total_prompt_tokens: int = 0
+        total_completion_tokens: int = 0
+        total_input_cost: float = 0.0
+        total_output_cost: float = 0.0
+
+        # Assume llm is obtained as before
+        llm: LLM = self._get_cached_llm_sync(
+            model=model,
+            max_tokens=max_tokens,
+            cache_config=cache_config,
+        )
+
+        for i in range(n):
+            current_messages = messages.copy()
+
+            if response_format is not None:
+                current_messages = self._append_response_format_to_prompt(
+                    messages=current_messages,
+                    response_format=response_format,
+                )
+
+            generation: Maybe[StatefulGenerationClient] = span.map(
+                lambda span: span.generation(
+                    id=f"gen-{uuid.uuid4()}-{i}",
+                    model=model.value,
+                    input=current_messages,
+                    model_parameters={
+                        "max_tokens": max_tokens,
+                        "temperature": str(temperature),
+                    },
+                )
+            )
+
+            chat_response: ChatResponse = llm.chat(
+                messages=[
+                    message.to_llama_index_chat_message()
+                    for message in current_messages
+                ]
+            )
+
+            logger.debug(
+                f"Received AI response from model {model.value}: {chat_response.message.content}"
+            )
+
+            generation.end(
+                output=chat_response.message.content,
+            )
+
+            # Always call _calculate_token_usage
+            usage_future = self._calculate_token_usage(
+                model=model,
+                messages=current_messages,
+                chat_response=chat_response,
+                generation=generation,
+                span=span,
+                index=i,
+                model_input_cost=model_input_cost,
+                model_output_cost=model_output_cost,
+            )
+
+            if postergate_token_counting:
+                try:
+                    asyncio.get_running_loop()
+                    asyncio.create_task(usage_future)
+                except RuntimeError:
+                    asyncio.run(usage_future)  # This will run the task in the current context
+            else:
+                try:
+                    # Check if an event loop is already running
+                    usage = asyncio.get_event_loop().run_until_complete(usage_future)
+                except RuntimeError:
+                    # If loop is already running, use asyncio.ensure_future or wrap in async context
+                    async def wrapper():
+                        return await usage_future
+
+                    usage = asyncio.run(wrapper())
+
+                # Accumulate total usage
+                total_prompt_tokens += usage.prompt_tokens or 0
+                total_completion_tokens += usage.completion_tokens or 0
+                total_input_cost += usage.input_cost or 0.0
+                total_output_cost += usage.output_cost or 0.0
+
+            completion_message: CompletionMessage[T] = CompletionMessage(
+                role=MessageRole(chat_response.message.role.value),
+                content=chat_response.message.content,
+                parsed=self._get_parsed(
+                    response_format,
+                    chat_response.message.content,
+                    trace=trace,
+                    span=span,
+                ),
+            )
+
+            choices.append(
+                MessageChoice(
+                    index=i,
+                    message=completion_message,
+                    logprobs=chat_response.logprobs,
+                    finish_reason=FinishReason.NONE,
+                )
+            )
+            logger.info(f"Successfully generated choice {i+1} for model {model.value}")
+
+        # After the loop, set the usage
+        if postergate_token_counting:
+            # Since token counting is postponed, usage variables remain zero
+            usage = Usage(
+                prompt_tokens=None,
+                completion_tokens=None,
+                input_cost=None,
+                output_cost=None,
+                total_cost=None,
+                total_tokens=None,
+                prompt_tokens_details=PromptTokensDetails(
+                    audio_tokens=None, cached_tokens=None
+                ),
+                completion_tokens_details=CompletionTokensDetails(
+                    audio_tokens=None, reasoning_tokens=None
+                ),
+            )
+        else:
+            usage = Usage(
+                prompt_tokens=total_prompt_tokens,
+                completion_tokens=total_completion_tokens,
+                input_cost=total_input_cost,
+                output_cost=total_output_cost,
+                total_cost=total_input_cost + total_output_cost,
+                total_tokens=total_prompt_tokens + total_completion_tokens,
+                prompt_tokens_details=PromptTokensDetails(
+                    audio_tokens=None, cached_tokens=None
+                ),
+                completion_tokens_details=CompletionTokensDetails(
+                    audio_tokens=None, reasoning_tokens=None
+                ),
+            )
+
+        return choices, usage
+
     async def _agen_choices(
         self,
         *,
@@ -387,26 +743,6 @@ class CompletionEngine(CompletionEngineProtocol):
         postergate_token_counting: bool,
         response_format: typing.Optional[typing.Type[T]],
     ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
-        """
-        Internal method to generate chat completions for a specific model.
-
-        Args:
-            model (AIModel): The AI model to use for completion.
-            messages (list[Message]): The input messages for the chat completion.
-            fallback_models (list[AIModel]): A list of fallback models.
-            n (int): The number of completions to generate.
-            temperature (float): Sampling temperature.
-            stream (bool): Whether to stream the output.
-            max_tokens (int): Maximum number of tokens to generate.
-            trace (StatefulTraceClient): The trace object for observability.
-            span (StatefulSpanClient): The span object for observability.
-            cache_config (CacheConfig): Configuration for caching.
-            postergate_token_counting (bool): If True, postpone token counting to a background task.
-            response_format (typing.Optional[typing.Union[dict, typing.Type[BaseModel]]]): The desired format for the response.
-
-        Returns:
-            typing.Tuple[list[MessageChoice[typing.Any]], Usage]: A tuple containing a list of generated message choices and a Usage object with token usage statistics.
-        """
         # Initialize variables
         choices: list[MessageChoice[T]] = []
         model_input_cost, model_output_cost = model.ppm()
@@ -551,26 +887,6 @@ class CompletionEngine(CompletionEngineProtocol):
         model_input_cost: float,
         model_output_cost: float,
     ) -> Usage:
-        """
-        Perform token counting and cost calculation.
-
-        This method can be called synchronously or scheduled as a background task.
-        It calculates the number of tokens used in the prompt and completion,
-        computes the associated costs, and updates the observability data.
-
-        Args:
-            model (AIModel): The AI model used for completion.
-            messages (list[Message]): The input messages for the chat completion.
-            chat_response (ChatResponse): The response from the LLM.
-            generation (Maybe[StatefulGenerationClient]): The generation object for observability.
-            span (Maybe[StatefulSpanClient]): The parent span for observability.
-            index (int): The index of the current choice in the loop.
-            model_input_cost (float): The per-token input cost of the model.
-            model_output_cost (float): The per-token output cost of the model.
-
-        Returns:
-            Usage: An object containing token usage statistics.
-        """
         # Perform token counting
         prompt_counting_span: Maybe[StatefulSpanClient] = span.map(
             lambda span: span.span(
@@ -730,13 +1046,6 @@ class CompletionEngine(CompletionEngineProtocol):
         response_format: typing.Optional[typing.Type[T]],
         prompt_role: typing.Optional[MessageRole] = None,
     ) -> list[Message]:
-        """
-        Appends the desired response format (output) to the specified prompt role.
-        By default, it appends to the System Prompt, which is generally the first prompt sent to the AI model.
-
-        :param skip_if_output_exists: If True, skips appending the new <saida> if it already exists in typing.any previous message.
-        """
-
         if prompt_role is None:
             prompt_role = MessageRole.SYSTEM
 
@@ -774,18 +1083,47 @@ class CompletionEngine(CompletionEngineProtocol):
         max_tokens: int,
         cache_config: CacheConfig,
     ) -> LLM:
-        """
-        Get or create a cached LLM instance for a specific model.
+        constructor_params: dict[str, typing.Any] = (
+            DynamicDict.having(
+                "max_tokens",
+                equals_to=max_tokens,
+            )
+            .as_well_as("model_name", equals_to=model.value)
+            .also(
+                "project",
+                equals_to=self.vertex_credentials.map(
+                    lambda credentials: credentials.project_id
+                ).unwrap(),
+            )
+            .also("model", equals_to=model.value)
+            .also(
+                "credentials",
+                equals_to=self.vertex_credentials.unwrap(),
+            )
+            .also(
+                "safety_settings",
+                equals_to={
+                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                },
+            )
+            .also("cache_config", equals_to=cache_config)
+            .also("timeout", equals_to=120)
+            .at_last("generate_kwargs", equals_to={"timeout": 120})
+        )
 
-        Args:
-            model (AIModel): The AI model to use.
-            max_tokens (int): The maximum number of tokens to generate.
-            vertex_credentials (service_account.Credentials): The Google Cloud credentials to use (if a gcloud model will be used).
+        return DynamicInstanceCreator(
+            AIModel.get_llama_index_model_cls(model)
+        ).create_instance(**constructor_params)
 
-        Returns:
-            LLM: A LlamaIndex LLM instance.
-        """
-
+    @functools.lru_cache(maxsize=128)  # type: ignore[misc]
+    def _get_cached_llm_sync(
+        self,
+        model: AIModel,
+        max_tokens: int,
+        cache_config: CacheConfig,
+    ) -> LLM:
         constructor_params: dict[str, typing.Any] = (
             DynamicDict.having(
                 "max_tokens",
