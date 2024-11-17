@@ -31,54 +31,124 @@ pip install intellibricks
 
 IntelliBricks abstracts away the complexities of interacting with different LLM providers. Specify your prompt, desired response format, and model, and IntelliBricks handles the rest.
 
+Let's take a look at HOW EASY it is to choose an AI Model, get your structured response, and manipulate it later.
+
+### Synchronous Completion Example
 ```python
-from intellibricks import CompletionEngine
-from msgspec import Struct # Serialization is faster than Pydantic.
-import os
-import getpass
 import asyncio
+from typing import Annotated
 
-# Your Google AI Studio API key (free Gemini)
-os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google API Key: ")
+from dotenv import load_dotenv
+from msgspec import Meta, Struct
 
-# Define your response structure
+from intellibricks import CompletionEngine
+from intellibricks.llms.schema import CompletionOutput
+
+load_dotenv(override=True)
+
+
+# Step #1: Define your response structure
 class President(Struct):
     name: str
-    age: int
+    age: Annotated[int, Meta(ge=40, le=107)]
+
 
 class PresidentsResponse(Struct):
     presidents: list[President]
 
-# Instantiate the CompletionEngine (defaults to Google's free Gemini model)
+# Call the CompletionEngine
 engine = CompletionEngine()
+response: CompletionOutput[PresidentsResponse] = engine.complete(
+    prompt="What were the presidents of the USA until your knowledge?",
+    response_format=PresidentsResponse,
+)
+
+# Manipulate the response as you want.
+presidents_response: PresidentsResponse = response.get_parsed()
+print(f"First president name is {presidents_response.presidents[0].name}")
+print(f"First president age is {presidents_response.presidents[0].age}")
+```
+
+
+### Asynchronous Completions Example
+```python
+import asyncio
+from typing import Annotated
+
+from dotenv import load_dotenv
+from msgspec import Meta, Struct
+
+from intellibricks import CompletionEngine
+from intellibricks.llms.schema import CompletionOutput
+
+load_dotenv(override=True)
+
+
+# Step #1: Define your response structure
+class President(Struct):
+    name: str
+    age: Annotated[int, Meta(ge=40, le=107)]
+
+
+class PresidentsResponse(Struct):
+    presidents: list[President]
+
 
 async def main():
-    # Generate and parse the response
-    response: PresidentsResponse = await engine.complete_async(
+    # Call the CompletionEngine
+    engine = CompletionEngine()
+    response: CompletionOutput[PresidentsResponse] = await engine.complete_async(
         prompt="What were the presidents of the USA until your knowledge?",
         response_format=PresidentsResponse,
-    ).get_parsed()
+    )
 
-    print(response)
+    # Manipulate the response as you want.
+    presidents_response: PresidentsResponse = response.get_parsed()
+    print(f"First president name is {presidents_response.presidents[0].name}")
+    print(f"First president age is {presidents_response.presidents[0].age}")
 
-asyncio.run(main)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.ensure_future(main())
+        else:
+            loop.run_until_complete(main())
 ```
 
 **Switching Providers:** Change AI providers by simply modifying the `model` parameter. Ensure the necessary environment variables for your chosen provider are set.
 
 ```python
-response = engine.complete_async(
-    # ... (your prompt and response format)
+response = engine.complete(
+    # [...]
     model=AIModel.GPT_4O # Switch to GPT-4
 ).get_parsed()
 ```
 
 ### Chat Interactions
 
-For multi-turn conversations, use the `chat_async` method.  You can also specify the `response_format` here for structured responses.
+For multi-turn conversations, use the `chat` method.  You can also specify the `response_format` here for structured responses.
 
 ```python
-from intellibricks import Message, MessageRole
+from intellibricks import Message, MessageRole, CompletionOutput
+from dotenv import load_dotenv
+from msgspec import Meta, Struct
+
+load_dotenv(override=True)
+
+
+# Step #1: Define your response structure
+class President(Struct):
+    name: str
+    age: Annotated[int, Meta(ge=40, le=107)]
+
+
+class PresidentsResponse(Struct):
+    presidents: list[President]
+
 
 messages = [
     Message(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -87,13 +157,13 @@ messages = [
     Message(role=MessageRole.USER, content="I'm fine. What are the presidents of the USA?"),
 ]
 
-response: PresidentsResponse = engine.chat_async(
+response = engine.chat(
     messages=messages,
     response_format=PresidentsResponse
-).get_parsed()
+)
 
-print(response)
-
+presidents_response: Presidentsresponse = response.get_parsed()
+print(presidents_response)
 ```
 
 
@@ -162,9 +232,10 @@ messages = [
     Message(role=MessageRole.USER, content="Where was it played?"),
 ]
 
-response = engine.chat_async(messages=messages).get_message()
-print(response)
-
+response = engine.chat(messages=messages)
+message: Message = response.get_message()
+print(message)
+# >> Message(role=MessageRole.ASSISTANT, content="I don't know")
 ```
 
 ###  Customizing Prompts
@@ -172,8 +243,8 @@ print(response)
 ```python
 from intellibricks import Prompt
 
-prompt_template = Prompt(content="My name is {{name}}. I am {{age}} years old.")
-compiled_prompt = prompt_template.compile(name="John", age=30)
+prompt_template = Prompt(content="My name is {{name}}. I am {{age}} years old.") # Implements __str__
+compiled_prompt = prompt_template.compile(name="John", age=30) # Returns Prompt
 print(compiled_prompt)  # Output: My name is John. I am 30 years old.
 ```
 
@@ -192,7 +263,7 @@ langfuse_client = Langfuse(
 
 engine = CompletionEngine(langfuse=langfuse_client)
 
-# Now all LLM calls made with 'engine' will be tracked in Langfuse.
+# Now all LLM calls made with 'engine' will be automatically tracked in Langfuse. Even the costs.
 ```
 
 
@@ -200,14 +271,14 @@ engine = CompletionEngine(langfuse=langfuse_client)
 ## Coming Soon
 
 * **Enhanced RAG:** A more robust RAG implementation for seamless integration with diverse knowledge sources.
-* **Unified Document Parsing** Stop wasting time choosing the right library for parsing pdfs. We will chose the right one for you (and let you choose to of course), with our DocumentArtifact model, it will be easily convertable to llama_index and langchain documents. You can pass your transformations too. We will offer support for NER and Relations extraction too. Example: 
+* **Unified Document Parsing** Stop wasting time choosing the right library for parsing pdfs. We will chose the right one for you (and let you choose to of course), with our DocumentArtifact model, it will be easily convertable to llama_index and langchain documents. You can pass your transformations too. We will offer support for NER and Relations extraction too. The intent is to use MinerU for PDFs, and Docling for the rest. Example: 
 
 ```py
 extractor: FileExtractorProtocol = ... # In development
 document = extractor.extract(RawFile.from_dir("./documents")) # or RawFile.from_upload_file(fastapi and litestar objects goes here). RawFile will be a powerful class
 document.as_langchain_docs(transformations=[SemanticChunker(...)])
 # Done. Now you can ingest your doc into 
-vector_store.add_documents(documents)
+vector_store.add_documents(documents) # Langchain example
 ```
 
 ## Documentation

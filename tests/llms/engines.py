@@ -1,16 +1,16 @@
 import asyncio
-import getpass
-import os
-import pprint
 from typing import Annotated
 
+from dotenv import load_dotenv
 from msgspec import Meta, Struct
 
 from intellibricks import CompletionEngine
-# Your Google AI Studio API key (free Gemini)
-os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter your Google API key: ")
+from intellibricks.llms.schema import CompletionOutput
 
-# Define your response structure
+load_dotenv(override=True)
+
+
+# Step #1: Define your response structure
 class President(Struct):
     name: str
     age: Annotated[int, Meta(ge=40, le=107)]
@@ -20,13 +20,18 @@ class PresidentsResponse(Struct):
     presidents: list[President]
 
 
-# Instantiate the CompletionEngine (defaults to Google's free Gemini model)
 async def main():
-    response = await CompletionEngine().complete_async(
+    # Call the CompletionEngine
+    engine = CompletionEngine()
+    response: CompletionOutput[PresidentsResponse] = await engine.complete_async(
         prompt="What were the presidents of the USA until your knowledge?",
         response_format=PresidentsResponse,
     )
-    pprint.pprint(response.get_parsed()) # PresidentsResponse
+
+    # Manipulate the response as you want.
+    presidents_response: PresidentsResponse = response.get_parsed()
+    print(f"First president name is {presidents_response.presidents[0].name}")
+    print(f"First president age is {presidents_response.presidents[0].age}")
 
 
 if __name__ == "__main__":
