@@ -883,7 +883,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
                        The length of this list can be greater than 1 if multiple choices were requested.""",
             examples=[],
         ),
-    ] = []
+    ] = field(default_factory=list)
 
     usage: typing.Annotated[
         Usage,
@@ -923,13 +923,6 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
             ),
         )
     )
-
-    def __post_init__(self) -> None:
-        if isinstance(self.created, int):
-            try:
-                datetime.datetime.fromtimestamp(self.created, datetime.timezone.utc)
-            except (ValueError, OSError) as e:
-                raise ValueError(f"Invalid Unix timestamp: {self.created}") from e
 
     def get_message(self, choice: int = 0) -> Message:
         selected_choice: typing.Union[MessageChoice, StreamChoice] = self.choices[

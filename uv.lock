@@ -1222,7 +1222,7 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.1.6"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiocache" },
@@ -1283,7 +1283,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.5.2" },
     { name = "types-beautifulsoup4", specifier = ">=4.12.0.20241020" },
     { name = "vertexai", specifier = ">=1.71.1" },
-    { name = "weavearc", specifier = ">=0.2.7" },
+    { name = "weavearc", specifier = ">=0.2.8" },
 ]
 
 [package.metadata.requires-dev]
@@ -3513,7 +3513,7 @@ wheels = [
 
 [[package]]
 name = "weavearc"
-version = "0.2.7"
+version = "0.2.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiocache" },
@@ -3521,9 +3521,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/ac/da8fb0acf61de416d21078216ae8a19c897d8865f8312911ff498925aaf5/weavearc-0.2.7.tar.gz", hash = "sha256:37814bf20e21a7ccac3c72ed5d9b0b489620dd71454ef319755b54e83ffbb918", size = 42241 }
+sdist = { url = "https://files.pythonhosted.org/packages/ea/56/2168f662ce74b2a09aa43a9277021dbbac384034486cd1837e5739f7d2e9/weavearc-0.2.8.tar.gz", hash = "sha256:41e35f78b39835756f4243cd5729796d6465afaa47a816233c92c21e391611a5", size = 42154 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/5e/9bea621d0507a3fc086c0d22e11d4978071570af1dad1776f0a106134fd2/weavearc-0.2.7-py3-none-any.whl", hash = "sha256:c21294e3c7976da877a9c7bb72d56ad5d693916d44645a1aeff8af92e199fa97", size = 24879 },
+    { url = "https://files.pythonhosted.org/packages/00/12/bce1151ce41a62f008eb6209bda0b99932929b8c1e19135b43fa19d035cf/weavearc-0.2.8-py3-none-any.whl", hash = "sha256:817da572789879111d67defc6798284614e9aff9c4b0e8b0fec584a3d7492caf", size = 24601 },
 ]
 
 [[package]]

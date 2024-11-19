@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import msgspec
 import questionary
-import toml
+import toml  # type: ignore
 import tomlkit
 from questionary.prompts.common import Choice
 from rich.console import Console
