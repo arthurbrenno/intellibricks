@@ -1,7 +1,6 @@
 """LLM engines module"""
 
 from __future__ import annotations
-import functools
 import abc
 import asyncio
 import typing
@@ -72,7 +71,7 @@ class CompletionEngineProtocol(typing.Protocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]: ...
@@ -92,7 +91,7 @@ class CompletionEngineProtocol(typing.Protocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]: ...
@@ -114,7 +113,7 @@ class CompletionEngineProtocol(typing.Protocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]: ...
@@ -135,7 +134,7 @@ class CompletionEngineProtocol(typing.Protocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]: ...
@@ -176,13 +175,20 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]:
-        system_prompt = system_prompt or "You are a helpful assistant. Answer in the same language the user asked."
+        system_prompt = (
+            system_prompt
+            or "You are a helpful assistant. Answer in the same language the user asked."
+        )
         prompt = prompt.content if isinstance(prompt, Prompt) else prompt
-        system_prompt = system_prompt.content if isinstance(system_prompt, Prompt) else system_prompt
+        system_prompt = (
+            system_prompt.content
+            if isinstance(system_prompt, Prompt)
+            else system_prompt
+        )
 
         messages: list[Message] = [
             Message(role=MessageRole.SYSTEM, content=system_prompt),
@@ -222,7 +228,7 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]:
@@ -269,7 +275,6 @@ class CompletionEngine(CompletionEngineProtocol):
                 )
             )
 
-
     async def complete_async(
         self,
         *,
@@ -286,13 +291,20 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]:
-        system_prompt = system_prompt or "You are a helpful assistant. Answer in the same language the user asked."
+        system_prompt = (
+            system_prompt
+            or "You are a helpful assistant. Answer in the same language the user asked."
+        )
         prompt = prompt.content if isinstance(prompt, Prompt) else prompt
-        system_prompt = system_prompt.content if isinstance(system_prompt, Prompt) else system_prompt
+        system_prompt = (
+            system_prompt.content
+            if isinstance(system_prompt, Prompt)
+            else system_prompt
+        )
 
         messages: list[Message] = [
             Message(role=MessageRole.SYSTEM, content=system_prompt),
@@ -332,11 +344,10 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]:
-
         return await self._achat(
             messages=messages,
             response_format=response_format,
@@ -370,7 +381,7 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: typing.Optional[CacheConfig] = None,
         trace_params: typing.Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable]] = None,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]:
@@ -469,7 +480,6 @@ class CompletionEngine(CompletionEngineProtocol):
                     continue
 
         raise MaxRetriesReachedException()
-
 
     async def _aget_choices(
         self,
@@ -581,11 +591,10 @@ class CompletionEngine(CompletionEngineProtocol):
             total_prompt_tokens,
             total_completion_tokens,
             total_input_cost,
-            total_output_cost
+            total_output_cost,
         )
 
         return choices, usage
-
 
     async def _calculate_token_usage(
         self,
@@ -671,9 +680,8 @@ class CompletionEngine(CompletionEngineProtocol):
             prompt_tokens,
             completion_tokens,
             completion_input_cost,
-            completion_output_cost
+            completion_output_cost,
         )
-
 
     def _create_usage(
         self,
@@ -681,7 +689,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt_tokens: typing.Optional[int],
         completion_tokens: typing.Optional[int],
         input_cost: typing.Optional[float],
-        output_cost: typing.Optional[float]
+        output_cost: typing.Optional[float],
     ) -> Usage:
         if postergate_token_counting:
             return Usage(
@@ -716,8 +724,6 @@ class CompletionEngine(CompletionEngineProtocol):
                     audio_tokens=None, reasoning_tokens=None
                 ),
             )
-
-
 
     def _get_parsed(
         self,
@@ -854,17 +860,3 @@ class CompletionEngine(CompletionEngineProtocol):
         return DynamicInstanceCreator(
             AIModel.get_llama_index_model_cls(model)
         ).create_instance(**constructor_params)
-
-    @functools.lru_cache(maxsize=128)
-    def _get_cached_llm_sync(
-        self,
-        model: AIModel,
-        max_tokens: int,
-        cache_config: CacheConfig,
-    ) -> LLM:
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # No event loop running
-            return asyncio.run(self._get_cached_llm(model, max_tokens, cache_config))
-        else:
-            return loop.run_until_complete(self._get_cached_llm(model, max_tokens, cache_config))
