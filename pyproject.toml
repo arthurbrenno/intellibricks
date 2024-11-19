@@ -1,6 +1,6 @@
 [project]
 name = "intellibricks"
-version = "v0.2.1"
+version = "v0.2.2"
 description = "IntelliBricks provides a streamlined set of tools for developing AI-powered applications. It simplifies complex tasks such as interacting with LLMs, training machine learning models, and implementing Retrieval Augmented Generation (RAG). Focus on building your application logic, not wrestling with boilerplate. IntelliBricks empowers you to build intelligent applications faster and more efficiently."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -11,13 +11,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = [
-    "pyfiglet>=1.0.2",
-    "pyre-check>=0.9.23",
-    "pyright>=1.1.388",
-    "questionary>=2.0.1",
-    "rich>=13.9.4",
-    "toml>=0.10.2",
-    "tomlkit>=0.13.2",
-    "types-toml>=0.10.8.20240310",
-]
+dev = ["pyfiglet>=1.0.2", "pyre-check>=0.9.23", "pyright>=1.1.388", "questionary>=2.0.1", "rich>=13.9.4", "toml>=0.10.2", "tomlkit>=0.13.2", "types-toml>=0.10.8.20240310"]
