@@ -11,4 +11,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pyfiglet>=1.0.2", "pyright>=1.1.388", "questionary>=2.0.1", "rich>=13.9.4", "toml>=0.10.2", "tomlkit>=0.13.2", "types-toml>=0.10.8.20240310"]
+dev = [
+    "pyfiglet>=1.0.2",
+    "pyre-check>=0.9.23",
+    "pyright>=1.1.388",
+    "questionary>=2.0.1",
+    "rich>=13.9.4",
+    "toml>=0.10.2",
+    "tomlkit>=0.13.2",
+    "types-toml>=0.10.8.20240310",
+]
