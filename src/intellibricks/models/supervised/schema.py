@@ -68,7 +68,9 @@ class ForgedModel(BaseModel):
         columns_info (list[ColumnInfo]): Information about each column in the dataset.
     """
 
-    uid: Annotated[str, Meta(title="UID", description="Unique Identifier for the Forged Model")]
+    uid: Annotated[
+        str, Meta(title="UID", description="Unique Identifier for the Forged Model")
+    ]
 
     target_name: Annotated[
         str,

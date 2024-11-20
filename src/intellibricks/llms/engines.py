@@ -1,4 +1,5 @@
 """LLM engines module"""
+
 # TODO: Create stubs file for engines
 from __future__ import annotations
 
@@ -55,7 +56,6 @@ T = typing.TypeVar("T", bound=msgspec.Struct)
 
 @typing.runtime_checkable
 class CompletionEngineProtocol(typing.Protocol):
-    
     @typing.overload
     def complete(
         self,
@@ -289,7 +289,6 @@ class CompletionEngineProtocol(typing.Protocol):
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[None]: ...
-
 
     async def chat_async(
         self,
@@ -428,7 +427,7 @@ class CompletionEngine(CompletionEngineProtocol):
             data_stores=data_stores,
             web_search=web_search,
         )
-    
+
     @typing.overload
     def chat(
         self,
@@ -493,45 +492,51 @@ class CompletionEngine(CompletionEngineProtocol):
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:  # No event loop running
-            return typing.cast(CompletionOutput[T] | CompletionOutput[None], asyncio.run(
-                self._achat(
-                    messages=messages,
-                    response_format=response_format,
-                    model=model,
-                    fallback_models=fallback_models,
-                    n=n,
-                    temperature=temperature,
-                    stream=stream,
-                    max_tokens=max_tokens,
-                    max_retries=max_retries,
-                    cache_config=cache_config,
-                    trace_params=trace_params,
-                    postergate_token_counting=postergate_token_counting,
-                    tools=tools,
-                    data_stores=data_stores,
-                    web_search=web_search,
-                )
-            ))
+            return typing.cast(
+                CompletionOutput[T] | CompletionOutput[None],
+                asyncio.run(
+                    self._achat(
+                        messages=messages,
+                        response_format=response_format,
+                        model=model,
+                        fallback_models=fallback_models,
+                        n=n,
+                        temperature=temperature,
+                        stream=stream,
+                        max_tokens=max_tokens,
+                        max_retries=max_retries,
+                        cache_config=cache_config,
+                        trace_params=trace_params,
+                        postergate_token_counting=postergate_token_counting,
+                        tools=tools,
+                        data_stores=data_stores,
+                        web_search=web_search,
+                    )
+                ),
+            )
         else:
-            return typing.cast(CompletionOutput[T] | CompletionOutput[None], loop.run_until_complete(
-                self._achat(
-                    messages=messages,
-                    response_format=response_format,
-                    model=model,
-                    fallback_models=fallback_models,
-                    n=n,
-                    temperature=temperature,
-                    stream=stream,
-                    max_tokens=max_tokens,
-                    max_retries=max_retries,
-                    cache_config=cache_config,
-                    trace_params=trace_params,
-                    postergate_token_counting=postergate_token_counting,
-                    tools=tools,
-                    data_stores=data_stores,
-                    web_search=web_search,
-                )
-            ))
+            return typing.cast(
+                CompletionOutput[T] | CompletionOutput[None],
+                loop.run_until_complete(
+                    self._achat(
+                        messages=messages,
+                        response_format=response_format,
+                        model=model,
+                        fallback_models=fallback_models,
+                        n=n,
+                        temperature=temperature,
+                        stream=stream,
+                        max_tokens=max_tokens,
+                        max_retries=max_retries,
+                        cache_config=cache_config,
+                        trace_params=trace_params,
+                        postergate_token_counting=postergate_token_counting,
+                        tools=tools,
+                        data_stores=data_stores,
+                        web_search=web_search,
+                    )
+                ),
+            )
 
     @typing.overload
     async def complete_async(
@@ -831,11 +836,13 @@ class CompletionEngine(CompletionEngineProtocol):
                         f"Successfully generated completion with model {model} in retry {retry}"
                     )
 
-                    output: CompletionOutput[T] | CompletionOutput[None] = CompletionOutput(
-                        id=completion_id,
-                        model=model,
-                        choices=choices,
-                        usage=usage,
+                    output: CompletionOutput[T] | CompletionOutput[None] = (
+                        CompletionOutput(
+                            id=completion_id,
+                            model=model,
+                            choices=choices,
+                            usage=usage,
+                        )
                     )
 
                     maybe_span.end(output=output.choices)
@@ -867,6 +874,40 @@ class CompletionEngine(CompletionEngineProtocol):
 
         raise MaxRetriesReachedException()
 
+    # @typing.overload
+    # async def _aget_choices(
+    #     self,
+    #     *,
+    #     model: AIModel,
+    #     messages: list[Message],
+    #     n: int,
+    #     temperature: float,
+    #     stream: bool,
+    #     max_tokens: int,
+    #     trace: Maybe[StatefulTraceClient],
+    #     span: Maybe[StatefulSpanClient],
+    #     cache_config: CacheConfig,
+    #     postergate_token_counting: bool,
+    #     response_format: typing.Type[T],
+    # ) -> typing.Tuple[list[MessageChoice[T]], Usage]: ...
+
+    # @typing.overload
+    # async def _aget_choices(
+    #     self,
+    #     *,
+    #     model: AIModel,
+    #     messages: list[Message],
+    #     n: int,
+    #     temperature: float,
+    #     stream: bool,
+    #     max_tokens: int,
+    #     trace: Maybe[StatefulTraceClient],
+    #     span: Maybe[StatefulSpanClient],
+    #     cache_config: CacheConfig,
+    #     postergate_token_counting: bool,
+    #     response_format: None,
+    # ) -> typing.Tuple[list[MessageChoice[None]], Usage]: ...
+
     async def _aget_choices(
         self,
         *,
@@ -881,8 +922,8 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: CacheConfig,
         postergate_token_counting: bool,
         response_format: typing.Optional[typing.Type[T]],
-    ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
-        choices = []
+    ) ->  typing.Tuple[list[MessageChoice[T | None]], Usage]:
+        choices: list[MessageChoice[T | None]] = []
         model_input_cost, model_output_cost = model.ppm()
         total_prompt_tokens: int = 0
         total_completion_tokens: int = 0
@@ -1173,7 +1214,9 @@ class CompletionEngine(CompletionEngineProtocol):
         if not structured:
             raise ValueError("Tag object could not be parsed as structured content")
 
-        model: T = msgspec.json.decode(msgspec.json.encode(structured), type=response_format)
+        model: T = msgspec.json.decode(
+            msgspec.json.encode(structured), type=response_format
+        )
 
         span.map(
             lambda span: span.event(

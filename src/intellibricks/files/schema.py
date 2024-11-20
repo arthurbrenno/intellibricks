@@ -14,6 +14,7 @@ from weavearc import BaseModel, Meta, field
 
 from intellibricks.llms import AIModel, CompletionEngineProtocol, CompletionOutput
 
+
 class Image(BaseModel):
     name: typing.Annotated[
         typing.Optional[str],

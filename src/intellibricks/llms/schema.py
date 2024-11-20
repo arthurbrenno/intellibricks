@@ -717,7 +717,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
     ]
 
     message: typing.Annotated[
-        CompletionMessage[T | None],
+        CompletionMessage[T],
         Meta(
             title="Message",
             description="The message content for this choice, including role and text.",
@@ -875,7 +875,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
     ] = "fp_none"
 
     choices: typing.Annotated[
-        list[MessageChoice[T]],
+        list[MessageChoice[T | None]],
         Meta(
             title="Choices",
             description="""The choices made by the language model. 
@@ -924,16 +924,12 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
     )
 
     def get_message(self, choice: int = 0) -> Message:
-        selected_choice: MessageChoice = self.choices[
-            choice
-        ]
+        selected_choice: MessageChoice = self.choices[choice]
 
         return selected_choice.message
 
     def get_parsed(self, choice: int = 0) -> T:
-        selected_choice: MessageChoice[T] = self.choices[
-            choice
-        ]
+        selected_choice = self.choices[choice]
 
         parsed: typing.Optional[T] = selected_choice.message.parsed
         if parsed is None:
