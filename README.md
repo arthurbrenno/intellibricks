@@ -297,7 +297,6 @@ try:
         fallback_models=[AIModel.STUDIO_GEMINI_1P5_FLASH, AIModel.GPT_3_5_TURBO],  # Fallback models
         n=2,  # Number of responses to generate
         temperature=0.7,  # Creativity of the responses
-        stream=True,  # Enable streaming of responses
         max_tokens=500,  # Maximum tokens per response
         max_retries=3,  # Maximum number of retry attempts
         cache_config=cache_config,  # Cache configuration
@@ -333,7 +332,6 @@ async def async_chat_example():
             fallback_models=[AIModel.STUDIO_GEMINI_1P5_FLASH, AIModel.GPT_3_5_TURBO],  # Fallback models
             n=2,  # Number of responses to generate
             temperature=0.7,  # Creativity of the responses
-            stream=True,  # Enable streaming of responses
             max_tokens=500,  # Maximum tokens per response
             max_retries=3,  # Maximum number of retry attempts
             cache_config=cache_config,  # Cache configuration
@@ -433,7 +431,6 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
 | `fallback_models`           | `list[AIModel]` or `None`              | **Optional.** A list of alternative AI models to try if the primary model fails to generate a response.                                                                                                                                                                                           |
 | `n`                         | `int` or `None`                        | **Optional.** The number of completions to generate. Defaults to `1` if not specified.                                                                                                                                                                                                            |
 | `temperature`               | `float` or `None`                      | **Optional.** Controls the creativity of the AI's responses. Higher values (e.g., `0.8`) make output more random, while lower values (e.g., `0.2`) make it more focused and deterministic.                                                                                                          |
-| `stream`                    | `bool` or `None`                       | **Optional.** If `True`, streams the response as it's generated, allowing for real-time applications. Defaults to `False`.                                                                                                                                                                         |
 | `max_tokens`                | `int` or `None`                        | **Optional.** The maximum number of tokens to generate in the response. Defaults to `5000` if not specified.                                                                                                                                                                                         |
 | `max_retries`               | `Literal[1, 2, 3, 4, 5]` or `None`      | **Optional.** The maximum number of retry attempts if the AI model fails to generate a response. Defaults to `1` if not specified.                                                                                                                                                                 |
 | `cache_config`              | `CacheConfig` or `None`                | **Optional.** Configuration settings for caching system prompts in AI providers. This includes:
