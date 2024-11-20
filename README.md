@@ -1,4 +1,4 @@
-# 🧠🧱 IntelliBricks: Building Blocks for Intelligent Applications
+# 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
 
 Welcome to **IntelliBricks**—your streamlined toolkit for developing AI-powered applications. Whether you're interacting with large language models (LLMs), training machine learning models, or implementing Retrieval Augmented Generation (RAG), IntelliBricks simplifies the complex so you can focus on what truly matters: your application logic.
 
