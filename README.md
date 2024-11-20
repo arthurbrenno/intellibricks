@@ -441,58 +441,22 @@ except Exception as e:
 
 Here's a detailed explanation of each parameter used in the `CompletionEngine.chat()` method:
 
-| **Parameter**               | **Type**                              | **Description**                                                                                                                                                                                                                                                                                 |
-|-----------------------------|---------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `messages`                  | `list[Message]`                       | **Required.** A list of `Message` objects representing the conversation history. Each message has a `role` (e.g., `SYSTEM`, `USER`, `ASSISTANT`) and `content`.                                                                                                                                 |
-| `response_format`           | `Type[T]` or `None`                   | **Optional.** A structured data model (subclass of `msgspec.Struct`) to deserialize the AI's response. If `None`, the response remains unstructured (`str`).                                                                                                                                    |
-| `model`                     | `AIModel` or `None`                    | **Optional.** Specifies the primary AI model to use for generating responses. Defaults to `AIModel.STUDIO_GEMINI_1P5_FLASH` if not provided.                                                                                                                                                   |
-| `fallback_models`           | `list[AIModel]` or `None`              | **Optional.** A list of alternative AI models to try if the primary model fails to generate a response.                                                                                                                                                                                           |
-| `n`                         | `int` or `None`                        | **Optional.** The number of completions to generate. Defaults to `1` if not specified.                                                                                                                                                                                                            |
-| `temperature`               | `float` or `None`                      | **Optional.** Controls the creativity of the AI's responses. Higher values (e.g., `0.8`) make output more random, while lower values (e.g., `0.2`) make it more focused and deterministic.                                                                                                          |
-| `max_tokens`                | `int` or `None`                        | **Optional.** The maximum number of tokens to generate in the response. Defaults to `5000` if not specified.                                                                                                                                                                                         |
-| `max_retries`               | `Literal[1, 2, 3, 4, 5]` or `None`      | **Optional.** The maximum number of retry attempts if the AI model fails to generate a response. Defaults to `1` if not specified.                                                                                                                                                                 |
-| `cache_config`              | `CacheConfig` or `None`                | **Optional.** Configuration settings for caching system prompts in AI providers. This includes:
-- `enabled` (`bool`): Indicates whether caching is enabled. When set to `True`, system prompts will be cached to improve performance by reducing redundant computations and API calls. **Default:** `False`.
-- `ttl` (`Union[int, datetime.timedelta]`): Specifies the time-to-live for cache entries. It can be defined either as an integer representing seconds or as a `datetime.timedelta` object for more precise control. **Default:** `datetime.timedelta(seconds=0)`.
-- `cache_key` (`str`): Defines the key used to identify cached system prompts. This key is essential for storing and retrieving cache entries consistently. **Default:** `'default'`.
-      
-  **Example:**
-  ```python
-  cache_config = CacheConfig(
-      enabled=True,
-      ttl=timedelta(minutes=10),
-      cache_key='user_session_prompt'
-  )
-  ```
-|
-| `trace_params`              | `TraceParams` or `None`                | **Optional.** Parameters for updating the current trace, including metadata and context information. Fields include:
-- `name`: Identifier of the trace.
-- `input`: Input parameters of the trace.
-- `output`: Output or result of the trace.
-- `user_id`: ID of the user triggering the execution.
-- `session_id`: Groups multiple traces into a session.
-- `version`: Version of the trace type.
-- `release`: Release identifier of the deployment.
-- `metadata`: Additional metadata for the trace.
-- `tags`: Tags to categorize or label traces.
-- `public`: Indicates if the trace is public.
-      
-  **Example:**
-  ```python
-  trace_params = TraceParams(
-      name="ChatCompletionTrace",
-      user_id="user_12345",
-      session_id="session_67890",
-      metadata={"feature": "chat_completion"},
-      tags=["chat", "completion"],
-      public=False
-  )
-  ```
-|
-| `postergate_token_counting` | `bool`                                 | **Optional.** Determines whether token counting is deferred. If `True`, token usage is not immediately calculated, which can improve performance but delays cost tracking. **Default:** `True`.                                                           |
-| `tools`                     | `list[Callable[..., Any]]` or `None`    | **Optional.** A list of custom tool functions to extend the engine's capabilities. These tools can perform additional processing or integrate with other services as needed. *(Currently under development.)*                                                                      |
-| `data_stores`               | `Sequence[RAGQueriable]` or `None`      | **Optional.** A list of data stores to integrate with Retrieval Augmented Generation (RAG) for context-aware responses. These data stores allow the AI to query external knowledge bases to enhance its responses. *(Currently under development.)*                                      |
-| `web_search`                | `bool` or `None`                       | **Optional.** If `True`, enables web search capabilities to enhance the AI's responses with up-to-date information from the internet. Requires passing a `WebSearchConfig` (interface currently being designed for best abstraction) with your web search configuration. *(Currently under development.)* **Default:** `False`. |
+| Parameter | Type | Description |
+|---|---|---|
+| `messages` | `list[Message]` | **Required.** A list of `Message` objects representing the conversation history. Each message has a `role` (e.g., `SYSTEM`, `USER`, `ASSISTANT`) and `content`. |
+| `response_format` | `Type[T]` or `None` | **Optional.** A structured data model (subclass of `msgspec.Struct`) to deserialize the AI's response. If `None`, the response remains unstructured (`str`). |
+| `model` | `AIModel` or `None` | **Optional.** Specifies the primary AI model to use for generating responses. Defaults to `AIModel.STUDIO_GEMINI_1P5_FLASH` if not provided. |
+| `fallback_models` | `list[AIModel]` or `None` | **Optional.** A list of alternative AI models to try if the primary model fails to generate a response. |
+| `n` | `int` or `None` | **Optional.** The number of completions to generate. Defaults to `1` if not specified. |
+| `temperature` | `float` or `None` | **Optional.** Controls the creativity of the AI's responses. Higher values (e.g., `0.8`) make output more random, while lower values (e.g., `0.2`) make it more focused and deterministic. |
+| `max_tokens` | `int` or `None` | **Optional.** The maximum number of tokens to generate in the response. Defaults to `5000` if not specified. |
+| `max_retries` | `Literal[1, 2, 3, 4, 5]` or `None` | **Optional.** The maximum number of retry attempts if the AI model fails to generate a response. Defaults to `1` if not specified. |
+| `cache_config` | `CacheConfig` or `None` | **Optional.** Configuration settings for caching system prompts in AI providers. This includes:<br><br>```python<br>cache_config = CacheConfig(<br>    enabled=True,  # Enable caching<br>    ttl=timedelta(minutes=10),  # Set TTL to 10 minutes<br>    cache_key='user_session_prompt'  # Define a unique cache key<br>)<br>``` |
+| `trace_params` | `TraceParams` or `None` | **Optional.** Parameters for updating the current trace, including metadata and context information. Fields include:<br><br>```python<br>trace_params = TraceParams(<br>    name="ChatCompletionTrace",<br>    user_id="user_12345",<br>    session_id="session_67890",<br>    metadata={"feature": "chat_completion"},<br>    tags=["chat", "completion"],<br>    public=False<br>)<br>``` |
+| `postergate_token_counting` | `bool` | **Optional.** Determines whether token counting is deferred. If `True`, token usage is not immediately calculated, which can improve performance but delays cost tracking. **Default:** `True`. |
+| `tools` | `list[Callable[..., Any]]` or `None` | **Optional.** A list of custom tool functions to extend the engine's capabilities. These tools can perform additional processing or integrate with other services as needed. *(Currently under development.)* |
+| `data_stores` | `Sequence[RAGQueriable]` or `None` | **Optional.** A list of data stores to integrate with Retrieval Augmented Generation (RAG) for context-aware responses. These data stores allow the AI to query external knowledge bases to enhance its responses. *(Currently under development.)* |
+| `web_search` | `bool` or `None` | **Optional.** If `True`, enables web search capabilities to enhance the AI's responses with up-to-date information from the internet. Requires passing a `WebSearchConfig` (interface currently being designed for best abstraction) with your web search configuration. *(Currently under development.)* **Default:** `False`. |
 
 ---
 
