@@ -14,7 +14,6 @@ from weavearc import BaseModel, Meta, field
 
 from intellibricks.llms import AIModel, CompletionEngineProtocol, CompletionOutput
 
-
 class Image(BaseModel):
     name: typing.Annotated[
         typing.Optional[str],
@@ -347,7 +346,7 @@ class DocumentArtifact(BaseModel):
         # Convert the dictionary to a JSON string with sorted keys to ensure consistency
         content_json = msgspec.json.encode(content_dict, order="sorted")
         # Compute the SHA-256 hash of the JSON string
-        self.id = hashlib.sha256(content_json).hexdigest()
+        self.uid = hashlib.sha256(content_json).hexdigest()
 
     async def get_schema_async(
         self, completion_engine: CompletionEngineProtocol

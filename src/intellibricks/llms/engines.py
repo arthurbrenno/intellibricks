@@ -19,7 +19,7 @@ from langfuse.client import (
 from langfuse.model import ModelUsage
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import LLM
-from weavearc import BaseModel, DynamicDict, NotGiven
+from weavearc import BaseModel, DynamicDict
 from weavearc.extensions import Maybe
 from weavearc.logging import LoggerFactory
 from weavearc.utils.creators import DynamicInstanceCreator
