@@ -787,7 +787,7 @@ class CompletionEngine(CompletionEngineProtocol):
             lambda langfuse: langfuse.trace(id=completion_id.__str__(), **trace_params)
         )
 
-        choices: list[MessageChoice[T | None]] = []
+        choices: list[MessageChoice[T]] = []
 
         model = model or AIModel.STUDIO_GEMINI_1P5_FLASH
         fallback_models = fallback_models or []
@@ -923,8 +923,8 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: CacheConfig,
         postergate_token_counting: bool,
         response_format: typing.Optional[typing.Type[T]],
-    ) ->  typing.Tuple[list[MessageChoice[T | None]], Usage]:
-        choices: list[MessageChoice[T | None]] = []
+    ) ->  typing.Tuple[list[MessageChoice[T]], Usage]:
+        choices: list[MessageChoice[T]] = []
         model_input_cost, model_output_cost = model.ppm()
         total_prompt_tokens: int = 0
         total_completion_tokens: int = 0
@@ -1153,23 +1153,23 @@ class CompletionEngine(CompletionEngineProtocol):
                 ),
             )
 
-    @typing.overload
-    def _get_parsed(
-        self,
-        response_format: typing.Type[T],
-        content: typing.Optional[str],
-        trace: Maybe[StatefulTraceClient],
-        span: Maybe[StatefulSpanClient],
-    ) -> T: ...
+    # @typing.overload
+    # def _get_parsed(
+    #     self,
+    #     response_format: typing.Type[T],
+    #     content: typing.Optional[str],
+    #     trace: Maybe[StatefulTraceClient],
+    #     span: Maybe[StatefulSpanClient],
+    # ) -> T: ...
 
-    @typing.overload
-    def _get_parsed(
-        self,
-        response_format: None,
-        content: typing.Optional[str],
-        trace: Maybe[StatefulTraceClient],
-        span: Maybe[StatefulSpanClient],
-    ) -> None: ...
+    # @typing.overload
+    # def _get_parsed(
+    #     self,
+    #     response_format: None,
+    #     content: typing.Optional[str],
+    #     trace: Maybe[StatefulTraceClient],
+    #     span: Maybe[StatefulSpanClient],
+    # ) -> None: ...
 
     def _get_parsed(
         self,
@@ -1177,14 +1177,14 @@ class CompletionEngine(CompletionEngineProtocol):
         content: typing.Optional[str],
         trace: Maybe[StatefulTraceClient],
         span: Maybe[StatefulSpanClient],
-    ) -> T | None:
+    ) -> T:
         if response_format is None:
             logger.warning("Response format is None")
-            return None
+            return typing.cast(T, None)
 
         if content is None:
             logger.warning("Contents of the message are none")
-            return None
+            return typing.cast(T, None)
 
         if isinstance(response_format, dict):
             LLMResponse: typing.Type[msgspec.Struct] = util.get_struct_from_schema(
@@ -1208,7 +1208,7 @@ class CompletionEngine(CompletionEngineProtocol):
                     metadata={"response_format": response_format, "content": content},
                 )
             )
-            return None
+            return typing.cast(T, None)
 
         structured: dict[str, typing.Any] = tag.as_object()
 

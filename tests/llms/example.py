@@ -12,8 +12,8 @@ class Joke(Struct):
 
 output = CompletionEngine().complete(
     prompt="Tell me a joke",
-    response_format=Joke,
 )  # Evaluates to CompletionOutput[Joke]
 
+output.choices
 funny_joke = output.get_parsed()  # Evaluates to Joke
 print(funny_joke)
