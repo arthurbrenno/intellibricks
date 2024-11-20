@@ -604,7 +604,7 @@ engine = CompletionEngine(langfuse=langfuse_client)
 
 ```py
 extractor: FileExtractorProtocol = ... # In development
-document = extractor.extract(RawFile.from_dir("./documents")) # or RawFile.from_upload_file(fastapi and litestar objects goes here). RawFile will be a powerful class
+document = extractor.extract(RawFile.from_file("./documents")) # or RawFile.from_upload_file(fastapi and litestar objects goes here). RawFile will be a powerful class
 document.as_langchain_docs(transformations=[SemanticChunker(...)])
 # Done. Now you can ingest your doc into 
 vector_store.add_documents(documents) # Langchain example
