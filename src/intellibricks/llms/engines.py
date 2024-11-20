@@ -1,5 +1,5 @@
 """LLM engines module"""
-
+# TODO: Create stubs file for engines
 from __future__ import annotations
 
 import asyncio
@@ -493,7 +493,7 @@ class CompletionEngine(CompletionEngineProtocol):
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:  # No event loop running
-            return asyncio.run(
+            return typing.cast(CompletionOutput[T] | CompletionOutput[None], asyncio.run(
                 self._achat(
                     messages=messages,
                     response_format=response_format,
@@ -511,9 +511,9 @@ class CompletionEngine(CompletionEngineProtocol):
                     data_stores=data_stores,
                     web_search=web_search,
                 )
-            )
+            ))
         else:
-            return loop.run_until_complete(
+            return typing.cast(CompletionOutput[T] | CompletionOutput[None], loop.run_until_complete(
                 self._achat(
                     messages=messages,
                     response_format=response_format,
@@ -531,7 +531,7 @@ class CompletionEngine(CompletionEngineProtocol):
                     data_stores=data_stores,
                     web_search=web_search,
                 )
-            )
+            ))
 
     @typing.overload
     async def complete_async(
@@ -710,6 +710,48 @@ class CompletionEngine(CompletionEngineProtocol):
             web_search=web_search,
         )
 
+    @typing.overload
+    async def _achat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    async def _achat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[None]: ...
+
     async def _achat(
         self,
         *,
@@ -824,6 +866,40 @@ class CompletionEngine(CompletionEngineProtocol):
                     continue
 
         raise MaxRetriesReachedException()
+
+    @typing.overload
+    async def _aget_choices(
+        self,
+        *,
+        model: AIModel,
+        messages: list[Message],
+        n: int,
+        temperature: float,
+        stream: bool,
+        max_tokens: int,
+        trace: Maybe[StatefulTraceClient],
+        span: Maybe[StatefulSpanClient],
+        cache_config: CacheConfig,
+        postergate_token_counting: bool,
+        response_format: typing.Type[T],
+    ) -> typing.Tuple[list[MessageChoice[T]], Usage]: ...
+    
+    @typing.overload
+    async def _aget_choices(
+        self,
+        *,
+        model: AIModel,
+        messages: list[Message],
+        n: int,
+        temperature: float,
+        stream: bool,
+        max_tokens: int,
+        trace: Maybe[StatefulTraceClient],
+        span: Maybe[StatefulSpanClient],
+        cache_config: CacheConfig,
+        postergate_token_counting: bool,
+        response_format: None,
+    ) -> typing.Tuple[list[MessageChoice[None]], Usage]: ...
 
     async def _aget_choices(
         self,
@@ -1069,13 +1145,31 @@ class CompletionEngine(CompletionEngineProtocol):
                 ),
             )
 
+    @typing.overload
+    def _get_parsed(
+        self,
+        response_format: typing.Type[T],
+        content: typing.Optional[str],
+        trace: Maybe[StatefulTraceClient],
+        span: Maybe[StatefulSpanClient],
+    ) -> T: ...
+
+    @typing.overload
+    def _get_parsed(
+        self,
+        response_format: None,
+        content: typing.Optional[str],
+        trace: Maybe[StatefulTraceClient],
+        span: Maybe[StatefulSpanClient],
+    ) -> None: ...
+
     def _get_parsed(
         self,
         response_format: typing.Optional[typing.Type[T]],
         content: typing.Optional[str],
         trace: Maybe[StatefulTraceClient],
         span: Maybe[StatefulSpanClient],
-    ) -> typing.Optional[T]:
+    ) -> T | None:
         if response_format is None:
             logger.warning("Response format is None")
             return None
@@ -1110,11 +1204,10 @@ class CompletionEngine(CompletionEngineProtocol):
 
         structured: dict[str, typing.Any] = tag.as_object()
 
-        model: typing.Optional[T] = (
-            msgspec.json.decode(msgspec.json.encode(structured), type=response_format)
-            if structured
-            else None
-        )
+        if not structured:
+            raise ValueError("Tag object could not be parsed as structured content")
+
+        model: T = msgspec.json.decode(msgspec.json.encode(structured), type=response_format)
 
         span.map(
             lambda span: span.event(
