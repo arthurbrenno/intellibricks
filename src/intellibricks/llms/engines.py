@@ -52,7 +52,7 @@ from .util import count_tokens
 logger = LoggerFactory.create(__name__)
 
 T = typing.TypeVar("T", bound=msgspec.Struct)
-
+U = typing.TypeVar("U", bound=msgspec.Struct | None)
 
 @typing.runtime_checkable
 class CompletionEngineProtocol(typing.Protocol):
@@ -787,7 +787,7 @@ class CompletionEngine(CompletionEngineProtocol):
             lambda langfuse: langfuse.trace(id=completion_id.__str__(), **trace_params)
         )
 
-        choices: list[MessageChoice] = []
+        choices: list[MessageChoice[T | None]] = []
 
         model = model or AIModel.STUDIO_GEMINI_1P5_FLASH
         fallback_models = fallback_models or []
@@ -817,6 +817,7 @@ class CompletionEngine(CompletionEngineProtocol):
                             )
                         ).unwrap()
                     )
+                    
 
                     choices, usage = await self._aget_choices(
                         model=model,
