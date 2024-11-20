@@ -119,7 +119,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
 
     @typing.overload
     def chat(
@@ -181,7 +181,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
 
     @typing.overload
     async def complete_async(
@@ -246,7 +246,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
 
     @typing.overload
     async def chat_async(
@@ -309,7 +309,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
 
 
 class CompletionEngine(CompletionEngineProtocol):
@@ -394,7 +394,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]:
+    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]:
         system_prompt = (
             system_prompt
             or "You are a helpful assistant. Answer in the same language the user asked."
@@ -596,7 +596,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]:
+    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]:
         system_prompt = (
             system_prompt
             or "You are a helpful assistant. Answer in the same language the user asked."

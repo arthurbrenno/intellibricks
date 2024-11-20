@@ -22,8 +22,8 @@ engine = CompletionEngine()
 
 response = engine.chat(
     messages=messages,
-    response_format=Joke,
+    response_format=Joke
 )
 
-presidents_response = response.get_parsed()
-print(presidents_response)
+p = response.choices[0].message.parsed
+
