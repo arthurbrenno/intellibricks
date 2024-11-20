@@ -1,3 +1,4 @@
+```markdown
 # 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
 
 Welcome to **IntelliBricks**—your streamlined toolkit for developing AI-powered applications. Whether you're interacting with large language models (LLMs), training machine learning models, or implementing Retrieval Augmented Generation (RAG), IntelliBricks simplifies the complex so you can focus on what truly matters: your application logic.
@@ -49,6 +50,9 @@ Welcome to **IntelliBricks**—your streamlined toolkit for developing AI-powere
 6. [Coming Soon](#coming-soon)
 7. [Documentation](#documentation)
 8. [Contributing](#contributing)
+9. [License](#license)
+10. [Community & Support](#community--support)
+11. [Showcase](#showcase)
 
 ---
 
@@ -260,6 +264,9 @@ cache_config = CacheConfig(
     ttl=timedelta(minutes=10),  # Set TTL to 10 minutes
     cache_key='user_session_prompt'  # Define a unique cache key
 )
+
+# **Example:**
+# >>> cache_config = CacheConfig(enabled=True, ttl=timedelta(seconds=60), cache_key='user_prompt')
 ```
 
 #### **8. Define Trace Parameters (Optional)**
@@ -273,6 +280,11 @@ trace_params = TraceParams(
     tags=["chat", "completion"],
     public=False
 )
+
+# **Example:**
+# >>> trace_params = TraceParams(user_id="user_123", session_id="session_456")
+# >>> print(trace_params)
+# {'user_id': 'user_123', 'session_id': 'session_456'}
 ```
 
 #### **9. Prepare Chat Messages**
@@ -308,9 +320,9 @@ try:
         cache_config=cache_config,  # Cache configuration
         trace_params=trace_params,  # Tracing parameters for monitoring
         postergate_token_counting=False,  # Immediate token counting
-        tools=[your_custom_tool_function],  # Custom tool functions
-        data_stores=[rag_data_store],  # RAG data stores for context-aware responses
-        web_search=True  # Enable web search capabilities
+        tools=[your_custom_tool_function],  # Custom tool functions *(Currently under development)*
+        data_stores=[rag_data_store],  # RAG data stores for context-aware responses *(Currently under development)*
+        web_search=True,  # Enable web search capabilities *(Currently under development)*. Requires passing a `WebSearchConfig`.
     )
 
     # Access the parsed structured response
@@ -341,9 +353,9 @@ async def async_chat_example():
             cache_config=cache_config,  # Cache configuration
             trace_params=trace_params,  # Tracing parameters for monitoring
             postergate_token_counting=False,  # Immediate token counting
-            tools=[your_custom_tool_function],  # Custom tool functions
-            data_stores=[rag_data_store],  # RAG data stores for context-aware responses
-            web_search=True  # Enable web search capabilities
+            tools=[your_custom_tool_function],  # Custom tool functions *(Currently under development)*
+            data_stores=[rag_data_store],  # RAG data stores for context-aware responses *(Currently under development)*
+            web_search=True  # Enable web search capabilities *(Currently under development)*. Requires passing a `WebSearchConfig`.
         )
 
         # Access the parsed structured response
@@ -411,8 +423,8 @@ try:
     output = engine.chat(
         messages=messages,
         response_format=None,
-        data_stores=[rag_data_store],  # Integrate RAG data stores
-        web_search=True,  # Enable web search for enhanced responses
+        data_stores=[rag_data_store],  # Integrate RAG data stores *(Currently under development)*
+        web_search=True,  # Enable web search capabilities *(Currently under development)*. Requires passing a `WebSearchConfig`.
         # ... other parameters
     )
     print(output.get_message().content)
@@ -439,11 +451,11 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
 | `temperature`               | `float` or `None`                      | **Optional.** Controls the creativity of the AI's responses. Higher values (e.g., `0.8`) make output more random, while lower values (e.g., `0.2`) make it more focused and deterministic.                                                                                                          |
 | `max_tokens`                | `int` or `None`                        | **Optional.** The maximum number of tokens to generate in the response. Defaults to `5000` if not specified.                                                                                                                                                                                         |
 | `max_retries`               | `Literal[1, 2, 3, 4, 5]` or `None`      | **Optional.** The maximum number of retry attempts if the AI model fails to generate a response. Defaults to `1` if not specified.                                                                                                                                                                 |
-| `cache_config`              | `CacheConfig` or `None`                | **Optional.** Configuration settings for caching system prompts in AI providers. Includes:
-- `enabled` (`bool`): Enables caching to improve performance by reducing redundant computations and API calls. **Default:** `False`.
-- `ttl` (`Union[int, datetime.timedelta]`): Time-to-live for cache entries. Can be defined as seconds or a `datetime.timedelta`. **Default:** `0` seconds.
-- `cache_key` (`str`): Key used to identify cached system prompts. **Default:** `'default'`.
-  
+| `cache_config`              | `CacheConfig` or `None`                | **Optional.** Configuration settings for caching system prompts in AI providers. This includes:
+- `enabled` (`bool`): Indicates whether caching is enabled. When set to `True`, system prompts will be cached to improve performance by reducing redundant computations and API calls. **Default:** `False`.
+- `ttl` (`Union[int, datetime.timedelta]`): Specifies the time-to-live for cache entries. It can be defined either as an integer representing seconds or as a `datetime.timedelta` object for more precise control. **Default:** `datetime.timedelta(seconds=0)`.
+- `cache_key` (`str`): Defines the key used to identify cached system prompts. This key is essential for storing and retrieving cache entries consistently. **Default:** `'default'`.
+      
   **Example:**
   ```python
   cache_config = CacheConfig(
@@ -464,7 +476,7 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
 - `metadata`: Additional metadata for the trace.
 - `tags`: Tags to categorize or label traces.
 - `public`: Indicates if the trace is public.
-  
+      
   **Example:**
   ```python
   trace_params = TraceParams(
@@ -478,9 +490,9 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
   ```
 |
 | `postergate_token_counting` | `bool`                                 | **Optional.** Determines whether token counting is deferred. If `True`, token usage is not immediately calculated, which can improve performance but delays cost tracking. **Default:** `True`.                                                           |
-| `tools`                     | `list[Callable[..., Any]]` or `None`    | **Optional.** A list of custom tool functions to extend the engine's capabilities. These tools can perform additional processing or integrate with other services as needed.                                                                                       |
-| `data_stores`               | `Sequence[RAGQueriable]` or `None`      | **Optional.** A list of data stores to integrate with Retrieval Augmented Generation (RAG) for context-aware responses. These data stores allow the AI to query external knowledge bases to enhance its responses.                                                     |
-| `web_search`                | `bool` or `None`                       | **Optional.** If `True`, enables web search capabilities to enhance the AI's responses with up-to-date information from the internet. **Default:** `False`.                                                                                                           |
+| `tools`                     | `list[Callable[..., Any]]` or `None`    | **Optional.** A list of custom tool functions to extend the engine's capabilities. These tools can perform additional processing or integrate with other services as needed. *(Currently under development.)*                                                                      |
+| `data_stores`               | `Sequence[RAGQueriable]` or `None`      | **Optional.** A list of data stores to integrate with Retrieval Augmented Generation (RAG) for context-aware responses. These data stores allow the AI to query external knowledge bases to enhance its responses. *(Currently under development.)*                                      |
+| `web_search`                | `bool` or `None`                       | **Optional.** If `True`, enables web search capabilities to enhance the AI's responses with up-to-date information from the internet. Requires passing a `WebSearchConfig` (interface currently being designed for best abstraction) with your web search configuration. *(Currently under development.)* **Default:** `False`. |
 
 ---
 
@@ -658,5 +670,14 @@ Join our community to stay updated, share your projects, and get support:
 
 ---
 
+## 📈 Showcase
+
+Check out some of the amazing projects built with IntelliBricks:
+
+- **Project A:** Description and link.
+- **Project B:** Description and link.
+- **Project C:** Description and link.
+
+---
 
 Thank you for choosing **IntelliBricks**!
