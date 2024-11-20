@@ -98,7 +98,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
     def complete(
         self,
@@ -119,7 +119,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
     @typing.overload
     def chat(
@@ -161,7 +161,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
     def chat(
         self,
@@ -181,7 +181,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
     @typing.overload
     async def complete_async(
@@ -225,7 +225,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
     async def complete_async(
         self,
@@ -246,7 +246,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
     @typing.overload
     async def chat_async(
@@ -288,7 +288,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
 
     async def chat_async(
@@ -309,7 +309,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
 
 class CompletionEngine(CompletionEngineProtocol):
@@ -373,7 +373,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
     def complete(
         self,
@@ -394,7 +394,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]:
+    ) -> CompletionOutput[T] | CompletionOutput[None]:
         system_prompt = (
             system_prompt
             or "You are a helpful assistant. Answer in the same language the user asked."
@@ -469,7 +469,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
     def chat(
         self,
@@ -489,7 +489,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]:
+    ) -> CompletionOutput[T] | CompletionOutput[None]:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:  # No event loop running
@@ -575,7 +575,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
     async def complete_async(
         self,
@@ -596,7 +596,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T] | CompletionOutput[NotGiven]:
+    ) -> CompletionOutput[T] | CompletionOutput[None]:
         system_prompt = (
             system_prompt
             or "You are a helpful assistant. Answer in the same language the user asked."
@@ -671,7 +671,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[NotGiven]: ...
+    ) -> CompletionOutput[None]: ...
 
     async def chat_async(
         self,
@@ -691,7 +691,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]:
+    ) -> CompletionOutput[T] | CompletionOutput[None]:
         return await self._achat(
             messages=messages,
             response_format=response_format,
@@ -909,7 +909,7 @@ class CompletionEngine(CompletionEngineProtocol):
             else:
                 asyncio.create_task(usage_future)
 
-            completion_message: CompletionMessage[T] = CompletionMessage(
+            completion_message: CompletionMessage[T | None] = CompletionMessage(
                 role=MessageRole(chat_response.message.role.value),
                 content=chat_response.message.content,
                 parsed=self._get_parsed(

@@ -4,12 +4,12 @@ from __future__ import annotations
 import datetime
 from typing import Annotated, Any, Literal, Optional
 
-from weavearc import BaseModel, Entity, Meta, ValueObject, field
+from weavearc import BaseModel, Meta, field
 
 from ..infra.constants import AlgorithmType
 
 
-class ColumnInfo(ValueObject):
+class ColumnInfo(BaseModel):
     """
     Represents information about a dataset column.
 
@@ -47,7 +47,7 @@ class ColumnInfo(ValueObject):
     ] = field(default=None)
 
 
-class ForgedModel(Entity):
+class ForgedModel(BaseModel):
     """
     Represents a trained machine learning model along with its metadata and artifacts.
 
@@ -67,6 +67,8 @@ class ForgedModel(Entity):
         scaler (Optional[str]): Name of the scaler used for feature scaling.
         columns_info (list[ColumnInfo]): Information about each column in the dataset.
     """
+
+    uid: Annotated[str, Meta(title="UID", description="Unique Identifier for the Forged Model")]
 
     target_name: Annotated[
         str,

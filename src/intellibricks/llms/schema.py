@@ -7,7 +7,6 @@ import re
 import typing
 import uuid
 
-import msgspec
 from bs4 import BeautifulSoup, NavigableString
 from llama_index.core.base.llms.types import LogProb
 from llama_index.core.base.llms.types import MessageRole as LlamaIndexMessageRole
@@ -25,7 +24,7 @@ from .constants import (
 )
 from .exceptions import MessageNotParsedError
 
-T = typing.TypeVar("T", bound=msgspec.Struct)
+T = typing.TypeVar("T")
 
 
 class Tag(BaseModel):
@@ -619,7 +618,7 @@ class VisionMessage(BaseModel):
     pass  # TODO
 
 
-class Message(BaseModel):
+class Message(BaseModel, kw_only=True):
     role: typing.Annotated[
         MessageRole,
         Meta(
@@ -699,12 +698,12 @@ class Message(BaseModel):
 
 class CompletionMessage(Message, typing.Generic[T]):
     parsed: typing.Annotated[
-        typing.Optional[T],
+        T,
         Meta(
             title="Structured Model",
             description="Structured model of the message",
         ),
-    ] = None
+    ]
 
 
 class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
@@ -718,7 +717,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
     ]
 
     message: typing.Annotated[
-        CompletionMessage[T],
+        CompletionMessage[T | None],
         Meta(
             title="Message",
             description="The message content for this choice, including role and text.",
@@ -764,65 +763,65 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
             self.finish_reason = FinishReason(self.finish_reason)
 
 
-class Delta(CompletionMessage, typing.Generic[T]):
-    """Stream message"""
+# class Delta(CompletionMessage, typing.Generic[T]):
+#     """Stream message"""
 
 
-class StreamChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
-    index: typing.Annotated[
-        int,
-        Meta(
-            title="Index",
-            description="Index of the choice",
-            examples=[0, 1, 2],
-        ),
-    ]
+# class StreamChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
+#     index: typing.Annotated[
+#         int,
+#         Meta(
+#             title="Index",
+#             description="Index of the choice",
+#             examples=[0, 1, 2],
+#         ),
+#     ]
 
-    delta: typing.Annotated[
-        typing.Optional[Delta],
-        Meta(
-            title="Delta",
-            description="Partial contents (token) of the final message",
-            examples=[
-                Delta(
-                    role=MessageRole.ASSISTANT,
-                    content="\n\nHello there, how may I assist you today?",
-                )
-            ],
-        ),
-    ] = None
+#     delta: typing.Annotated[
+#         typing.Optional[Delta],
+#         Meta(
+#             title="Delta",
+#             description="Partial contents (token) of the final message",
+#             examples=[
+#                 Delta(
+#                     role=MessageRole.ASSISTANT,
+#                     content="\n\nHello there, how may I assist you today?",
+#                 )
+#             ],
+#         ),
+#     ] = None
 
-    logprobs: typing.Annotated[
-        typing.Optional[list[list[LogProb]]],
-        Meta(
-            title="Log Probability",
-            description='log probability of the choice. For now, always "null"',
-            examples=[None],
-        ),
-    ] = None
+#     logprobs: typing.Annotated[
+#         typing.Optional[list[list[LogProb]]],
+#         Meta(
+#             title="Log Probability",
+#             description='log probability of the choice. For now, always "null"',
+#             examples=[None],
+#         ),
+#     ] = None
 
-    finish_reason: typing.Annotated[
-        FinishReason,
-        Meta(
-            title="Finish Reason",
-            description="The reason the model stopped generating tokens.",
-            examples=[
-                "stop",
-                "length",
-                "content_filter",
-                "tool_calls",
-                FinishReason.STOP,
-                FinishReason.LENGTH,
-                FinishReason.CONTENT_FILTER,
-                FinishReason.TOOL_CALLS,
-                FinishReason.NONE,
-            ],
-        ),
-    ] = FinishReason.NONE
+#     finish_reason: typing.Annotated[
+#         FinishReason,
+#         Meta(
+#             title="Finish Reason",
+#             description="The reason the model stopped generating tokens.",
+#             examples=[
+#                 "stop",
+#                 "length",
+#                 "content_filter",
+#                 "tool_calls",
+#                 FinishReason.STOP,
+#                 FinishReason.LENGTH,
+#                 FinishReason.CONTENT_FILTER,
+#                 FinishReason.TOOL_CALLS,
+#                 FinishReason.NONE,
+#             ],
+#         ),
+#     ] = FinishReason.NONE
 
-    def __post_init__(self) -> None:
-        if isinstance(self.finish_reason, str):
-            self.finish_reason = FinishReason(self.finish_reason)
+#     def __post_init__(self) -> None:
+#         if isinstance(self.finish_reason, str):
+#             self.finish_reason = FinishReason(self.finish_reason)
 
 
 class CompletionOutput(BaseModel, typing.Generic[T]):

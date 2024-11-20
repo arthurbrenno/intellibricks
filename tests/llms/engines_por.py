@@ -22,6 +22,7 @@ engine = CompletionEngine()
 
 response = engine.chat(
     messages=messages,
+    response_format=Joke
 )
 
 p = response.choices[0].message.parsed
