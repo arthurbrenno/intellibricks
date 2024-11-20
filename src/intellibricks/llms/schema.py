@@ -876,7 +876,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
     ] = "fp_none"
 
     choices: typing.Annotated[
-        typing.Sequence[typing.Union[MessageChoice[T], StreamChoice[T]]],
+        typing.Sequence[MessageChoice[T]],
         Meta(
             title="Choices",
             description="""The choices made by the language model. 
@@ -925,41 +925,21 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
     )
 
     def get_message(self, choice: int = 0) -> Message:
-        selected_choice: typing.Union[MessageChoice, StreamChoice] = self.choices[
+        selected_choice: MessageChoice = self.choices[
             choice
         ]
 
-        match selected_choice:
-            case MessageChoice():
-                return selected_choice.message
-            case StreamChoice():
-                return Message.from_dict(
-                    selected_choice.delta.as_dict() if selected_choice.delta else {}
-                )
+        return selected_choice.message
 
     def get_parsed(self, choice: int = 0) -> T:
-        selected_choice: typing.Union[MessageChoice[T], StreamChoice[T]] = self.choices[
+        selected_choice: MessageChoice[T] = self.choices[
             choice
         ]
 
-        match selected_choice:
-            case MessageChoice():
-                parsed: typing.Optional[T] = selected_choice.message.parsed
-                if parsed is None:
-                    raise MessageNotParsedError(
-                        "Message could not be parsed. Parsed content is None."
-                    )
+        parsed: typing.Optional[T] = selected_choice.message.parsed
+        if parsed is None:
+            raise MessageNotParsedError(
+                "Message could not be parsed. Parsed content is None."
+            )
 
-                return parsed
-            case StreamChoice():
-                if not selected_choice.delta:
-                    raise RuntimeError("Delta is None.")
-
-                parsed = selected_choice.delta.parsed
-
-                if not parsed:
-                    raise MessageNotParsedError(
-                        "Message could not be parsed. Parsed content is None."
-                    )
-
-                return parsed
+        return parsed
