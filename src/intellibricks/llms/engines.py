@@ -867,40 +867,6 @@ class CompletionEngine(CompletionEngineProtocol):
 
         raise MaxRetriesReachedException()
 
-    @typing.overload
-    async def _aget_choices(
-        self,
-        *,
-        model: AIModel,
-        messages: list[Message],
-        n: int,
-        temperature: float,
-        stream: bool,
-        max_tokens: int,
-        trace: Maybe[StatefulTraceClient],
-        span: Maybe[StatefulSpanClient],
-        cache_config: CacheConfig,
-        postergate_token_counting: bool,
-        response_format: typing.Type[T],
-    ) -> typing.Tuple[list[MessageChoice[T]], Usage]: ...
-    
-    @typing.overload
-    async def _aget_choices(
-        self,
-        *,
-        model: AIModel,
-        messages: list[Message],
-        n: int,
-        temperature: float,
-        stream: bool,
-        max_tokens: int,
-        trace: Maybe[StatefulTraceClient],
-        span: Maybe[StatefulSpanClient],
-        cache_config: CacheConfig,
-        postergate_token_counting: bool,
-        response_format: None,
-    ) -> typing.Tuple[list[MessageChoice[None]], Usage]: ...
-
     async def _aget_choices(
         self,
         *,
@@ -916,7 +882,7 @@ class CompletionEngine(CompletionEngineProtocol):
         postergate_token_counting: bool,
         response_format: typing.Optional[typing.Type[T]],
     ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
-        choices: list[MessageChoice[T]] = []
+        choices = []
         model_input_cost, model_output_cost = model.ppm()
         total_prompt_tokens: int = 0
         total_completion_tokens: int = 0
@@ -985,7 +951,7 @@ class CompletionEngine(CompletionEngineProtocol):
             else:
                 asyncio.create_task(usage_future)
 
-            completion_message: CompletionMessage[T | None] = CompletionMessage(
+            completion_message = CompletionMessage(
                 role=MessageRole(chat_response.message.role.value),
                 content=chat_response.message.content,
                 parsed=self._get_parsed(

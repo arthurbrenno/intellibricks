@@ -875,7 +875,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
     ] = "fp_none"
 
     choices: typing.Annotated[
-        typing.Sequence[MessageChoice[T]],
+        list[MessageChoice[T]],
         Meta(
             title="Choices",
             description="""The choices made by the language model. 
