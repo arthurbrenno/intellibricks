@@ -451,8 +451,8 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
 | `temperature` | `float` or `None` | **Optional.** Controls response creativity (0.0-1.0).  Higher values are more random. |
 | `max_tokens` | `int` or `None` | **Optional.** Maximum tokens per response. Defaults to `5000`. |
 | `max_retries` | `Literal[1, 2, 3, 4, 5]` or `None` | **Optional.** Maximum retry attempts. Defaults to `1`. |
-| `cache_config` | `CacheConfig` or `None` | **Optional.** Caching configuration. See [CacheConfig Examples](cache_config_examples.md). |
-| `trace_params` | `TraceParams` or `None` | **Optional.** Tracing parameters. See [TraceParams Examples](trace_params_examples.md). |
+| `cache_config` | `CacheConfig` or `None` | **Optional.** Caching configuration. See [CacheConfig Examples](docs/examples/cache_config_examples.md). |
+| `trace_params` | `TraceParams` or `None` | **Optional.** Tracing parameters. See [TraceParams Examples](docs/examples/trace_params_examples.md). |
 | `postergate_token_counting` | `bool` | **Optional.** Defer token counting. Defaults to `True`. |
 | `tools` | `list[Callable[..., Any]]` or `None` | **Optional.** Custom tool functions. *(Currently under development.)* |
 | `data_stores` | `Sequence[RAGQueriable]` or `None` | **Optional.** RAG data stores. *(Currently under development.)* |
