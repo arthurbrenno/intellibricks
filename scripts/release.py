@@ -280,7 +280,7 @@ def main():
             if compare_releases(current_version, new_version) != 0:
                 if questionary.confirm(
                     f"The version in {changelog_path} ({current_version}) does not match the new version ({new_version}). Do you want to overwrite the file?",
-                    default=False,
+                    default=True,
                 ).ask():
                     with open(changelog_path, "w") as f:
                         f.write(f"# Changelog\n\n## {new_version}\n\n- \n")

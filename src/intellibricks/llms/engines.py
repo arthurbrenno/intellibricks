@@ -728,7 +728,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
-    ) -> CompletionOutput[T]:
+    ) -> CompletionOutput[T] | CompletionOutput[None]:
         trace_params = trace_params or {}
         cache_config = cache_config or CacheConfig()
 
@@ -789,7 +789,7 @@ class CompletionEngine(CompletionEngineProtocol):
                         f"Successfully generated completion with model {model} in retry {retry}"
                     )
 
-                    output: CompletionOutput[T] = CompletionOutput(
+                    output: CompletionOutput[T] | CompletionOutput[None] = CompletionOutput(
                         id=completion_id,
                         model=model,
                         choices=choices,

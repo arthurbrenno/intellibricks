@@ -35,38 +35,23 @@ Let's take a look at HOW EASY it is to choose an AI Model, get your structured r
 
 ### Synchronous Completion Example
 ```python
-import asyncio
-from typing import Annotated
-
 from dotenv import load_dotenv
-from msgspec import Meta, Struct
+from msgspec import Struct
 
 from intellibricks import CompletionEngine
-from intellibricks.llms.schema import CompletionOutput
 
 load_dotenv(override=True)
 
+class Joke(Struct):
+    joke: str
 
-# Step #1: Define your response structure
-class President(Struct):
-    name: str
-    age: Annotated[int, Meta(ge=40, le=107)]
+output = CompletionEngine().complete(
+    prompt="Tell me a joke",
+    response_format=Joke,
+) # Evaluates to CompletionOutput[Joke]
 
-
-class PresidentsResponse(Struct):
-    presidents: list[President]
-
-# Call the CompletionEngine
-engine = CompletionEngine()
-response: CompletionOutput[PresidentsResponse] = engine.complete(
-    prompt="What were the presidents of the USA until your knowledge?",
-    response_format=PresidentsResponse,
-)
-
-# Manipulate the response as you want.
-presidents_response: PresidentsResponse = response.get_parsed()
-print(f"First president name is {presidents_response.presidents[0].name}")
-print(f"First president age is {presidents_response.presidents[0].age}")
+funny_joke = output.get_parsed() # Evaluates to Joke
+print(funny_joke)
 ```
 
 
