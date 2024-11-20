@@ -1,7 +1,7 @@
 """LLM engines module"""
 
 from __future__ import annotations
-import abc
+
 import asyncio
 import typing
 import uuid
@@ -19,7 +19,7 @@ from langfuse.client import (
 from langfuse.model import ModelUsage
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import LLM
-from weavearc import BaseModel, DynamicDict
+from weavearc import BaseModel, DynamicDict, NotGiven
 from weavearc.extensions import Maybe
 from weavearc.logging import LoggerFactory
 from weavearc.utils.creators import DynamicInstanceCreator
@@ -55,6 +55,51 @@ T = typing.TypeVar("T", bound=msgspec.Struct)
 
 @typing.runtime_checkable
 class CompletionEngineProtocol(typing.Protocol):
+    
+    @typing.overload
+    def complete(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    def complete(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
+
     def complete(
         self,
         *,
@@ -76,6 +121,48 @@ class CompletionEngineProtocol(typing.Protocol):
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]: ...
 
+    @typing.overload
+    def chat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    def chat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
+
     def chat(
         self,
         *,
@@ -96,7 +183,50 @@ class CompletionEngineProtocol(typing.Protocol):
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]: ...
 
-    @abc.abstractmethod
+    @typing.overload
+    async def complete_async(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    async def complete_async(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
+
     async def complete_async(
         self,
         *,
@@ -118,7 +248,49 @@ class CompletionEngineProtocol(typing.Protocol):
         web_search: typing.Optional[bool] = None,
     ) -> CompletionOutput[T]: ...
 
-    @abc.abstractmethod
+    @typing.overload
+    async def chat_async(
+        self,
+        *,
+        messages: list[Message],
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    async def chat_async(
+        self,
+        *,
+        messages: list[Message],
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
+
+
     async def chat_async(
         self,
         *,
@@ -158,6 +330,50 @@ class CompletionEngine(CompletionEngineProtocol):
         self.json_encoder = json_encoder or msgspec.json.Encoder()
         self.json_decoder = json_decoder or msgspec.json.Decoder()
         self.vertex_credentials = Maybe(vertex_credentials or None)
+
+    @typing.overload
+    def complete(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    def complete(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
 
     def complete(
         self,
@@ -212,6 +428,48 @@ class CompletionEngine(CompletionEngineProtocol):
             data_stores=data_stores,
             web_search=web_search,
         )
+    
+    @typing.overload
+    def chat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    def chat(
+        self,
+        *,
+        messages: list[Message],
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
 
     def chat(
         self,
@@ -275,6 +533,50 @@ class CompletionEngine(CompletionEngineProtocol):
                 )
             )
 
+    @typing.overload
+    async def complete_async(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    async def complete_async(
+        self,
+        *,
+        prompt: typing.Union[str, Prompt],
+        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
+
     async def complete_async(
         self,
         *,
@@ -328,6 +630,48 @@ class CompletionEngine(CompletionEngineProtocol):
             data_stores=data_stores,
             web_search=web_search,
         )
+
+    @typing.overload
+    async def chat_async(
+        self,
+        *,
+        messages: list[Message],
+        response_format: typing.Type[T],
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[T]: ...
+
+    @typing.overload
+    async def chat_async(
+        self,
+        *,
+        messages: list[Message],
+        response_format: None = None,
+        model: typing.Optional[AIModel] = None,
+        fallback_models: typing.Optional[list[AIModel]] = None,
+        n: typing.Optional[int] = None,
+        temperature: typing.Optional[float] = None,
+        stream: typing.Optional[bool] = None,
+        max_tokens: typing.Optional[int] = None,
+        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: typing.Optional[CacheConfig] = None,
+        trace_params: typing.Optional[TraceParams] = None,
+        postergate_token_counting: bool = True,
+        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
+        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
+        web_search: typing.Optional[bool] = None,
+    ) -> CompletionOutput[NotGiven]: ...
 
     async def chat_async(
         self,
