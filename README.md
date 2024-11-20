@@ -37,7 +37,6 @@ Let's take a look at HOW EASY it is to choose an AI Model, get your structured r
 ```python
 from dotenv import load_dotenv
 from msgspec import Struct
-
 from intellibricks import CompletionEngine
 
 load_dotenv(override=True)
@@ -47,61 +46,42 @@ class Joke(Struct):
 
 output = CompletionEngine().complete(
     prompt="Tell me a joke",
-    response_format=Joke,
-) # Evaluates to CompletionOutput[Joke]
+    response_format=Joke
+)
 
-funny_joke = output.get_parsed() # Evaluates to Joke
-print(funny_joke)
+print(output.get_parsed()) # Joke obj
+
 ```
 
+You just need 3 steps to get your structured outputs. No "OutputParsers" and other boilerplate. You just need the CompletionEngine!
 
-### Asynchronous Completions Example
+### Mypy and Pyright
+The entire module intellibricks.llms was designed with code quality in mind. I designed the code with type hints in my mind all the time. Look at how CompletionEngine behaves on type hints:
 ```python
-import asyncio
-from typing import Annotated
-
 from dotenv import load_dotenv
-from msgspec import Meta, Struct
-
+from msgspec import Struct
 from intellibricks import CompletionEngine
-from intellibricks.llms.schema import CompletionOutput
 
 load_dotenv(override=True)
 
-
-# Step #1: Define your response structure
-class President(Struct):
-    name: str
-    age: Annotated[int, Meta(ge=40, le=107)]
+## Example #1: Structured outputs
+class Joke(Struct):
+    joke: str
 
 
-class PresidentsResponse(Struct):
-    presidents: list[President]
+output = CompletionEngine().complete(
+    prompt="Tell me a joke",
+    response_format=Joke
+) # evaluates to CompletionOutput[Joke]
 
+choices = output.choices # Evaluates to list[MessageChoice[Joke]]
+message = output.choices[0].message # Evaluates to CompletionMessage[Joke]
+parsed = message.parsed # Evaluates to Joke.
 
-async def main():
-    # Call the CompletionEngine
-    engine = CompletionEngine()
-    response: CompletionOutput[PresidentsResponse] = await engine.complete_async(
-        prompt="What were the presidents of the USA until your knowledge?",
-        response_format=PresidentsResponse,
-    )
+# You can easily get the parsed output like this:
 
-    # Manipulate the response as you want.
-    presidents_response: PresidentsResponse = response.get_parsed()
-    print(f"First president name is {presidents_response.presidents[0].name}")
-    print(f"First president age is {presidents_response.presidents[0].age}")
-
-
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except RuntimeError:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.ensure_future(main())
-        else:
-            loop.run_until_complete(main())
+# The following still evaluates to Joke:
+easy_parsed = output.get_parsed() # You can pass the choice number as well, default is 0
 ```
 
 **Switching Providers:** Change AI providers by simply modifying the `model` parameter. Ensure the necessary environment variables for your chosen provider are set.
@@ -150,7 +130,374 @@ response = engine.chat(
 presidents_response: Presidentsresponse = response.get_parsed()
 print(presidents_response)
 ```
+## 🛠️ **Complete `CompletionEngine.chat()` Usage Example**
 
+This section demonstrates how to use the `CompletionEngine.chat()` method with all available parameters. By following this example, you'll gain a clear understanding of how to leverage each parameter to customize your AI-powered chat interactions effectively.
+
+### **1. Import Required Modules**
+
+Begin by importing all necessary modules and classes. Ensure that you have the required environment variables set, especially if you're integrating with Langfuse or using specific AI models.
+
+```python
+import os
+import asyncio
+from dotenv import load_dotenv
+from msgspec import Struct
+from langfuse import Langfuse
+from google.oauth2 import service_account
+
+from intellibricks import CompletionEngine, Message, Prompt
+from intellibricks.config import CacheConfig
+from intellibricks.constants import AIModel, MessageRole
+from intellibricks.schema import Message
+from intellibricks.types import TraceParams
+from intellibricks.exceptions import MaxRetriesReachedException
+from intellibricks.rag.contracts import RAGQueriable
+
+# Example custom tool function
+def your_custom_tool_function(*args, **kwargs):
+    # Implement your custom tool logic here
+    pass
+
+# Example RAG data store
+class YourRAGDataStore(RAGQueriable):
+    # Implement the required methods for your RAG data store
+    async def query_async(self, query: str) -> "QueryResult":
+        # Your asynchronous query implementation
+        pass
+
+    def query(self, query: str) -> "QueryResult":
+        # Your synchronous query implementation
+        pass
+```
+
+### **2. Load Environment Variables**
+
+Ensure that environment variables are loaded, especially if you're using `.env` files to manage sensitive information like API keys.
+
+```python
+load_dotenv(override=True)
+```
+
+### **3. Define Structured Response Models**
+
+Define any structured data models you expect from the AI responses. This ensures that the responses are deserialized into well-defined Python objects.
+
+```python
+class President(Struct):
+    name: str
+    age: int
+
+class PresidentsResponse(Struct):
+    presidents: list[President]
+```
+
+### **4. Initialize Langfuse (Optional)**
+
+If you want to integrate with Langfuse for enhanced observability, initialize the Langfuse client with your credentials.
+
+```python
+langfuse_client = Langfuse(
+    public_key=os.environ.get("LANGFUSE_PUBLIC_KEY"),
+    secret_key=os.environ.get("LANGFUSE_SECRET_KEY"),
+)
+```
+
+### **5. Configure Vertex AI Credentials (Optional)**
+
+If you're using Vertex AI models, set up the necessary credentials.
+
+```python
+vertex_credentials = service_account.Credentials.from_service_account_file(
+    "path/to/your/vertex_credentials.json"
+)
+```
+
+### **6. Initialize the CompletionEngine**
+
+Instantiate the `CompletionEngine`, passing in optional parameters like `langfuse`, custom JSON encoders/decoders, and Vertex AI credentials.
+
+```python
+engine = CompletionEngine(
+    langfuse=langfuse_client,  # Optional: Integrate with Langfuse
+    json_encoder=None,          # Optional: Use a custom JSON encoder
+    json_decoder=None,          # Optional: Use a custom JSON decoder
+    vertex_credentials=vertex_credentials  # Optional: Vertex AI credentials
+)
+```
+
+### **7. Set Up Cache Configuration (Optional)**
+
+Configure caching to optimize performance and reduce redundant AI calls. The `CacheConfig` allows you to enable or disable caching, set the time-to-live (TTL) for cache entries, and define a cache key to identify cached data. The cache configuration, currently, is done by a runtime dictionary mapping. The intention is to make it more robust.
+
+```python
+from datetime import timedelta
+
+cache_config = CacheConfig(
+    enabled=True,  # Enable caching
+    ttl=timedelta(minutes=10),  # Set TTL to 10 minutes
+    cache_key='user_session_prompt'  # Define a unique cache key
+)
+
+# **Example:**
+# >>> cache_config = CacheConfig(enabled=True, ttl=timedelta(seconds=60), cache_key='user_prompt')
+```
+
+### **8. Define Trace Parameters (Optional)**
+
+Set up tracing parameters to monitor and debug your completions. The `TraceParams` allows you to provide metadata and context information for better observability within the Langfuse UI.
+
+```python
+trace_params = TraceParams(
+    name="ChatCompletionTrace",
+    user_id="user_12345",
+    session_id="session_67890",
+    metadata={"feature": "chat_completion"},
+    tags=["chat", "completion"],
+    public=False
+)
+
+# **Example:**
+# >>> trace_params = TraceParams(user_id="user_123", session_id="session_456")
+# >>> print(trace_params)
+# {'user_id': 'user_123', 'session_id': 'session_456'}
+```
+
+### **9. Prepare Chat Messages**
+
+Create a list of `Message` objects representing the conversation history.
+
+```python
+messages = [
+    Message(role=MessageRole.SYSTEM, content="You are a knowledgeable assistant."),
+    Message(role=MessageRole.USER, content="Hello! Can you help me with some information?"),
+    Message(role=MessageRole.ASSISTANT, content="Of course! What do you need assistance with?"),
+    Message(role=MessageRole.USER, content="I'm interested in knowing the current presidents of various countries.")
+]
+```
+
+### **10. Initialize RAG Data Stores (Optional)**
+
+If you're utilizing Retrieval Augmented Generation (RAG), initialize your data stores.
+
+```python
+rag_data_store = YourRAGDataStore()
+```
+
+### **11. Make a `chat` Request with All Parameters**
+
+Use the `chat` method to engage in a multi-turn conversation, utilizing all available parameters for maximum control and customization.
+
+```python
+try:
+    chat_response = engine.chat(
+        messages=messages,  # The conversation history
+        response_format=PresidentsResponse,  # Structured response format
+        model=AIModel.GPT_4O,  # Primary AI model
+        fallback_models=[AIModel.STUDIO_GEMINI_1P5_FLASH, AIModel.GPT_3_5_TURBO],  # Fallback models
+        n=2,  # Number of responses to generate
+        temperature=0.7,  # Creativity of the responses
+        stream=True,  # Enable streaming of responses
+        max_tokens=500,  # Maximum tokens per response
+        max_retries=3,  # Maximum number of retry attempts
+        cache_config=cache_config,  # Cache configuration
+        trace_params=trace_params,  # Tracing parameters for monitoring
+        postergate_token_counting=False,  # Immediate token counting
+        tools=[your_custom_tool_function],  # Custom tool functions
+        data_stores=[rag_data_store],  # RAG data stores for context-aware responses
+        web_search=True  # Enable web search capabilities
+    )
+
+    # Access the parsed structured response
+    presidents_response: PresidentsResponse = chat_response.get_parsed()
+    for president in presidents_response.presidents:
+        print(f"President: {president.name}, Age: {president.age}")
+
+except MaxRetriesReachedException:
+    print("Failed to generate a chat response after maximum retries.")
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+```
+
+### **12. Asynchronous `chat_async` Request (Optional)**
+
+For applications that benefit from asynchronous operations, use the `chat_async` method with all parameters.
+
+```python
+async def async_chat_example():
+    try:
+        chat_response = await engine.chat_async(
+            messages=messages,  # The conversation history
+            response_format=PresidentsResponse,  # Structured response format
+            model=AIModel.GPT_4O,  # Primary AI model
+            fallback_models=[AIModel.STUDIO_GEMINI_1P5_FLASH, AIModel.GPT_3_5_TURBO],  # Fallback models
+            n=2,  # Number of responses to generate
+            temperature=0.7,  # Creativity of the responses
+            stream=True,  # Enable streaming of responses
+            max_tokens=500,  # Maximum tokens per response
+            max_retries=3,  # Maximum number of retry attempts
+            cache_config=cache_config,  # Cache configuration
+            trace_params=trace_params,  # Tracing parameters for monitoring
+            postergate_token_counting=False,  # Immediate token counting
+            tools=[your_custom_tool_function],  # Custom tool functions
+            data_stores=[rag_data_store],  # RAG data stores for context-aware responses
+            web_search=True  # Enable web search capabilities
+        )
+
+        # Access the parsed structured response
+        presidents_response: PresidentsResponse = chat_response.get_parsed()
+        for president in presidents_response.presidents:
+            print(f"President: {president.name}, Age: {president.age}")
+
+    except MaxRetriesReachedException:
+        print("Failed to generate a chat response after maximum retries.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+# Run the asynchronous chat example
+asyncio.run(async_chat_example())
+```
+
+### **13. Custom Prompt Compilation**
+
+Use the `Prompt` class to create dynamic prompts with placeholders, ensuring flexibility in your interactions.
+
+```python
+# Define a prompt template with placeholders
+prompt_template = Prompt(content="My name is {{name}}. I am {{age}} years old.")
+
+# Compile the prompt with actual values
+compiled_prompt = prompt_template.compile(name="Alice", age=30)
+
+print(compiled_prompt)  # Output: My name is Alice. I am 30 years old.
+```
+
+### **14. Handling Exceptions and Retries**
+
+The `CompletionEngine` automatically handles retries based on the `max_retries` parameter. However, it's good practice to handle exceptions gracefully in your application.
+
+```python
+try:
+    output = engine.chat(
+        messages=messages,
+        response_format=None,  # No structured response
+        model=AIModel.GPT_4O,
+        max_retries=5,
+        # ... other parameters
+    )
+    print(output.get_message().content)
+
+except MaxRetriesReachedException:
+    print("Unable to generate a response after multiple attempts. Please try again later.")
+
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+```
+
+### **15. Integrating with Retrieval Augmented Generation (RAG)**
+
+Leverage RAG capabilities by connecting to your knowledge bases for context-aware AI responses.
+
+```python
+# Initialize your RAG data store
+rag_data_store = YourRAGDataStore()
+
+# Make a completion request with RAG integration
+try:
+    output = engine.chat(
+        messages=messages,
+        response_format=None,
+        data_stores=[rag_data_store],  # Integrate RAG data stores
+        web_search=True,  # Enable web search for enhanced responses
+        # ... other parameters
+    )
+    print(output.get_message().content)
+
+except MaxRetriesReachedException:
+    print("Failed to retrieve information after multiple attempts.")
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+```
+
+---
+
+## 🔍 **Parameter Breakdown**
+
+Here's a detailed explanation of each parameter used in the `CompletionEngine.chat()` method:
+
+| **Parameter**               | **Type**                              | **Description**                                                                                                                                                                                                                                                                                 |
+|-----------------------------|---------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `messages`                  | `list[Message]`                       | **Required.** A list of `Message` objects representing the conversation history. Each message has a `role` (e.g., `SYSTEM`, `USER`, `ASSISTANT`) and `content`.                                                                                                                                 |
+| `response_format`           | `Type[T]` or `None`                   | **Optional.** A structured data model (subclass of `msgspec.Struct`) to deserialize the AI's response. If `None`, the response remains unstructured (`str`).                                                                                                                                    |
+| `model`                     | `AIModel` or `None`                    | **Optional.** Specifies the primary AI model to use for generating responses. Defaults to `AIModel.STUDIO_GEMINI_1P5_FLASH` if not provided.                                                                                                                                                   |
+| `fallback_models`           | `list[AIModel]` or `None`              | **Optional.** A list of alternative AI models to try if the primary model fails to generate a response.                                                                                                                                                                                           |
+| `n`                         | `int` or `None`                        | **Optional.** The number of completions to generate. Defaults to `1` if not specified.                                                                                                                                                                                                            |
+| `temperature`               | `float` or `None`                      | **Optional.** Controls the creativity of the AI's responses. Higher values (e.g., `0.8`) make output more random, while lower values (e.g., `0.2`) make it more focused and deterministic.                                                                                                          |
+| `stream`                    | `bool` or `None`                       | **Optional.** If `True`, streams the response as it's generated, allowing for real-time applications. Defaults to `False`.                                                                                                                                                                         |
+| `max_tokens`                | `int` or `None`                        | **Optional.** The maximum number of tokens to generate in the response. Defaults to `5000` if not specified.                                                                                                                                                                                         |
+| `max_retries`               | `Literal[1, 2, 3, 4, 5]` or `None`      | **Optional.** The maximum number of retry attempts if the AI model fails to generate a response. Defaults to `1` if not specified.                                                                                                                                                                 |
+| `cache_config`              | `CacheConfig` or `None`                | **Optional.** Configuration settings for caching system prompts in AI providers. This includes:
+- `enabled` (`bool`): Indicates whether caching is enabled. When set to `True`, system prompts will be cached to improve performance by reducing redundant computations and API calls. **Default:** `False`.
+  
+- `ttl` (`Union[int, datetime.timedelta]`): Specifies the time-to-live for cache entries. It can be defined either as an integer representing seconds or as a `datetime.timedelta` object for more precise control. **Default:** `datetime.timedelta(seconds=0)`.
+  
+- `cache_key` (`str`): Defines the key used to identify cached system prompts. This key is essential for storing and retrieving cache entries consistently. **Default:** `'default'`.
+  
+**Example:**
+```python
+cache_config = CacheConfig(
+    enabled=True,
+    ttl=timedelta(minutes=10),
+    cache_key='user_session_prompt'
+)
+```
+|
+| `trace_params`              | `TraceParams` or `None`                | **Optional.** Parameters for updating the current trace, including metadata and context information. This includes:
+- `name` (`Optional[str]`): Identifier of the trace. Useful for sorting and filtering in the UI.
+- `input` (`Optional[Any]`): The input parameters of the trace, providing context about the observed operation or function call.
+- `output` (`Optional[Any]`): The output or result of the trace.
+- `user_id` (`Optional[str]`): The ID of the user that triggered the execution. Used to provide user-level analytics.
+- `session_id` (`Optional[str]`): Used to group multiple traces into a session in Langfuse. Typically your own session or thread identifier.
+- `version` (`Optional[str]`): The version of the trace type. Helps in understanding how changes to the trace type affect metrics and is useful for debugging.
+- `release` (`Optional[str]`): The release identifier of the current deployment. Helps in understanding how changes in different deployments affect metrics and is useful for debugging.
+- `metadata` (`Optional[Any]`): Additional metadata for the trace. Can be any JSON-serializable object. Metadata is merged when updated via the API.
+- `tags` (`Optional[list[str]]`): Tags used to categorize or label traces. Traces can be filtered by tags in the Langfuse UI and through the GET API.
+- `public` (`Optional[bool]`): Indicates whether the trace is public. If set to `True`, the trace is accessible publicly; otherwise, it remains private.
+  
+**Example:**
+```python
+trace_params = TraceParams(
+    name="ChatCompletionTrace",
+    user_id="user_12345",
+    session_id="session_67890",
+    metadata={"feature": "chat_completion"},
+    tags=["chat", "completion"],
+    public=False
+)
+```
+|
+| `postergate_token_counting` | `bool`                                 | **Optional.** Determines whether token counting is deferred. If `True`, token usage is not immediately calculated, which can improve performance but delays cost tracking. **Default:** `True`.                                                           |
+| `tools`                     | `list[Callable[..., Any]]` or `None`    | **Optional.** A list of custom tool functions to extend the engine's capabilities. These tools can perform additional processing or integrate with other services as needed.                                                                                       |
+| `data_stores`               | `Sequence[RAGQueriable]` or `None`      | **Optional.** A list of data stores to integrate with Retrieval Augmented Generation (RAG) for context-aware responses. These data stores allow the AI to query external knowledge bases to enhance its responses.                                                     |
+| `web_search`                | `bool` or `None`                       | **Optional.** If `True`, enables web search capabilities to enhance the AI's responses with up-to-date information from the internet. **Default:** `False`.                                                                                                           |
+
+---
+
+## 💡 **Key Points to Consider**
+
+- **Structured Responses:** Utilizing the `response_format` parameter with `msgspec.Struct` models ensures that AI responses adhere to a predefined structure, facilitating easier downstream processing and validation.
+
+- **Fallback Models:** Specifying `fallback_models` enhances the resilience of your application by providing alternative AI models in case the primary model encounters issues or fails to generate a response.
+
+- **Asynchronous Operations:** Leveraging `chat_async` allows your application to handle multiple concurrent AI interactions efficiently, improving overall performance and responsiveness.
+
+- **Caching:** Properly configuring `cache_config` can significantly optimize performance and reduce costs by avoiding redundant AI calls for identical prompts.
+
+- **Tracing and Monitoring:** Integrating with Langfuse and utilizing `trace_params` provides deep insights into your AI interactions, enabling effective monitoring, debugging, and cost tracking.
+
+- **Error Handling:** Implement robust error handling to gracefully manage failures, especially when dealing with external AI services. The `MaxRetriesReachedException` helps in identifying when maximum retry attempts have been exhausted.
+
+- **Security:** Always handle sensitive information, such as API keys and credentials, securely. Use environment variables or secure secret management systems to protect your data.
 
 ### Training Machine Learning Models
 
@@ -255,7 +602,7 @@ engine = CompletionEngine(langfuse=langfuse_client)
 
 ## Coming Soon
 
-* **Enhanced RAG:** A more robust RAG implementation for seamless integration with diverse knowledge sources.
+* **Enhanced RAG:** A more robust RAG implementation for seamless integration with diverse knowledge sources. The intention is to create adapters for each vector store so by doing this the interfaces are compatible with each other.
 * **Unified Document Parsing** Stop wasting time choosing the right library for parsing pdfs. We will chose the right one for you (and let you choose to of course), with our DocumentArtifact model, it will be easily convertable to llama_index and langchain documents. You can pass your transformations too. We will offer support for NER and Relations extraction too. The intent is to use MinerU for PDFs, and Docling for the rest. Example: 
 
 ```py
