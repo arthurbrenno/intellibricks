@@ -4,7 +4,7 @@ Welcome to **IntelliBricks**—your streamlined toolkit for developing AI-powere
 
 > ⚠️ **Warning:**  
 > *This project is currently under development and is **not ready for production**.*  
-> If you resonate with our vision, please consider supporting the project to help bring it to life! This is a personal endeavor I've nurtured for months and am excited to open source.
+> If you resonate with our vision, please consider supporting the project to help bring it to life! This is a personal endeavor I've nurtured for months and am excited to open source it. I work during the day and attend university classes at night. That’s why the support of the community is essential—I can’t do this alone. I’m excited to share this journey with you! The plan is to launch in 2025.
 
 ---
 
@@ -78,18 +78,16 @@ from intellibricks import CompletionEngine
 class Joke(Struct):
     joke: str
 
-output = CompletionEngine().complete(
-    prompt="Tell me a joke",
-    response_format=Joke
-)
+# One line to rule them all 🔥
+output = CompletionEngine().complete(prompt="Tell me a joke", response_format=Joke)
 
-joke = output.get_parsed()
-
-print(joke)  # Joke object
+print(output.get_parsed())  # Joke obj
 ```
+
 **Highlights:**
 - **3 Easy Steps:** Define your structured output, call `complete()`, and parse the result.
 - **No Boilerplate:** Forget about `OutputParsers` and repetitive code.
+- **Environment Keys:** Make sure to have the correct model provider API_KEY in your enviroment and to use load_dotenv() to load them.
 
 
 ## How to do it with LangChain 🦜️🔗
@@ -169,6 +167,31 @@ parsed = message.parsed  # Joke
 # Easily get the parsed output
 easy_parsed = output.get_parsed()  # Defaults to choice 0
 ```
+
+## 🎯 My Goal: A Quick Breakdown
+
+The primary goal of **IntelliBricks** is to make developers' lives easier by simplifying the process of building intelligent applications. I strive to provide an intuitive, feature-rich toolkit that abstracts complexity, enabling users to focus on their application's unique logic.
+
+A cornerstone of this vision is ensuring **perfect type hints** for tools like `mypy` and modern IDEs. By prioritizing robust and accurate type annotations, IntelliBricks aims to offer a seamless and productive development experience, reducing errors and enhancing code clarity across the entire stack.
+
+I also **AVOID** using `**kwargs`, unlike many frameworks that rely on it extensively. While `**kwargs` can offer flexibility, I believe it harms clarity and significantly detracts from the developer experience. Here's why:
+
+1. **Lack of Explicitness:**  
+   `**kwargs` obscures the actual parameters a function or method accepts, forcing developers to constantly refer to documentation or source code to understand the expected arguments.
+
+2. **Reduced IDE Support:**  
+   IDEs and type checkers struggle to provide accurate autocompletion and type hints for `**kwargs`. This lack of support can lead to errors and slow down development.
+
+3. **Error-Prone Code:**  
+   Misspelled or unexpected arguments can slip through unnoticed because `**kwargs` doesn’t validate the provided keys, leading to potential runtime errors.
+
+4. **Harder to Maintain:**  
+   Over time, as code evolves, the use of `**kwargs` can make it challenging to track which arguments are required or optional, increasing the cognitive load on developers maintaining the code.
+
+5. **Less Readable Code:**  
+   Code that relies heavily on `**kwargs` sacrifices readability, making it harder for teams to collaborate and for new developers to onboard effectively.
+
+Instead of `**kwargs`, I prefer defining explicit parameters with detailed type hints. This approach ensures clarity, enhances IDE support, and improves the overall developer experience, aligning with IntelliBricks' mission to make development intuitive and enjoyable.
 
 **Switching Providers:**
 

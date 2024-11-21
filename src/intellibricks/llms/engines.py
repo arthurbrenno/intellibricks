@@ -9,6 +9,10 @@ import uuid
 
 import aiocache
 import msgspec
+from architecture import BaseModel, DynamicDict
+from architecture.extensions import Maybe
+from architecture.logging import LoggerFactory
+from architecture.utils.creators import DynamicInstanceCreator
 from google.generativeai.types import HarmBlockThreshold, HarmCategory
 from google.oauth2 import service_account
 from langfuse import Langfuse
@@ -20,12 +24,9 @@ from langfuse.client import (
 from langfuse.model import ModelUsage
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import LLM
-from architecture import BaseModel, DynamicDict
-from architecture.extensions import Maybe
-from architecture.logging import LoggerFactory
-from architecture.utils.creators import DynamicInstanceCreator
 
 from intellibricks import util
+from intellibricks.llms.web_search import WebSearchable
 from intellibricks.rag.contracts import RAGQueriable
 
 from .config import CacheConfig
@@ -65,7 +66,7 @@ class CompletionEngineProtocol(typing.Protocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -87,7 +88,7 @@ class CompletionEngineProtocol(typing.Protocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -108,7 +109,7 @@ class CompletionEngineProtocol(typing.Protocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -129,7 +130,7 @@ class CompletionEngineProtocol(typing.Protocol):
         *,
         messages: list[Message],
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -150,7 +151,7 @@ class CompletionEngineProtocol(typing.Protocol):
         *,
         messages: list[Message],
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -170,7 +171,7 @@ class CompletionEngineProtocol(typing.Protocol):
         *,
         messages: list[Message],
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -192,7 +193,7 @@ class CompletionEngineProtocol(typing.Protocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -214,7 +215,7 @@ class CompletionEngineProtocol(typing.Protocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -235,7 +236,7 @@ class CompletionEngineProtocol(typing.Protocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -256,7 +257,7 @@ class CompletionEngineProtocol(typing.Protocol):
         *,
         messages: list[Message],
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -277,7 +278,7 @@ class CompletionEngineProtocol(typing.Protocol):
         *,
         messages: list[Message],
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -297,7 +298,7 @@ class CompletionEngineProtocol(typing.Protocol):
         *,
         messages: list[Message],
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -316,6 +317,7 @@ class CompletionEngineProtocol(typing.Protocol):
 class CompletionEngine(CompletionEngineProtocol):
     langfuse: Maybe[Langfuse]
     vertex_credentials: Maybe[service_account.Credentials]
+    web_searcher: typing.Optional[WebSearchable] = None
     json_encoder: msgspec.json.Encoder
     json_decoder: msgspec.json.Decoder
 
@@ -326,11 +328,15 @@ class CompletionEngine(CompletionEngineProtocol):
         json_encoder: typing.Optional[msgspec.json.Encoder] = None,
         json_decoder: typing.Optional[msgspec.json.Decoder] = None,
         vertex_credentials: typing.Optional[service_account.Credentials] = None,
+        web_searcher: typing.Optional[
+            WebSearchable
+        ] = None,  # TODO: not working yet. Tryng to manage my time for that (work + university)
     ) -> None:
         self.langfuse = Maybe(langfuse or None)
         self.json_encoder = json_encoder or msgspec.json.Encoder()
         self.json_decoder = json_decoder or msgspec.json.Decoder()
         self.vertex_credentials = Maybe(vertex_credentials or None)
+        self.web_searcher = web_searcher
 
     @typing.overload
     def complete(
@@ -339,7 +345,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -361,7 +367,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -382,7 +388,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -435,7 +441,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -456,7 +462,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -476,7 +482,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -544,7 +550,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -566,7 +572,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -587,7 +593,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: typing.Union[str, Prompt],
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -640,7 +646,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -661,7 +667,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -681,7 +687,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -718,7 +724,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: typing.Type[T],
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -739,7 +745,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: None = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -759,7 +765,7 @@ class CompletionEngine(CompletionEngineProtocol):
         *,
         messages: list[Message],
         response_format: typing.Optional[typing.Type[T]] = None,
-        model: typing.Optional[AIModel] = None,
+        model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: typing.Optional[list[AIModel]] = None,
         n: typing.Optional[int] = None,
         temperature: typing.Optional[float] = None,
@@ -786,7 +792,6 @@ class CompletionEngine(CompletionEngineProtocol):
 
         choices: list[MessageChoice[T]] = []
 
-        model = model or AIModel.STUDIO_GEMINI_1P5_FLASH
         fallback_models = fallback_models or []
         n = n or 1
         temperature = temperature or 0.7
@@ -825,6 +830,7 @@ class CompletionEngine(CompletionEngineProtocol):
                         trace=trace,
                         span=maybe_span,
                         postergate_token_counting=postergate_token_counting,
+                        language=language,
                     )
 
                     logger.info(
@@ -869,40 +875,6 @@ class CompletionEngine(CompletionEngineProtocol):
 
         raise MaxRetriesReachedException()
 
-    # @typing.overload
-    # async def _aget_choices(
-    #     self,
-    #     *,
-    #     model: AIModel,
-    #     messages: list[Message],
-    #     n: int,
-    #     temperature: float,
-    #     stream: bool,
-    #     max_tokens: int,
-    #     trace: Maybe[StatefulTraceClient],
-    #     span: Maybe[StatefulSpanClient],
-    #     cache_config: CacheConfig,
-    #     postergate_token_counting: bool,
-    #     response_format: typing.Type[T],
-    # ) -> typing.Tuple[list[MessageChoice[T]], Usage]: ...
-
-    # @typing.overload
-    # async def _aget_choices(
-    #     self,
-    #     *,
-    #     model: AIModel,
-    #     messages: list[Message],
-    #     n: int,
-    #     temperature: float,
-    #     stream: bool,
-    #     max_tokens: int,
-    #     trace: Maybe[StatefulTraceClient],
-    #     span: Maybe[StatefulSpanClient],
-    #     cache_config: CacheConfig,
-    #     postergate_token_counting: bool,
-    #     response_format: None,
-    # ) -> typing.Tuple[list[MessageChoice[None]], Usage]: ...
-
     async def _aget_choices(
         self,
         *,
@@ -916,6 +888,7 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: CacheConfig,
         postergate_token_counting: bool,
         response_format: typing.Optional[typing.Type[T]],
+        language: Language,
     ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
         choices: list[MessageChoice[T]] = []
         model_input_cost, model_output_cost = model.ppm()
@@ -937,6 +910,7 @@ class CompletionEngine(CompletionEngineProtocol):
                 current_messages = self._append_response_format_to_prompt(
                     messages=current_messages,
                     response_format=response_format,
+                    language=language,
                 )
 
             generation: Maybe[StatefulGenerationClient] = span.map(
@@ -1225,11 +1199,87 @@ class CompletionEngine(CompletionEngineProtocol):
 
         return model
 
+    def _get_structured_prompt_instructions_by_language(
+        self, language: Language, schema: dict[str, typing.Any]
+    ) -> str:
+        match language:
+            case Language.ENGLISH:
+                return f"""
+                    <output>
+                        Inside a "<structured>" tag, the assistant will return an output formatted in JSON, which complies with the following JSON schema:
+                        <json_schema>
+                        {schema}
+                        </json_schema>
+                        The JSON returned by the assistant, within the tag, must adhere to the schema mentioned above and take into account the instructions provided in the given task. The assistant must close the tag with </structured>.
+                    </output>
+                """
+            case Language.SPANISH:
+                return f"""
+                    <output>
+                        Dentro de una etiqueta "<structured>", el asistente devolverá una salida formateada en JSON, que cumple con el siguiente esquema JSON:
+                        <json_schema>
+                        {schema}
+                        </json_schema>
+                        El JSON devuelto por el asistente, dentro de la etiqueta, debe adherirse al esquema mencionado anteriormente y tener en cuenta las instrucciones proporcionadas en la tarea dada. El asistente debe cerrar la etiqueta con </structured>.
+                    </output>
+                """
+            case Language.FRENCH:
+                return f"""
+                    <output>
+                        À l'intérieur d'une balise "<structured>", l'assistant renverra une sortie formatée en JSON, qui est conforme au schéma JSON suivant :
+                        <json_schema>
+                        {schema}
+                        </json_schema>
+                        Le JSON renvoyé par l'assistant, à l'intérieur de la balise, doit respecter le schéma mentionné ci-dessus et prendre en compte les instructions fournies dans la tâche donnée. L'assistant doit fermer la balise avec </structured>.
+                    </output>
+                """
+            case Language.GERMAN:
+                return f"""
+                    <output>
+                        Innerhalb eines "<structured>"-Tags gibt der Assistent eine Ausgabe im JSON-Format zurück, die dem folgenden JSON-Schema entspricht:
+                        <json_schema>
+                        {schema}
+                        </json_schema>
+                        Das vom Assistenten zurückgegebene JSON innerhalb des Tags muss dem oben genannten Schema entsprechen und die in der gegebenen Aufgabe angegebenen Anweisungen berücksichtigen. Der Assistent muss das Tag mit </structured> schließen.
+                    </output>
+                """
+            case Language.CHINESE:
+                return f"""
+                    <output>
+                        在 "<structured>" 标签内，助手将以 JSON 格式返回输出，符合以下 JSON 模式：
+                        <json_schema>
+                        {schema}
+                        </json_schema>
+                        助手在标签内返回的 JSON 必须遵守上述模式，并考虑到给定任务中提供的说明。助手必须用 </structured> 关闭标签。
+                    </output>
+                """
+            case Language.JAPANESE:
+                return f"""
+                    <output>
+                        "<structured>" タグ内で、アシスタントは次の JSON スキーマに準拠した JSON 形式の出力を返します:
+                        <json_schema>
+                        {schema}
+                        </json_schema>
+                        タグ内でアシスタントが返す JSON は、上記のスキーマに従い、指定されたタスクで提供された指示を考慮に入れる必要があります。アシスタントはタグを </structured> で閉じる必要があります。
+                    </output>
+                """
+            case Language.PORTUGUESE:
+                return f"""
+                    <output>
+                        Dentro de uma tag "<structured>", o assistente retornará uma saída formatada em JSON, que está em conformidade com o seguinte esquema JSON:
+                        <json_schema>
+                        {schema}
+                        </json_schema>
+                        O JSON retornado pelo assistente, dentro da tag, deve aderir ao esquema mencionado acima e levar em conta as instruções fornecidas na tarefa dada. O assistente deve fechar a tag com </structured>.
+                    </output>
+                """
+
     def _append_response_format_to_prompt(
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[typing.Type[T]],
+        response_format: typing.Type[T],
+        language: Language,
         prompt_role: typing.Optional[MessageRole] = None,
     ) -> list[Message]:
         if prompt_role is None:
@@ -1237,15 +1287,9 @@ class CompletionEngine(CompletionEngineProtocol):
 
         basemodel_schema = msgspec.json.schema(response_format)
 
-        new_prompt: str = f"""
-        <output>
-            Inside a "<structured>" tag, using the same language of the instruction above, the assistant will return an output formatted in JSON, which complies with the following JSON schema:
-            <json_schema>
-            {basemodel_schema}
-            </json_schema>
-            The JSON returned by the assistant, within the tag, must adhere to the schema mentioned above and take into account the instructions provided in the given task. The assistant must close the tag with </structured>.
-        </output>
-        """  # TODO: make a Language parameter so this can be present in different languages
+        new_prompt = self._get_structured_prompt_instructions_by_language(
+            language=language, schema=basemodel_schema
+        )
 
         for message in messages:
             if message.content is None:
