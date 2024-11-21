@@ -32,6 +32,7 @@ from .config import CacheConfig
 from .constants import (
     AIModel,
     FinishReason,
+    Language,
     MessageRole,
 )
 from .exceptions import MaxRetriesReachedException
@@ -76,6 +77,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -97,6 +99,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     def complete(
@@ -117,6 +120,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
     @typing.overload
@@ -137,6 +141,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -157,6 +162,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     def chat(
@@ -176,6 +182,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
     @typing.overload
@@ -197,6 +204,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -218,6 +226,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     async def complete_async(
@@ -238,6 +247,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
     @typing.overload
@@ -258,6 +268,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -278,6 +289,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     async def chat_async(
@@ -297,6 +309,7 @@ class CompletionEngineProtocol(typing.Protocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
 
@@ -338,6 +351,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -359,6 +373,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     def complete(
@@ -379,6 +394,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         system_prompt = (
             system_prompt
@@ -431,6 +447,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -451,6 +468,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     def chat(
@@ -470,6 +488,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         try:
             loop = asyncio.get_running_loop()
@@ -537,6 +556,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -558,6 +578,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     async def complete_async(
@@ -578,6 +599,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         system_prompt = (
             system_prompt
@@ -630,6 +652,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -650,6 +673,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     async def chat_async(
@@ -669,6 +693,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         return await self._achat(
             messages=messages,
@@ -705,6 +730,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
     @typing.overload
@@ -725,6 +751,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     async def _achat(
@@ -744,6 +771,7 @@ class CompletionEngine(CompletionEngineProtocol):
         tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
         data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
         web_search: typing.Optional[bool] = None,
+        language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         trace_params = trace_params or {}
         cache_config = cache_config or CacheConfig()

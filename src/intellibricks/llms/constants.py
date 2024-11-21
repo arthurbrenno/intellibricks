@@ -14,6 +14,16 @@ from llama_index.llms.openai import OpenAI
 from intellibricks.llms.custom_llms import EnhancedVertexAI
 
 
+class Language(str, Enum):
+    ENGLISH = "en"
+    SPANISH = "es"
+    FRENCH = "fr"
+    GERMAN = "de"
+    CHINESE = "zh"
+    JAPANESE = "ja"
+    PORTUGUESE = "pt"
+
+
 class MessageRole(str, Enum):
     """Represents the role of a message."""
 
