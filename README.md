@@ -673,23 +673,31 @@ engine = CompletionEngine(langfuse=langfuse_client)
 
   ```python
   extractor: FileExtractorProtocol = ...  # In development
-  document = extractor.extract(RawFile.from_file("./documents"))  # Or RawFile from upload
-  document.as_langchain_docs(transformations=[SemanticChunker(...)])
+  
+  # Example #1 - From file in filesystem:
+  document_artifact_1 = extractor.extract(RawFile.from_file("./documents/some_file.pdf"))
+
+  # Example #2 - From an uplodaded file: 
+  # Imagine you're ingesting documents into a vector store, but you don't have them yet. Extract from uploaded files will be possible
+  document_artifact_2 = extractor.extract(RawFile.from_litestar_uploadfile(some_litestar_upload_file))
+  document_artifact_3 = extractor.extract(RawFile.from_fastapi_uploadfile(some_fastapi_upload_file))
+  
+  
+  langchain_documents = document.as_langchain_docs(transformations=[SemanticChunker(...)])
   # Done. Now you can ingest your doc into 
-  vector_store.add_documents(documents)  # Langchain example
+  vector_store.add_documents(langchain_documents)  # Langchain example
   ```
 
 ---
 
 ## 📖 Documentation
 
-For more detailed information and API references, please refer to the comprehensive [IntelliBricks documentation](https://link-to-docs.com). *(In development)*
-
+For now, the only documentation available is here in GitHub. I work as a software developer, so I'm trying to manage my time for this project too.
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions to IntelliBricks! Whether it's reporting issues, suggesting features, or submitting pull requests, your involvement is invaluable. Please see our [contribution guidelines](https://link-to-contribution-guidelines.com). *(In development)*
+We welcome contributions to IntelliBricks! Whether it's reporting issues, suggesting features, or submitting pull requests, your involvement is invaluable.
 
 ---
 
@@ -703,20 +711,7 @@ We welcome contributions to IntelliBricks! Whether it's reporting issues, sugges
 
 Join our community to stay updated, share your projects, and get support:
 
-- **GitHub Discussions:** [IntelliBricks Discussions](https://github.com/your-repo/discussions)
-- **Twitter:** [@IntelliBricks](https://twitter.com/IntelliBricks)
-- **Email:** [support@intellibricks.com](mailto:support@intellibricks.com)
-
----
-
-## 📈 Showcase
-
-Check out some of the amazing projects built with IntelliBricks:
-
-- **Project A:** Description and link.
-- **Project B:** Description and link.
-- **Project C:** Description and link.
-
+- **GitHub Discussions:** [IntelliBricks Discussions](https://github.com/arthurbrenno/intellibricks/discussions)
 ---
 
 Thank you for choosing **IntelliBricks**!
