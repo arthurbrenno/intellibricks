@@ -173,7 +173,7 @@ wheels = [
 
 [[package]]
 name = "architecture"
-version = "0.1.7"
+version = "0.1.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiocache" },
@@ -181,9 +181,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9f/a5/a79dcbfbd1f3c75845a0675c9490eddf2162976bc5d39975e2fce58bf7ae/architecture-0.1.7.tar.gz", hash = "sha256:97b0efa6349b3dd109e5cb86c0fad15f2df21b7d9ec8a8fd010fb211a98feaa4", size = 42159 }
+sdist = { url = "https://files.pythonhosted.org/packages/e9/10/c4665daba7ea916f11bae31da1decf96117d09806318750dcbfc6fe8eda7/architecture-0.1.8.tar.gz", hash = "sha256:f69e0ae7ffc96d79234c20664acc4f6f94420b3b946b33453630a586bfc64b35", size = 42160 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/94/2722acc1ee34e781d9eaaf08af995b998db2781d62e2a7d34e4eb7fa41ea/architecture-0.1.7-py3-none-any.whl", hash = "sha256:c87a88799a966ea1d51d1743ecd75b8238eadbc08343f623866d9f2ea98a62c0", size = 24414 },
+    { url = "https://files.pythonhosted.org/packages/c3/3e/fed441b3cd6d79d11416c0c3414ffb93ed190bbd5f3b09774c97c3543cdf/architecture-0.1.8-py3-none-any.whl", hash = "sha256:bf68ceddf91af81725d8d83fdc1185c5c219de144313526eb526b34149fbfe74", size = 24420 },
 ]
 
 [[package]]
@@ -1238,7 +1238,7 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.2.13"
+version = "0.2.14"
 source = { editable = "." }
 dependencies = [
     { name = "aiocache" },
@@ -1280,7 +1280,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiocache", specifier = ">=0.12.3" },
-    { name = "architecture", specifier = ">=0.1.7" },
+    { name = "architecture", specifier = ">=0.1.8" },
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
     { name = "firebase-admin", specifier = ">=6.6.0" },
     { name = "graphviz", specifier = ">=0.20.3" },
