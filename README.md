@@ -201,6 +201,50 @@ app = Litestar([get_joke])
 
 ---
 
+## 🌐 Integrating IntelliBricks with FastAPI
+
+Create a simple API endpoint using the [FastAPI](https://fastapi.tiangolo.com/) framework that receives a request and returns a structured response with IntelliBricks. Since FastAPI relies on Pydantic for data validation and IntelliBricks uses `msgspec.Struct`, we'll use Pydantic for the request model and encode the IntelliBricks response using `msgspec.json.encode()` before returning it.
+
+```python
+from fastapi import FastAPI, Response
+from pydantic import BaseModel
+from intellibricks import CompletionEngine, AIModel
+from msgspec import Struct
+import msgspec
+
+# Define the request model using Pydantic
+class JokeRequest(BaseModel):
+    prompt: str
+
+# Define the structured response model using msgspec
+class JokeResponse(Struct):
+    joke: str
+
+# Initialize FastAPI and CompletionEngine
+app = FastAPI()
+
+# Define the endpoint
+@app.post("/joke")
+async def get_joke(data: JokeRequest) -> Response:
+    response = CompletionEngine().complete(
+        prompt=f"The theme of the joke is: {data.prompt}",
+        system_prompt="You are an AI specialized in making the funniest jokes.",
+        response_format=JokeResponse,
+        model=AIModel.STUDIO_GEMINI_1P5_FLASH
+    )
+    joke_response = response.get_parsed()
+    encoded_response = msgspec.json.encode(joke_response)
+    return Response(content=encoded_response, media_type="application/json")
+```
+
+### 🛠️ Additional Notes
+
+- **Why Use `msgspec.json.encode()`?**
+  
+  FastAPI is designed to work seamlessly with Pydantic models for both requests and responses. However, since IntelliBricks uses `msgspec.Struct` for structured responses, directly returning `msgspec` objects isn't compatible with FastAPI's response handling. By encoding the `msgspec` structured response into JSON bytes, we can integrate IntelliBricks' structured outputs with FastAPI's response system effectively. Intellibricks will not use pydantic's BaseModel, since msgspec is way faster to serialize/desserialize in performance critical / low latency LLM applications.
+
+---
+
 ## 🛠️ Advanced Usage
 
 ### 📜 Complete `CompletionEngine.chat()` Usage Example
