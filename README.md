@@ -683,9 +683,9 @@ engine = CompletionEngine(langfuse=langfuse_client)
   document_artifact_3 = extractor.extract(RawFile.from_fastapi_uploadfile(some_fastapi_upload_file))
   
   
-  langchain_documents = document.as_langchain_docs(transformations=[SemanticChunker(...)])
+  langchain_documents = document_artifact_1.as_langchain_docs(transformations=[SemanticChunker(...)])
   # Done. Now you can ingest your doc into 
-  vector_store.add_documents(langchain_documents)  # Langchain example
+  some_vector_store.add_documents(langchain_documents)  # Langchain example
   ```
 
 ---
