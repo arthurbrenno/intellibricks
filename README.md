@@ -673,18 +673,32 @@ engine = CompletionEngine(langfuse=langfuse_client)
 
   ```python
   extractor: FileExtractorProtocol = ...  # In development
-  
-  # Example #1 - From file in filesystem:
-  document_artifact_1 = extractor.extract(RawFile.from_file("./documents/some_file.pdf"))
 
-  # Example #2 - From an uplodaded files: 
+  # Example #1 - From file in filesystem:
+  document_artifact_1 = extractor.extract(
+      RawFile.from_file("./documents/some_file.pdf"),
+      parsing_method=ParsingMethod.FAST,
+      gpu=False,
+  )
+
+  # Example #2 - From an uplodaded files:
   # Imagine you're ingesting documents into a vector store, but you don't have them yet. Extract from uploaded files will be possible
-  document_artifact_2 = extractor.extract(RawFile.from_litestar_uploadfile(some_litestar_upload_file))
-  document_artifact_3 = extractor.extract(RawFile.from_fastapi_uploadfile(some_fastapi_upload_file))
-  
-  
-  langchain_documents = document_artifact_1.as_langchain_docs(transformations=[SemanticChunker(...)])
-  # Done. Now you can ingest your doc into 
+  document_artifact_2 = extractor.extract(
+      RawFile.from_litestar_uploadfile(some_litestar_upload_file),
+      parsing_method=ParsingMethod.MEDIUM,
+      gpu=True,
+  )
+  document_artifact_3 = extractor.extract(
+      RawFile.from_fastapi_uploadfile(some_fastapi_upload_file),
+      parsing_method=ParsingMethod.PROFESSIONAL,
+      gpu=False,
+  )
+
+
+  langchain_documents = document_artifact_1.as_langchain_docs(
+      transformations=[SemanticChunker(...)]
+  )
+  # Done. Now you can ingest your doc into
   some_vector_store.add_documents(langchain_documents)  # Langchain example
   ```
 
