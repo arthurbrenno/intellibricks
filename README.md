@@ -692,7 +692,7 @@ engine = CompletionEngine(langfuse=langfuse_client)
 
 ## 📖 Documentation
 
-For now, the only documentation available is here in GitHub. I work as a software developer, so I'm trying to manage my time for this project too.
+For now, the only documentation available is here in GitHub. I work as a Software Architect | Engineer, so I'm trying to manage my time for this project too.
 ---
 
 ## 🤝 Contributing
