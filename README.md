@@ -108,7 +108,7 @@ model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
 structured_llm = model.with_structured_output(Joke)
 
 joke = structured_llm.invoke(
-    "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
+    "Tell me a joke about cats"
 ) # Joke object
 
 print(joke)
@@ -133,7 +133,7 @@ sllm = llm.as_structured_llm(output_cls=Joke)
 input_msg = ChatMessage.from_str("Tell me a joke about cats")
 
 output = sllm.chat([input_msg])
-output_obj = output.raw
+output_obj = output.raw # Joke object
 
 print(output_obj)
 ```
