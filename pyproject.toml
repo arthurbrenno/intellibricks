@@ -1,6 +1,6 @@
 [project]
 name = "intellibricks"
-version = "v0.2.20"
+version = "v0.2.21"
 description = "IntelliBricks provides a streamlined set of tools for developing AI-powered applications. It simplifies complex tasks such as interacting with LLMs, training machine learning models, and implementing Retrieval Augmented Generation (RAG). Focus on building your application logic, not wrestling with boilerplate. IntelliBricks empowers you to build intelligent applications faster and more efficiently."
 readme = "README.md"
 requires-python = ">=3.10"
