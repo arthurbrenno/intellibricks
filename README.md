@@ -193,17 +193,6 @@ I also **AVOID** using `**kwargs`, unlike many frameworks that rely on it extens
 
 Instead of `**kwargs`, I prefer defining explicit parameters with detailed type hints. This approach ensures clarity, enhances IDE support, and improves the overall developer experience, aligning with IntelliBricks' mission to make development intuitive and enjoyable.
 
-**Switching Providers:**
-
-Change AI providers effortlessly by modifying the `model` parameter.
-
-```python
-response = engine.complete(
-    # ...
-    model=AIModel.GPT_4O  # Switch to GPT-4
-).get_parsed()
-```
-
 ### 💬 Chat Interactions
 
 Engage in multi-turn conversations with structured responses.
@@ -430,6 +419,30 @@ print(joke_message.content)  # Outputs the raw joke string
 # Access the parsed structured response
 parsed_joke: Joke = response.get_parsed(choice=0)
 print(parsed_joke.joke)  # Outputs the joke from the structured model
+
+# Access usage statistics
+print(response.usage.total_tokens)  # Total tokens used
+print(response.usage.total_cost)    # Total cost in USD
+```
+
+### 🥸 But I don't want structured outputs!
+
+Fine. CompletionEngine will adapt and types will work fine as well.
+
+```python
+from intellibricks import CompletionEngine
+
+# Make a completion request
+response = engine.complete(
+    prompt="Tell me a joke",
+) # CompletionOUtput[None]
+
+# Access the first choice
+joke_message = response.get_message(choice=0)
+print(joke_message.content)  # Outputs the raw joke string
+
+# Access the parsed structured response
+parsed_joke = response.get_parsed(choice=0) # None
 
 # Access usage statistics
 print(response.usage.total_tokens)  # Total tokens used
@@ -694,7 +707,7 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
 | `postergate_token_counting` | `bool` | **Optional.** Defer token counting. Defaults to `True`. |
 | `tools` | `list[Callable[..., Any]]` or `None` | **Optional.** Custom tool functions. *(Currently under development.)* |
 | `data_stores` | `Sequence[RAGQueriable]` or `None` | **Optional.** RAG data stores. *(Currently under development.)* |
-| `web_search` | `bool` or `None` | **Optional.** Enable web search. Requires `WebSearchConfig`. *(Currently under development.)* Defaults to `False`. |
+| `web_search` | `bool` or `None` | **Optional.** Enable web search. Requires `WebSearchable` to be passed in the `CompletionEngine` constructor. *(Currently under development.)* Defaults to `False`. |
 ---
 
 ## 💡 Key Points to Consider
