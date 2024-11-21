@@ -168,6 +168,39 @@ print(presidents_response)
 
 ---
 
+## 🌐 Integrating IntelliBricks with Litestar
+
+Create a simple API endpoint using the [Litestar](https://litestar.dev/) framework that receives a request and returns a structured response with IntelliBricks.
+
+```python
+from litestar import Litestar, post
+from intellibricks import CompletionEngine, AIModel
+from msgspec import Struct
+
+# Define the request model
+class JokeTheme(Struct):
+    prompt: str
+
+# Define the structured response model
+class JokeResponse(Struct):
+    joke: str
+
+# Define the endpoint
+@post("/joke", response_model=JokeResponse)
+async def get_joke(data: JokeTheme) -> JokeResponse:
+    response = CompletionEngine().complete(
+        prompt=f"The theme of the joke is: {data.prompt}",
+        system_prompt="You are an AI specialised in making the funniest jokes.",
+        response_format=JokeResponse
+        model=AIModel.STUDIO_GEMINI_1P5_FLASH
+    )
+    return response.get_parsed()
+
+app = Litestar([get_joke])
+```
+
+---
+
 ## 🛠️ Advanced Usage
 
 ### 📜 Complete `CompletionEngine.chat()` Usage Example
