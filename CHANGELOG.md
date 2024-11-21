@@ -1,6 +1,5 @@
 # Changelog
 
-## v0.2.8
+## v0.2.9
 
-- Integration with new `architecture` library
-
+- 
