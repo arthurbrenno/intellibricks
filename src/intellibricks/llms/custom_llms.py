@@ -30,7 +30,7 @@ from vertexai.generative_models._generative_models import (
 )
 from vertexai.preview import caching
 from vertexai.preview.generative_models import GenerationConfig, GenerativeModel
-from weavearc.logging import LoggerFactory
+from architecture.logging import LoggerFactory
 
 from .config import CacheConfig
 from .runtime_mappings import CACHE_KEY_TO_ID

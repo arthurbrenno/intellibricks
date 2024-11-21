@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 
-from weavearc.data.files import RawFile
+from architecture.data.files import RawFile
 
 from .schema import DocumentArtifact
 

@@ -1,4 +1,4 @@
-from weavearc import BaseModel
+from architecture import BaseModel
 
 
 class QueryResult(BaseModel): ...

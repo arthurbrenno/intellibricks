@@ -1,6 +1,6 @@
 import tiktoken
 from vertexai.generative_models import GenerativeModel
-from weavearc.utils.decorators import pure
+from architecture.utils.decorators import pure
 
 from .constants import AIModel
 

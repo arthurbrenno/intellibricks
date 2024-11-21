@@ -22,7 +22,7 @@ Examples:
 import datetime
 from typing import Annotated
 
-from weavearc import BaseModel, Meta, field
+from architecture import BaseModel, Meta, field
 
 
 class CacheConfig(BaseModel):

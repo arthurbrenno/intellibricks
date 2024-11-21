@@ -19,7 +19,7 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import get_lexer_by_name
 from pygments.util import ClassNotFound
 from typing_extensions import TypedDict
-from weavearc.logging import LoggerFactory
+from architecture.logging import LoggerFactory
 
 logger = LoggerFactory.create(__name__)
 

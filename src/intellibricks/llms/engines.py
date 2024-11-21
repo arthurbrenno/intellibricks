@@ -20,10 +20,10 @@ from langfuse.client import (
 from langfuse.model import ModelUsage
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import LLM
-from weavearc import BaseModel, DynamicDict
-from weavearc.extensions import Maybe
-from weavearc.logging import LoggerFactory
-from weavearc.utils.creators import DynamicInstanceCreator
+from architecture import BaseModel, DynamicDict
+from architecture.extensions import Maybe
+from architecture.logging import LoggerFactory
+from architecture.utils.creators import DynamicInstanceCreator
 
 from intellibricks import util
 from intellibricks.rag.contracts import RAGQueriable
@@ -53,6 +53,7 @@ logger = LoggerFactory.create(__name__)
 
 T = typing.TypeVar("T", bound=msgspec.Struct)
 U = typing.TypeVar("U", bound=msgspec.Struct | None)
+
 
 @typing.runtime_checkable
 class CompletionEngineProtocol(typing.Protocol):
@@ -505,7 +506,6 @@ class CompletionEngine(CompletionEngineProtocol):
                         fallback_models=fallback_models,
                         n=n,
                         temperature=temperature,
-        
                         max_tokens=max_tokens,
                         max_retries=max_retries,
                         cache_config=cache_config,
@@ -785,7 +785,6 @@ class CompletionEngine(CompletionEngineProtocol):
                             )
                         ).unwrap()
                     )
-                    
 
                     choices, usage = await self._aget_choices(
                         model=model,
@@ -889,7 +888,7 @@ class CompletionEngine(CompletionEngineProtocol):
         cache_config: CacheConfig,
         postergate_token_counting: bool,
         response_format: typing.Optional[typing.Type[T]],
-    ) ->  typing.Tuple[list[MessageChoice[T]], Usage]:
+    ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
         choices: list[MessageChoice[T]] = []
         model_input_cost, model_output_cost = model.ppm()
         total_prompt_tokens: int = 0

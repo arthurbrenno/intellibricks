@@ -4,7 +4,7 @@ import json
 import os
 from typing import Any, Optional
 
-from weavearc.data import (
+from architecture.data import (
     AsyncRepository,
     CreateResult,
     ReadAllResult,

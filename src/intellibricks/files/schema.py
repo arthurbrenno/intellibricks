@@ -10,7 +10,7 @@ import msgspec
 from langchain_core.documents import Document as LangchainDocument
 from langchain_core.documents.transformers import BaseDocumentTransformer
 from llama_index.core.schema import Document as LlamaIndexDocument
-from weavearc import BaseModel, Meta, field
+from architecture import BaseModel, Meta, field
 
 from intellibricks.llms import AIModel, CompletionEngineProtocol, CompletionOutput
 

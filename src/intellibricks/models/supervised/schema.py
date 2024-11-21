@@ -4,7 +4,7 @@ from __future__ import annotations
 import datetime
 from typing import Annotated, Any, Literal, Optional
 
-from weavearc import BaseModel, Meta, field
+from architecture import BaseModel, Meta, field
 
 from ..infra.constants import AlgorithmType
 

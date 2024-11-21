@@ -12,8 +12,8 @@ from llama_index.core.base.llms.types import LogProb
 from llama_index.core.base.llms.types import MessageRole as LlamaIndexMessageRole
 from llama_index.core.llms import ChatMessage as LlamaIndexChatMessage
 from tiktoken.core import Encoding
-from weavearc import BaseModel, Meta, field
-from weavearc.logging import logger
+from architecture import BaseModel, Meta, field
+from architecture.logging import logger
 
 from intellibricks.util import deserialize_json
 

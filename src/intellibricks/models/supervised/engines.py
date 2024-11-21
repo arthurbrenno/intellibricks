@@ -23,10 +23,10 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from typing_extensions import Doc
-from weavearc import ReadAllResult, ReadResult
-from weavearc.data import AsyncRepository
-from weavearc.logging import LoggerFactory
-from weavearc.utils.creators import ModuleClassLoader
+from architecture import ReadAllResult, ReadResult
+from architecture.data import AsyncRepository
+from architecture.logging import LoggerFactory
+from architecture.utils.creators import ModuleClassLoader
 
 from intellibricks.llms import CompletionEngineProtocol, CompletionOutput
 
