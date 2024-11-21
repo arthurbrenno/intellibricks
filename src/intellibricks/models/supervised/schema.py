@@ -6,7 +6,7 @@ from typing import Annotated, Any, Literal, Optional
 
 from architecture import BaseModel, Meta, field
 
-from ..infra.constants import AlgorithmType
+from .constants import AlgorithmType
 
 
 class ColumnInfo(BaseModel):
