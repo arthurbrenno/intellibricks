@@ -145,18 +145,15 @@ class WebSearchable(Protocol):
 
 
 class SearxngWebSearchEngine(WebSearchable):
+    host: str
+
+    def __init__(self, host: str):
+        self.host = host
+
     def search(
         self, query: str, search_params: Optional[SearchParams] = None
     ) -> list[SearchResult]:
-        if search_params is None:
-            raise ValueError(
-                "Search Parameters must be provided in order to use Searchxng."
-            )
-
-        if search_params.host is None:
-            raise ValueError("A host must be provided so you can use Searxng")
-
-        s = SearxSearchWrapper(searx_host=search_params.host)
+        s = SearxSearchWrapper(searx_host=self.host)
         results: list[dict[str, Any]] = cast(
             list[dict[str, Any]],
             s.results("presidente estados unidos 2024", num_results=2),
