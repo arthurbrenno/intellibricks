@@ -781,7 +781,7 @@ class CompletionEngine(CompletionEngineProtocol):
                             lambda trace: trace.span(
                                 id=span_id,
                                 input=messages,
-                                name="Geração de Resposta",
+                                name="Response Generation",
                             )
                         ).unwrap()
                     )
@@ -818,7 +818,7 @@ class CompletionEngine(CompletionEngineProtocol):
                         id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
                         name="Sucesso",
                         value=1.0,
-                        comment="Escolhas geradas com sucesso!",
+                        comment="Choices generated successfully!",
                     )
 
                     trace.update(output=output.choices)
@@ -831,7 +831,7 @@ class CompletionEngine(CompletionEngineProtocol):
                         id=f"sc-{maybe_span.unwrap()}",
                         name="Sucesso",
                         value=0.0,
-                        comment=f"Erro ao gerar escolhas: {e}",
+                        comment=f"Error while generating choices: {e}",
                     )
                     logger.error(
                         f"An error ocurred in retry {retry}",
@@ -1166,7 +1166,7 @@ class CompletionEngine(CompletionEngineProtocol):
             span.map(
                 lambda span: span.event(
                     id=f"ev-{trace.id}",
-                    name="Obtendo resposta estruturada",
+                    name="Getting Structured Response",
                     input=content,
                     output=None,
                     level="ERROR",
@@ -1187,7 +1187,7 @@ class CompletionEngine(CompletionEngineProtocol):
         span.map(
             lambda span: span.event(
                 id=f"ev-{trace.id}",
-                name="Obtendo resposta estruturada",
+                name="Getting Structured Response",
                 input=f"<structured>\n{tag.content}\n</structured>",
                 output=model,
                 level="DEBUG",
@@ -1210,14 +1210,14 @@ class CompletionEngine(CompletionEngineProtocol):
         basemodel_schema = msgspec.json.schema(response_format)
 
         new_prompt: str = f"""
-        <saida>
-            Dentro de uma tag "<structured>" a assistente irá retornar uma saída, formatada em JSON, que esteja de acordo com o seguinte esquema JSON:
+        <output>
+            Inside a "<structured>" tag, using the same language of the instruction above, the assistant will return an output formatted in JSON, which complies with the following JSON schema:
             <json_schema>
             {basemodel_schema}
             </json_schema>
-            O JSON retornado pela assistente, dentro da tag, deve estar de acordo com o esquema mencionado acima e deve levar em conta as instruções dadas na tarefa estipulada. A assistente deve fechar a tag com </structured>.
-        </saida>
-        """
+            The JSON returned by the assistant, within the tag, must adhere to the schema mentioned above and take into account the instructions provided in the given task. The assistant must close the tag with </structured>.
+        </output>
+        """  # TODO: make a Language parameter so this can be present in different languages
 
         for message in messages:
             if message.content is None:
