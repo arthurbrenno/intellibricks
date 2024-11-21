@@ -72,11 +72,8 @@ IntelliBricks abstracts the complexities of interacting with different LLM provi
 #### 🔄 Synchronous Completion Example
 
 ```python
-from dotenv import load_dotenv
 from msgspec import Struct
 from intellibricks import CompletionEngine
-
-load_dotenv(override=True)
 
 class Joke(Struct):
     joke: str
@@ -86,12 +83,65 @@ output = CompletionEngine().complete(
     response_format=Joke
 )
 
-print(output.get_parsed())  # Joke object
-```
+joke = output.get_parsed()
 
+print(joke)  # Joke object
+```
 **Highlights:**
 - **3 Easy Steps:** Define your structured output, call `complete()`, and parse the result.
 - **No Boilerplate:** Forget about `OutputParsers` and repetitive code.
+
+
+## How to do it with LangChain 🦜️🔗
+
+LangChain offers a simplified approach to structured outputs using `with_structured_output`.  While convenient, it lacks some of the advanced features and flexibility of IntelliBricks. For instance, features like fallback models, caching, tracing, and custom tool integration are not readily available.  Additionally, the reliance on a single `invoke` method for diverse operations can make customization and specific parameter handling less intuitive.
+
+```python
+from langchain.chat_models import ChatOpenAI
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel
+
+class Joke(BaseModel):
+    joke: str
+
+model = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+structured_llm = model.with_structured_output(Joke)
+
+joke = structured_llm.invoke(
+    "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
+) # Joke object
+
+print(joke)
+```
+
+## How to do it with LlamaIndex 🦙
+
+LlamaIndex also provides a way to achieve structured outputs, involving wrapping the LLM with  `as_structured_llm`.  This, however, introduces additional steps compared to IntelliBricks.  You also need to construct `ChatMessage`.  LlamaIndex's approach lacks the built-in retry mechanisms, comprehensive tracing with Langfuse, and other advanced parameters offered by IntelliBricks for fine-grained control and observability.
+
+```python
+from llama_index.llms.openai import OpenAI
+from llama_index.core.llms import ChatMessage
+from pydantic import BaseModel
+
+class Joke(BaseModel):
+    joke: str
+
+
+llm = OpenAI(model="gpt-3.5-turbo-0125")
+sllm = llm.as_structured_llm(output_cls=Joke)
+
+input_msg = ChatMessage.from_str("Tell me a joke about cats")
+
+output = sllm.chat([input_msg])
+output_obj = output.raw
+
+print(output_obj)
+```
+
+
+IntelliBricks streamlines the process by directly accepting the prompt and the desired output structure (`response_format`).  It handles the complexities of parsing and error handling internally. Furthermore, IntelliBricks provides a richer set of parameters like `fallback_models`, `max_retries`, `cache_config`, and `trace_params` for enhanced control, resilience, and monitoring, which are absent in the LangChain and LlamaIndex examples above.
+
+
 
 #### 🔍 Type Safety with Mypy and Pyright
 
