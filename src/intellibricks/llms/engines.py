@@ -62,8 +62,8 @@ class CompletionEngineProtocol(typing.Protocol):
     @typing.overload
     def complete(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -84,8 +84,8 @@ class CompletionEngineProtocol(typing.Protocol):
     @typing.overload
     def complete(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -105,8 +105,8 @@ class CompletionEngineProtocol(typing.Protocol):
 
     def complete(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -189,8 +189,8 @@ class CompletionEngineProtocol(typing.Protocol):
     @typing.overload
     async def complete_async(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -211,8 +211,8 @@ class CompletionEngineProtocol(typing.Protocol):
     @typing.overload
     async def complete_async(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -232,8 +232,8 @@ class CompletionEngineProtocol(typing.Protocol):
 
     async def complete_async(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -341,8 +341,8 @@ class CompletionEngine(CompletionEngineProtocol):
     @typing.overload
     def complete(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -363,8 +363,8 @@ class CompletionEngine(CompletionEngineProtocol):
     @typing.overload
     def complete(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -384,8 +384,8 @@ class CompletionEngine(CompletionEngineProtocol):
 
     def complete(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -546,8 +546,8 @@ class CompletionEngine(CompletionEngineProtocol):
     @typing.overload
     async def complete_async(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -568,8 +568,8 @@ class CompletionEngine(CompletionEngineProtocol):
     @typing.overload
     async def complete_async(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
@@ -589,8 +589,8 @@ class CompletionEngine(CompletionEngineProtocol):
 
     async def complete_async(
         self,
-        *,
         prompt: typing.Union[str, Prompt],
+        *,
         system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
         response_format: typing.Optional[typing.Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,

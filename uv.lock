@@ -1238,7 +1238,7 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.2.23"
+version = "0.2.24"
 source = { editable = "." }
 dependencies = [
     { name = "aiocache" },

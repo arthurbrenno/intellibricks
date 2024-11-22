@@ -109,9 +109,9 @@ class Joke(Struct):
     joke: str
 
 # One line to rule them all 🔥
-output = CompletionEngine().complete(prompt="Tell me a joke", response_format=Joke)
+output = CompletionEngine().complete("Tell me a joke", response_format=Joke)
 
-print(output.get_parsed())  # Joke obj
+joke = output.get_parsed()  # Joke obj
 ```
 
 **Highlights:**
