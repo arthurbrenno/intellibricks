@@ -2,18 +2,33 @@
 
 from __future__ import annotations
 
+import dataclasses
 import datetime
 import re
-import typing
+from typing_extensions import NotRequired
 import uuid
+from typing import (
+    Annotated,
+    Any,
+    Final,
+    Generic,
+    Literal,
+    Optional,
+    Type,
+    TypeVar,
+    TypedDict,
+    Union,
+    cast,
+)
 
+import validators
+from architecture import BaseModel, Meta, field
+from architecture.logging import logger
 from bs4 import BeautifulSoup, NavigableString
 from llama_index.core.base.llms.types import LogProb
 from llama_index.core.base.llms.types import MessageRole as LlamaIndexMessageRole
 from llama_index.core.llms import ChatMessage as LlamaIndexChatMessage
 from tiktoken.core import Encoding
-from architecture import BaseModel, Meta, field
-from architecture.logging import logger
 
 from intellibricks.util import deserialize_json
 
@@ -24,22 +39,24 @@ from .constants import (
 )
 from .exceptions import MessageNotParsedError
 
-T = typing.TypeVar("T")
+T = TypeVar("T")
+ReplacementText = str
+ReplacementValue = str
 
 
 class Tag(BaseModel):
     tag_name: str
-    content: typing.Optional[str] = field(default=None)
-    attributes: dict[str, typing.Optional[str]] = field(default_factory=dict)
+    content: Optional[str] = field(default=None)
+    attributes: dict[str, Optional[str]] = field(default_factory=dict)
 
     @classmethod
     def from_string(
         cls,
         string: str,
         *,
-        tag_name: typing.Optional[str] = None,
-        attributes: typing.Optional[dict[str, typing.Optional[str]]] = None,
-    ) -> typing.Optional[Tag]:
+        tag_name: Optional[str] = None,
+        attributes: Optional[dict[str, Optional[str]]] = None,
+    ) -> Optional[Tag]:
         """
         Create a Tag instance from a string containing a tag.
 
@@ -48,11 +65,11 @@ class Tag(BaseModel):
 
         Args:
             string (str): The input string containing the tag.
-            tag_name (typing.Optional[str], optional): If provided, only match tags with this name.
-            attributes (typing.Optional[dict[str, str]], optional): If provided, only match tags with these attributes.
+            tag_name (Optional[str], optional): If provided, only match tags with this name.
+            attributes (Optional[dict[str, str]], optional): If provided, only match tags with these attributes.
 
         Returns:
-            typing.Optional[Tag]: A Tag instance if a matching tag is found, None otherwise.
+            Optional[Tag]: A Tag instance if a matching tag is found, None otherwise.
         """
         # logger.debug(f"Parsing tag from string: {string}")
         # logger.debug(f"Tag name: {tag_name}, Attributes: {attributes}")
@@ -103,7 +120,7 @@ class Tag(BaseModel):
             raise ValueError("Element cannot be instance of NavigableString")
 
         if elem is not None:
-            elem_attributes: dict[str, typing.Optional[str]] = dict(elem.attrs)
+            elem_attributes: dict[str, Optional[str]] = dict(elem.attrs)
             # Get the inner HTML content of the tag
             content = "".join(str(child) for child in elem.contents).strip()
 
@@ -120,7 +137,7 @@ class Tag(BaseModel):
         logger.debug("No matching tag found.")
         return None
 
-    def as_object(self) -> dict[str, typing.Any]:
+    def as_object(self) -> dict[str, Any]:
         """
         Extracts the content of the tag as a Python dictionary by parsing the JSON content.
 
@@ -132,7 +149,7 @@ class Tag(BaseModel):
         - Complex and nested JSON structures
 
         Returns:
-            dict[str, typing.Any]: The parsed JSON content as a Python dictionary.
+            dict[str, Any]: The parsed JSON content as a Python dictionary.
 
         Raises:
             ValueError: If no valid JSON content is found in the tag or if the JSON content is not a dictionary.
@@ -166,7 +183,7 @@ class Tag(BaseModel):
         content: str = self.content.strip()
 
         try:
-            parsed_obj: dict[str, typing.Any] = deserialize_json(content)
+            parsed_obj: dict[str, Any] = deserialize_json(content)
             return parsed_obj
         except ValueError:
             raise ValueError("No valid JSON content found in the tag.")
@@ -182,7 +199,7 @@ class Tag(BaseModel):
     def __str__(self) -> str:
         return self.content if self.content is not None else ""
 
-    def to_dict(self) -> dict[str, typing.Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "tag_name": self.tag_name,
             "content": self.content,
@@ -190,267 +207,67 @@ class Tag(BaseModel):
         }
 
 
-class ImageFile(BaseModel):
-    """Represents a type of the Message"""
+# FACADE
+@dataclasses.dataclass
+class Part:
+    type: Literal["image_url", "text", "input_audio"]
 
-    file_id: typing.Annotated[
-        str,
-        Meta(
-            title="File ID",
-            description="The File ID of the image in the message content.",
-        ),
-    ]
+    @classmethod
+    def from_string(cls: Type[Part], string: str) -> TextContentPart:
+        return TextContentPart(text=string)
 
-    detail: typing.Annotated[
-        typing.Literal["low", "high", "auto"],
-        Meta(
-            title="Detail",
-            description="The detail of the image in the message content.",
-        ),
-    ]
+    @classmethod
+    def from_uri(
+        cls: Type[Part], url: str, detail: Optional[str] = None
+    ) -> ImageUrlPart:
+        return ImageUrlPart(image_url=ImageUrl(url=url, detail=detail))
+
+    @classmethod
+    def from_input_audio(cls: Type[Part], data: str, format: str) -> InputAudioPart:
+        return InputAudioPart(input_audio=InputAudio(data=data, format=format))
+        
+
+    def dict(self):
+        return {k: str(v) for k, v in dataclasses.asdict(self).items()}
+
+class InputAudio(TypedDict):
+    data: str
+    format: str
+
+class ImageUrl(TypedDict):
+    url: str
+    detail: NotRequired[Optional[str]]
+
+@dataclasses.dataclass(kw_only=True)
+class InputAudioPart(Part):
+    type: Literal["image_url", "text", "input_audio"] = dataclasses.field(
+        default=cast(Final[Literal["image_url", "text", "input_audio"]], lambda: "input_audio")
+    )
+    input_audio: InputAudio
+
+@dataclasses.dataclass(kw_only=True)
+class TextContentPart(Part):
+    type: Final[Literal["image_url", "text", "input_audio"]] = dataclasses.field(
+        default=cast(Literal["image_url", "text", "input_audio"], lambda: "text")
+    )
+    text: str
 
 
-class ImageFilePart(BaseModel, kw_only=True):  # type: ignore
-    """Represents a type of the Message"""
-
-    type: typing.Annotated[
-        typing.Literal["image_file"],
-        Meta(
-            title="Type",
-            description="The type of the part.",
-        ),
-    ] = field(default_factory=lambda: "image_file")
-
-    image_file: typing.Annotated[
-        ImageFile,
-        Meta(
-            title="Image File",
-            description="The image file in the message content.",
-        ),
-    ]
-
-
-class ImageURL(BaseModel):
-    """Represents a type of the Message"""
-
-    url: typing.Annotated[
-        str,
-        Meta(
-            title="URL",
-            description="The external URL of the image, must be a supported image types: jpeg, jpg, png, gif, webp.",
-        ),
-    ]
-
-    detail: typing.Annotated[
-        typing.Literal["low", "high", "auto"],
-        Meta(
-            title="Detail",
-            description="The detail of the image in the message content.",
-        ),
-    ]
+@dataclasses.dataclass(kw_only=True)
+class ImageUrlPart(Part):
+    type: Literal["image_url", "text", "input_audio"] = dataclasses.field(
+        default=cast(Literal["image_url", "text", "input_audio"], lambda: "type")
+    )
+    image_url: ImageUrl
 
     def __post_init__(self) -> None:
-        # Validate if the mime type is valid
-        supported_mime_types = ["jpeg", "jpg", "png", "gif", "webp"]
-        mime: str = self.url.split(".")[-1]
-        if mime not in supported_mime_types:
-            raise ValueError(
-                f"Unsupported image type: {mime}. Supported types are: {supported_mime_types}"
-            )
-
-
-class ImageURLPart(BaseModel, kw_only=True):  # type: ignore
-    """Represents a type of the Message"""
-
-    type: typing.Annotated[
-        typing.Literal["image_url"],
-        Meta(
-            title="Type",
-            description="The type of the part",
-        ),
-    ] = field(default_factory=lambda: "image_url")
-
-    image_url: typing.Annotated[
-        ImageURL,
-        Meta(
-            title="Image URL",
-            description="Image URL details in the message content.",
-        ),
-    ]
-
-
-class FileCitation(BaseModel):
-    """Represents a type of the Message"""
-
-    file_id: typing.Annotated[
-        str,
-        Meta(
-            title="File ID",
-            description="The File ID of the file in the message content.",
-        ),
-    ]
-
-
-class FilePath(BaseModel):
-    """Represents a type of the Message"""
-
-    file_id: typing.Annotated[
-        str,
-        Meta(
-            title="File Path",
-            description="The File Path of the file in the message content.",
-        ),
-    ]
-
-
-class FileCitationAnnotation(BaseModel, kw_only=True):  # type: ignore
-    type: typing.Annotated[
-        typing.Literal["file_citation"],
-        Meta(
-            title="Type",
-            description="The type of the part",
-        ),
-    ] = field(default_factory=lambda: "file_citation")
-
-    text: typing.Annotated[
-        str,
-        Meta(
-            title="Text",
-            description="The text in the message content that needs to be replaced.",
-        ),
-    ]
-
-    file_citation: typing.Annotated[
-        FileCitation,
-        Meta(
-            title="File Citation",
-            description="The file citation in the message content.",
-        ),
-    ]
-
-    start_index: typing.Annotated[
-        int,
-        Meta(
-            title="Start Index",
-            description="The start index of the text in the message content.",
-        ),
-    ]
-
-    end_index: typing.Annotated[
-        int,
-        Meta(
-            title="End Index",
-            description="The end index of the text in the message content.",
-        ),
-    ]
-
-
-class FilePathAnnotation(BaseModel, kw_only=True):  # type: ignore
-    type: typing.Annotated[
-        typing.Literal["file_path"],
-        Meta(
-            title="Type",
-            description="The type of the part",
-        ),
-    ] = field(default_factory=lambda: "file_path")
-
-    text: typing.Annotated[
-        str,
-        Meta(
-            title="Text",
-            description="The text in the message content that needs to be replaced.",
-        ),
-    ]
-
-    file_path: typing.Annotated[
-        FilePath,
-        Meta(
-            title="File Path",
-            description="The file path in the message content.",
-        ),
-    ]
-
-    start_index: typing.Annotated[
-        int,
-        Meta(
-            title="Start Index",
-            description="The start index of the text in the message content.",
-        ),
-    ]
-
-    end_index: typing.Annotated[
-        int,
-        Meta(
-            title="End Index",
-            description="The end index of the text in the message content.",
-        ),
-    ]
-
-
-class Text(BaseModel):
-    """Represents a Text in the Message"""
-
-    value: typing.Annotated[
-        str,
-        Meta(
-            title="Value",
-            description="The text value in the message content.",
-        ),
-    ]
-
-    annotations: typing.Annotated[
-        list[typing.Union[FileCitationAnnotation, FilePathAnnotation]],
-        Meta(
-            title="Annotations",
-            description="The annotations in the text.",
-        ),
-    ]
-
-
-class TextPart(BaseModel, kw_only=True):  # type: ignore
-    """Represents a type of the Message"""
-
-    type: typing.Annotated[
-        typing.Literal["text"],
-        Meta(
-            title="Type",
-            description="The type of the part",
-        ),
-    ] = field(default_factory=lambda: "text")
-
-    text: typing.Annotated[
-        Text,
-        Meta(
-            title="Text",
-            description="The text in the message content.",
-        ),
-    ]
-
-
-class RefusalPart(BaseModel, kw_only=True):  # type: ignore
-    """Represents a type of the Message"""
-
-    type: typing.Annotated[
-        typing.Literal["refusal"],
-        Meta(
-            title="Type",
-            description="The type of the part",
-        ),
-    ] = field(default_factory=lambda: "refusal")
-
-    refusal: typing.Annotated[
-        str,
-        Meta(
-            title="Refusal",
-            description="The refusal in the message content.",
-        ),
-    ]
+        validators.url(self.image_url["url"])
 
 
 class Prompt(BaseModel):
     """Represents a prompt"""
 
-    content: typing.Annotated[
+    content: Annotated[
         str,
         Meta(
             title="Content",
@@ -463,7 +280,7 @@ class Prompt(BaseModel):
         ),
     ]
 
-    def compile(self, **replacements: typing.Any) -> Prompt:
+    def compile(self, **replacements: dict[ReplacementText, ReplacementValue]) -> Prompt:
         """
         Replace placeholders in the content with provided replacement values.
 
@@ -502,8 +319,8 @@ class Prompt(BaseModel):
 class PromptTokensDetails(BaseModel):
     """Breakdown of tokens used in prompt"""
 
-    audio_tokens: typing.Annotated[
-        typing.Optional[int],
+    audio_tokens: Annotated[
+        Optional[int],
         Meta(
             title="Audio Tokens",
             description="The number of audio tokens used in the prompt.",
@@ -511,8 +328,8 @@ class PromptTokensDetails(BaseModel):
         ),
     ]
 
-    cached_tokens: typing.Annotated[
-        typing.Optional[int],
+    cached_tokens: Annotated[
+        Optional[int],
         Meta(
             title="Cached Tokens",
             description="The number of cached tokens used in the prompt.",
@@ -524,8 +341,8 @@ class PromptTokensDetails(BaseModel):
 class CompletionTokensDetails(BaseModel):
     """Breakdown of tokens generated in completion"""
 
-    audio_tokens: typing.Annotated[
-        typing.Optional[int],
+    audio_tokens: Annotated[
+        Optional[int],
         Meta(
             title="Audio Tokens",
             description="The number of audio tokens used in the prompt.",
@@ -533,8 +350,8 @@ class CompletionTokensDetails(BaseModel):
         ),
     ]
 
-    reasoning_tokens: typing.Annotated[
-        typing.Optional[int],
+    reasoning_tokens: Annotated[
+        Optional[int],
         Meta(
             title="Reasoning Tokens",
             description="Tokens generated by the model for reasoning.",
@@ -543,8 +360,8 @@ class CompletionTokensDetails(BaseModel):
 
 
 class Usage(BaseModel):
-    prompt_tokens: typing.Annotated[
-        typing.Optional[int],
+    prompt_tokens: Annotated[
+        Optional[int],
         Meta(
             title="Prompt Tokens",
             description="The number of tokens consumed by the input prompt.",
@@ -552,8 +369,8 @@ class Usage(BaseModel):
         ),
     ]
 
-    completion_tokens: typing.Annotated[
-        typing.Optional[int],
+    completion_tokens: Annotated[
+        Optional[int],
         Meta(
             title="Completion Tokens",
             description="The number of tokens generated in the completion response.",
@@ -561,8 +378,8 @@ class Usage(BaseModel):
         ),
     ]
 
-    input_cost: typing.Annotated[
-        typing.Optional[float],
+    input_cost: Annotated[
+        Optional[float],
         Meta(
             title="USD Cost",
             description="The cost of the input prompt in USD.",
@@ -570,8 +387,8 @@ class Usage(BaseModel):
         ),
     ]
 
-    output_cost: typing.Annotated[
-        typing.Optional[float],
+    output_cost: Annotated[
+        Optional[float],
         Meta(
             title="USD Cost",
             description="The cost of the output completion in USD.",
@@ -579,8 +396,8 @@ class Usage(BaseModel):
         ),
     ]
 
-    total_cost: typing.Annotated[
-        typing.Optional[float],
+    total_cost: Annotated[
+        Optional[float],
         Meta(
             title="USD Cost",
             description="The cost of the completion in USD.",
@@ -588,8 +405,8 @@ class Usage(BaseModel):
         ),
     ]
 
-    total_tokens: typing.Annotated[
-        typing.Optional[int],
+    total_tokens: Annotated[
+        Optional[int],
         Meta(
             title="Total Tokens",
             description="The total number of tokens consumed, including both prompt and completion.",
@@ -597,7 +414,7 @@ class Usage(BaseModel):
         ),
     ]
 
-    prompt_tokens_details: typing.Annotated[
+    prompt_tokens_details: Annotated[
         PromptTokensDetails,
         Meta(
             title="Prompt Tokens Details",
@@ -605,7 +422,7 @@ class Usage(BaseModel):
         ),
     ]
 
-    completion_tokens_details: typing.Annotated[
+    completion_tokens_details: Annotated[
         CompletionTokensDetails,
         Meta(
             title="Completion Tokens Details",
@@ -614,12 +431,8 @@ class Usage(BaseModel):
     ]
 
 
-class VisionMessage(BaseModel):
-    pass  # TODO
-
-
 class Message(BaseModel, kw_only=True):
-    role: typing.Annotated[
+    role: Annotated[
         MessageRole,
         Meta(
             title="Message Role",
@@ -628,8 +441,8 @@ class Message(BaseModel, kw_only=True):
         ),
     ] = MessageRole.USER
 
-    content: typing.Annotated[
-        typing.Optional[str],
+    content: Annotated[
+        Union[str, list[Part]],
         Meta(
             title="Message Content",
             description="The content of the message",
@@ -638,10 +451,10 @@ class Message(BaseModel, kw_only=True):
                 "I need help on solving a Python problem.",
             ],
         ),
-    ] = field(default=None)
+    ]
 
-    name: typing.Annotated[
-        typing.Optional[str],
+    name: Annotated[
+        Optional[str],
         Meta(
             title="Name",
             description="An optional name for the participant. Provides the model information to differentiate between participants of the same role.",
@@ -652,19 +465,19 @@ class Message(BaseModel, kw_only=True):
     def extract_tag(
         self,
         *,
-        name: typing.Optional[str] = None,
-        attributes: typing.Optional[dict[str, typing.Optional[str]]] = None,
-    ) -> typing.Optional[Tag]:
+        name: Optional[str] = None,
+        attributes: Optional[dict[str, Optional[str]]] = None,
+    ) -> Optional[Tag]:
         """
         Extracts a tag from the message content based on tag name and/or identifier.
         Uses regex, BeautifulSoup, and XML parsing for robust extraction.
 
         Args:
-            tag_name (typing.Optional[str]): The name of the tag to extract.
-            attributes (typing.Optional[dict[str, str]]): The attributes of the tag to extract.
+            tag_name (Optional[str]): The name of the tag to extract.
+            attributes (Optional[dict[str, str]]): The attributes of the tag to extract.
 
         Returns:
-            typing.Optional[Tag]: The extracted tag, or None if not found.
+            Optional[Tag]: The extracted tag, or None if not found.
 
         Raises:
             ValueError: If neither tag_name nor identifier is provided.
@@ -696,8 +509,8 @@ class Message(BaseModel, kw_only=True):
         return tokens
 
 
-class CompletionMessage(Message, typing.Generic[T]):
-    parsed: typing.Annotated[
+class CompletionMessage(Message, Generic[T]):
+    parsed: Annotated[
         T,
         Meta(
             title="Structured Model",
@@ -706,8 +519,8 @@ class CompletionMessage(Message, typing.Generic[T]):
     ]
 
 
-class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
-    index: typing.Annotated[
+class MessageChoice(BaseModel, Generic[T], tag=True):  # type: ignore
+    index: Annotated[
         int,
         Meta(
             title="Index",
@@ -716,7 +529,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
         ),
     ]
 
-    message: typing.Annotated[
+    message: Annotated[
         CompletionMessage[T],
         Meta(
             title="Message",
@@ -730,8 +543,8 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
         ),
     ]
 
-    logprobs: typing.Annotated[
-        typing.Optional[list[list[LogProb]]],
+    logprobs: Annotated[
+        Optional[list[list[LogProb]]],
         Meta(
             title="Log Probability",
             description="Log probability of the choice. Currently always None, reserved for future use.",
@@ -739,7 +552,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
         ),
     ] = None
 
-    finish_reason: typing.Annotated[
+    finish_reason: Annotated[
         FinishReason,
         Meta(
             title="Finish Reason",
@@ -763,12 +576,12 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
             self.finish_reason = FinishReason(self.finish_reason)
 
 
-# class Delta(CompletionMessage, typing.Generic[T]):
+# class Delta(CompletionMessage, Generic[T]):
 #     """Stream message"""
 
 
-# class StreamChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
-#     index: typing.Annotated[
+# class StreamChoice(BaseModel, Generic[T], tag=True):  # type: ignore
+#     index: Annotated[
 #         int,
 #         Meta(
 #             title="Index",
@@ -777,8 +590,8 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
 #         ),
 #     ]
 
-#     delta: typing.Annotated[
-#         typing.Optional[Delta],
+#     delta: Annotated[
+#         Optional[Delta],
 #         Meta(
 #             title="Delta",
 #             description="Partial contents (token) of the final message",
@@ -791,8 +604,8 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
 #         ),
 #     ] = None
 
-#     logprobs: typing.Annotated[
-#         typing.Optional[list[list[LogProb]]],
+#     logprobs: Annotated[
+#         Optional[list[list[LogProb]]],
 #         Meta(
 #             title="Log Probability",
 #             description='log probability of the choice. For now, always "null"',
@@ -800,7 +613,7 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
 #         ),
 #     ] = None
 
-#     finish_reason: typing.Annotated[
+#     finish_reason: Annotated[
 #         FinishReason,
 #         Meta(
 #             title="Finish Reason",
@@ -824,8 +637,16 @@ class MessageChoice(BaseModel, typing.Generic[T], tag=True):  # type: ignore
 #             self.finish_reason = FinishReason(self.finish_reason)
 
 
-class CompletionOutput(BaseModel, typing.Generic[T]):
-    id: typing.Annotated[
+class CompletionOutput(BaseModel, Generic[T], kw_only=True):
+    elapsed_time: Annotated[
+        float,
+        Meta(
+            title="Elapsed Time",
+            description="The amount of time it took to generate the Completion.",
+        ),
+    ] = field()
+
+    id: Annotated[
         uuid.UUID,
         Meta(
             title="ID",
@@ -837,8 +658,8 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
         ),
     ] = field(default_factory=lambda: uuid.uuid4())
 
-    object: typing.Annotated[
-        typing.Literal["chat.completion"],
+    object: Annotated[
+        Literal["chat.completion"],
         Meta(
             title="Object Type",
             description="The object type. Always `chat.completion`.",
@@ -846,7 +667,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
         ),
     ] = "chat.completion"
 
-    created: typing.Annotated[
+    created: Annotated[
         float,
         Meta(
             title="Created",
@@ -855,7 +676,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
         ),
     ] = field(default_factory=lambda: int(datetime.datetime.now().timestamp()))
 
-    model: typing.Annotated[
+    model: Annotated[
         AIModel,
         Meta(
             title="Model",
@@ -863,7 +684,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
         ),
     ] = field(default_factory=lambda: AIModel.STUDIO_GEMINI_1P5_FLASH)
 
-    system_fingerprint: typing.Annotated[
+    system_fingerprint: Annotated[
         str,
         Meta(
             title="System Fingerprint",
@@ -874,7 +695,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
         ),
     ] = "fp_none"
 
-    choices: typing.Annotated[
+    choices: Annotated[
         list[MessageChoice[T]],
         Meta(
             title="Choices",
@@ -884,7 +705,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
         ),
     ] = field(default_factory=list)
 
-    usage: typing.Annotated[
+    usage: Annotated[
         Usage,
         Meta(
             title="Usage",
@@ -931,7 +752,7 @@ class CompletionOutput(BaseModel, typing.Generic[T]):
     def get_parsed(self, choice: int = 0) -> T:
         selected_choice = self.choices[choice]
 
-        parsed: typing.Optional[T] = selected_choice.message.parsed
+        parsed: Optional[T] = selected_choice.message.parsed
         if parsed is None:
             raise MessageNotParsedError(
                 "Message could not be parsed. Parsed content is None."

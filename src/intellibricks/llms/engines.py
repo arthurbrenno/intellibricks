@@ -4,12 +4,26 @@
 from __future__ import annotations
 
 import asyncio
-import typing
 import uuid
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+    runtime_checkable,
+)
 
 import aiocache
 import msgspec
-from architecture import BaseModel, DynamicDict
+from architecture import BaseModel
 from architecture.extensions import Maybe
 from architecture.logging import LoggerFactory
 from architecture.utils.creators import DynamicInstanceCreator
@@ -53,116 +67,116 @@ from .util import count_tokens
 
 logger = LoggerFactory.create(__name__)
 
-T = typing.TypeVar("T", bound=msgspec.Struct)
-U = typing.TypeVar("U", bound=msgspec.Struct | None)
+T = TypeVar("T", bound=msgspec.Struct)
+U = TypeVar("U", bound=msgspec.Struct | None)
 
 
-@typing.runtime_checkable
-class CompletionEngineProtocol(typing.Protocol):
-    @typing.overload
+@runtime_checkable
+class CompletionEngineProtocol(Protocol):
+    @overload
     def complete(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Type[T],
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     def complete(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     def complete(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Optional[typing.Type[T]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
-    @typing.overload
+    @overload
     def chat(
         self,
         *,
         messages: list[Message],
-        response_format: typing.Type[T],
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     def chat(
         self,
         *,
         messages: list[Message],
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
@@ -170,126 +184,126 @@ class CompletionEngineProtocol(typing.Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[typing.Type[T]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
-    @typing.overload
+    @overload
     async def complete_async(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Type[T],
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     async def complete_async(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     async def complete_async(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Optional[typing.Type[T]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
-    @typing.overload
+    @overload
     async def chat_async(
         self,
         *,
         messages: list[Message],
-        response_format: typing.Type[T],
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     async def chat_async(
         self,
         *,
         messages: list[Message],
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
@@ -297,19 +311,19 @@ class CompletionEngineProtocol(typing.Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[typing.Type[T]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]: ...
 
@@ -317,18 +331,18 @@ class CompletionEngineProtocol(typing.Protocol):
 class CompletionEngine(CompletionEngineProtocol):
     langfuse: Maybe[Langfuse]
     vertex_credentials: Maybe[service_account.Credentials]
-    web_searcher: typing.Optional[WebSearchable] = None
+    web_searcher: Optional[WebSearchable] = None
     json_encoder: msgspec.json.Encoder
     json_decoder: msgspec.json.Decoder
 
     def __init__(
         self,
         *,
-        langfuse: typing.Optional[Langfuse] = None,
-        json_encoder: typing.Optional[msgspec.json.Encoder] = None,
-        json_decoder: typing.Optional[msgspec.json.Decoder] = None,
-        vertex_credentials: typing.Optional[service_account.Credentials] = None,
-        web_searcher: typing.Optional[
+        langfuse: Optional[Langfuse] = None,
+        json_encoder: Optional[msgspec.json.Encoder] = None,
+        json_decoder: Optional[msgspec.json.Decoder] = None,
+        vertex_credentials: Optional[service_account.Credentials] = None,
+        web_searcher: Optional[
             WebSearchable
         ] = None,  # TODO: not working yet. Tryng to manage my time for that (work + university)
     ) -> None:
@@ -338,68 +352,68 @@ class CompletionEngine(CompletionEngineProtocol):
         self.vertex_credentials = Maybe(vertex_credentials or None)
         self.web_searcher = web_searcher
 
-    @typing.overload
+    @overload
     def complete(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Type[T],
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     def complete(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     def complete(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Optional[typing.Type[T]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         system_prompt = (
@@ -435,45 +449,45 @@ class CompletionEngine(CompletionEngineProtocol):
             web_search=web_search,
         )
 
-    @typing.overload
+    @overload
     def chat(
         self,
         *,
         messages: list[Message],
-        response_format: typing.Type[T],
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     def chat(
         self,
         *,
         messages: list[Message],
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
@@ -481,25 +495,25 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[typing.Type[T]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:  # No event loop running
-            return typing.cast(
+            return cast(
                 CompletionOutput[T] | CompletionOutput[None],
                 asyncio.run(
                     self._achat(
@@ -521,7 +535,7 @@ class CompletionEngine(CompletionEngineProtocol):
                 ),
             )
         else:
-            return typing.cast(
+            return cast(
                 CompletionOutput[T] | CompletionOutput[None],
                 loop.run_until_complete(
                     self._achat(
@@ -543,68 +557,68 @@ class CompletionEngine(CompletionEngineProtocol):
                 ),
             )
 
-    @typing.overload
+    @overload
     async def complete_async(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Type[T],
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     async def complete_async(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
     async def complete_async(
         self,
-        prompt: typing.Union[str, Prompt],
+        prompt: Union[str, Prompt],
         *,
-        system_prompt: typing.Optional[typing.Union[str, Prompt]] = None,
-        response_format: typing.Optional[typing.Type[T]] = None,
+        system_prompt: Optional[Union[str, Prompt]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         system_prompt = (
@@ -640,45 +654,45 @@ class CompletionEngine(CompletionEngineProtocol):
             web_search=web_search,
         )
 
-    @typing.overload
+    @overload
     async def chat_async(
         self,
         *,
         messages: list[Message],
-        response_format: typing.Type[T],
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     async def chat_async(
         self,
         *,
         messages: list[Message],
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
@@ -686,19 +700,19 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[typing.Type[T]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         return await self._achat(
@@ -718,45 +732,45 @@ class CompletionEngine(CompletionEngineProtocol):
             web_search=web_search,
         )
 
-    @typing.overload
+    @overload
     async def _achat(
         self,
         *,
         messages: list[Message],
-        response_format: typing.Type[T],
+        response_format: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T]: ...
 
-    @typing.overload
+    @overload
     async def _achat(
         self,
         *,
         messages: list[Message],
         response_format: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[None]: ...
 
@@ -764,19 +778,19 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Optional[typing.Type[T]] = None,
+        response_format: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
-        fallback_models: typing.Optional[list[AIModel]] = None,
-        n: typing.Optional[int] = None,
-        temperature: typing.Optional[float] = None,
-        max_tokens: typing.Optional[int] = None,
-        max_retries: typing.Optional[typing.Literal[1, 2, 3, 4, 5]] = None,
-        cache_config: typing.Optional[CacheConfig] = None,
-        trace_params: typing.Optional[TraceParams] = None,
+        fallback_models: Optional[list[AIModel]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
         postergate_token_counting: bool = True,
-        tools: typing.Optional[list[typing.Callable[..., typing.Any]]] = None,
-        data_stores: typing.Optional[typing.Sequence[RAGQueriable]] = None,
-        web_search: typing.Optional[bool] = None,
+        tools: Optional[list[Callable[..., Any]]] = None,
+        data_stores: Optional[Sequence[RAGQueriable]] = None,
+        web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         trace_params = trace_params or {}
@@ -887,9 +901,9 @@ class CompletionEngine(CompletionEngineProtocol):
         span: Maybe[StatefulSpanClient],
         cache_config: CacheConfig,
         postergate_token_counting: bool,
-        response_format: typing.Optional[typing.Type[T]],
+        response_format: Optional[Type[T]],
         language: Language,
-    ) -> typing.Tuple[list[MessageChoice[T]], Usage]:
+    ) -> Tuple[list[MessageChoice[T]], Usage]:
         choices: list[MessageChoice[T]] = []
         model_input_cost, model_output_cost = model.ppm()
         total_prompt_tokens: int = 0
@@ -1081,10 +1095,10 @@ class CompletionEngine(CompletionEngineProtocol):
     def _create_usage(
         self,
         postergate_token_counting: bool,
-        prompt_tokens: typing.Optional[int],
-        completion_tokens: typing.Optional[int],
-        input_cost: typing.Optional[float],
-        output_cost: typing.Optional[float],
+        prompt_tokens: Optional[int],
+        completion_tokens: Optional[int],
+        input_cost: Optional[float],
+        output_cost: Optional[float],
     ) -> Usage:
         if postergate_token_counting:
             return Usage(
@@ -1120,47 +1134,47 @@ class CompletionEngine(CompletionEngineProtocol):
                 ),
             )
 
-    # @typing.overload
+    # @overload
     # def _get_parsed(
     #     self,
-    #     response_format: typing.Type[T],
-    #     content: typing.Optional[str],
+    #     response_format: Type[T],
+    #     content: Optional[str],
     #     trace: Maybe[StatefulTraceClient],
     #     span: Maybe[StatefulSpanClient],
     # ) -> T: ...
 
-    # @typing.overload
+    # @overload
     # def _get_parsed(
     #     self,
     #     response_format: None,
-    #     content: typing.Optional[str],
+    #     content: Optional[str],
     #     trace: Maybe[StatefulTraceClient],
     #     span: Maybe[StatefulSpanClient],
     # ) -> None: ...
 
     def _get_parsed(
         self,
-        response_format: typing.Optional[typing.Type[T]],
-        content: typing.Optional[str],
+        response_format: Optional[Type[T]],
+        content: Optional[str],
         trace: Maybe[StatefulTraceClient],
         span: Maybe[StatefulSpanClient],
     ) -> T:
         if response_format is None:
             logger.warning("Response format is None")
-            return typing.cast(T, None)
+            return cast(T, None)
 
         if content is None:
             logger.warning("Contents of the message are none")
-            return typing.cast(T, None)
+            return cast(T, None)
 
         if isinstance(response_format, dict):
-            LLMResponse: typing.Type[msgspec.Struct] = util.get_struct_from_schema(
+            LLMResponse: Type[msgspec.Struct] = util.get_struct_from_schema(
                 response_format, bases=(BaseModel,), name="ResponseModel"
             )
 
             response_format = LLMResponse
 
-        tag: typing.Optional[Tag] = Tag.from_string(
+        tag: Optional[Tag] = Tag.from_string(
             content, tag_name="structured"
         ) or Tag.from_string(content, tag_name="output")
 
@@ -1175,9 +1189,9 @@ class CompletionEngine(CompletionEngineProtocol):
                     metadata={"response_format": response_format, "content": content},
                 )
             )
-            return typing.cast(T, None)
+            return cast(T, None)
 
-        structured: dict[str, typing.Any] = tag.as_object()
+        structured: dict[str, Any] = tag.as_object()
 
         if not structured:
             raise ValueError("Tag object could not be parsed as structured content")
@@ -1200,7 +1214,7 @@ class CompletionEngine(CompletionEngineProtocol):
         return model
 
     def _get_structured_prompt_instructions_by_language(
-        self, language: Language, schema: dict[str, typing.Any]
+        self, language: Language, schema: dict[str, Any]
     ) -> str:
         match language:
             case Language.ENGLISH:
@@ -1278,9 +1292,9 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: typing.Type[T],
+        response_format: Type[T],
         language: Language,
-        prompt_role: typing.Optional[MessageRole] = None,
+        prompt_role: Optional[MessageRole] = None,
     ) -> list[Message]:
         if prompt_role is None:
             prompt_role = MessageRole.SYSTEM
@@ -1311,35 +1325,23 @@ class CompletionEngine(CompletionEngineProtocol):
         max_tokens: int,
         cache_config: CacheConfig,
     ) -> LLM:
-        constructor_params: dict[str, typing.Any] = (
-            DynamicDict.having(
-                "max_tokens",
-                equals_to=max_tokens,
-            )
-            .as_well_as("model_name", equals_to=model.value)
-            .also(
-                "project",
-                equals_to=self.vertex_credentials.map(
-                    lambda credentials: credentials.project_id
-                ).unwrap(),
-            )
-            .also("model", equals_to=model.value)
-            .also(
-                "credentials",
-                equals_to=self.vertex_credentials.unwrap(),
-            )
-            .also(
-                "safety_settings",
-                equals_to={
-                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-                },
-            )
-            .also("cache_config", equals_to=cache_config)
-            .also("timeout", equals_to=120)
-            .at_last("generate_kwargs", equals_to={"timeout": 120})
-        )
+        constructor_params = {
+            "max_tokens": max_tokens,
+            "model_name": model.value,
+            "project": self.vertex_credentials.map(
+                lambda credentials: credentials.project_id
+            ).unwrap(),
+            "model": model.value,
+            "credentials": self.vertex_credentials.unwrap(),
+            "safety_settings": {
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            },
+            "cache_config": cache_config,
+            "timeout": 120,
+            "generate_kwargs": {"timeout": 120},
+        }
 
         return DynamicInstanceCreator(
             AIModel.get_llama_index_model_cls(model)
