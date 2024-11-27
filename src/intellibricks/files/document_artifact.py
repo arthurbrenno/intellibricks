@@ -377,7 +377,6 @@ class DocumentArtifact(msgspec.Struct, frozen=True):
         raw_docs: list[LangchainDocument] = [
             LangchainDocument(
                 page_content=page.md or "",
-                id=page.id,
                 metadata={
                     "filename": filename,
                 },

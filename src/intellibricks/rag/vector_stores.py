@@ -1,5 +1,5 @@
 import abc
-import typing
+from typing import Optional, TypeAlias
 
 from langchain_community.vectorstores import Clickhouse, ClickhouseSettings
 from langchain_core.documents import Document as LangchainDocument
@@ -13,13 +13,15 @@ from intellibricks.files import DocumentArtifact
 from .contracts import RAGQueriable
 from .results import QueryResult
 
+DocumentID: TypeAlias = str
+
 
 class RAGDocumentRepository(abc.ABC):
     embeddings: Embeddings
     collection_name: str
 
     def __init__(
-        self, embeddings: Embeddings, collection_name: typing.Optional[str] = None
+        self, embeddings: Embeddings, collection_name: Optional[str] = None
     ) -> None:
         self.embeddings = embeddings
         self.collection_name = collection_name or "default"
@@ -27,8 +29,8 @@ class RAGDocumentRepository(abc.ABC):
     async def ingest_async(
         self,
         document: DocumentArtifact,
-        transformations: typing.Optional[list[BaseDocumentTransformer]] = None,
-    ) -> list[str]:
+        transformations: Optional[list[BaseDocumentTransformer]] = None,
+    ) -> list[DocumentID]:
         """Stores the document in the database and returns the document ids."""
         vector_store: VectorStore = self._get_vector_store()
 
@@ -59,7 +61,5 @@ class ClickHouseDataStore(RAGDocumentRepository, RAGQueriable):
     def query(self, query: str) -> QueryResult:
         return QueryResult()
 
-    def _get_vector_store(
-        self, collection_name: typing.Optional[str] = None
-    ) -> VectorStore:
+    def _get_vector_store(self, collection_name: Optional[str] = None) -> VectorStore:
         return Clickhouse(embedding=self.embeddings, config=ClickhouseSettings())
