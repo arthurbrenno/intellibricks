@@ -109,7 +109,7 @@ class Joke(Struct):
     joke: str
 
 # One line to rule them all 🔥
-output = CompletionEngine().complete("Tell me a joke", response_format=Joke)
+output = CompletionEngine().complete("Tell me a joke", response_model=Joke)
 
 joke = output.get_parsed()  # Joke obj
 ```
@@ -167,7 +167,7 @@ print(output_obj)
 ```
 
 
-IntelliBricks streamlines the process by directly accepting the prompt and the desired output structure (`response_format`).  It handles the complexities of parsing and error handling internally. Furthermore, IntelliBricks provides a richer set of parameters like `fallback_models`, `max_retries`, `cache_config`, and `trace_params` for enhanced control, resilience, and monitoring, which are absent in the LangChain and LlamaIndex examples above.
+IntelliBricks streamlines the process by directly accepting the prompt and the desired output structure (`response_model`).  It handles the complexities of parsing and error handling internally. Furthermore, IntelliBricks provides a richer set of parameters like `fallback_models`, `max_retries`, `cache_config`, and `trace_params` for enhanced control, resilience, and monitoring, which are absent in the LangChain and LlamaIndex examples above.
 
 
 
@@ -187,7 +187,7 @@ class Joke(Struct):
 
 output = CompletionEngine().complete(
     prompt="Tell me a joke",
-    response_format=Joke
+    response_model=Joke
 )  # CompletionOutput[Joke]
 
 choices = output.choices  # list[MessageChoice[Joke]]
@@ -251,7 +251,7 @@ messages = [
 
 response = engine.chat(
     messages=messages,
-    response_format=PresidentsResponse
+    response_model=PresidentsResponse
 )
 
 presidents_response: PresidentsResponse = response.get_parsed()
@@ -283,7 +283,7 @@ async def get_joke(data: JokeTheme) -> JokeResponse:
     response = CompletionEngine().complete(
         prompt=f"The theme of the joke is: {data.prompt}",
         system_prompt="You are an AI specialised in making the funniest jokes.",
-        response_format=JokeResponse
+        response_model=JokeResponse
         model=AIModel.STUDIO_GEMINI_1P5_FLASH
     )
     return response.get_parsed()
@@ -321,7 +321,7 @@ async def get_joke(data: JokeRequest) -> Response:
     response = CompletionEngine().complete(
         prompt=f"The theme of the joke is: {data.prompt}",
         system_prompt="You are an AI specialized in making the funniest jokes.",
-        response_format=JokeResponse,
+        response_model=JokeResponse,
         model=AIModel.STUDIO_GEMINI_1P5_FLASH
     )
     joke_response = response.get_parsed()
@@ -393,7 +393,7 @@ Each `MessageChoice` in the `choices` list corresponds to a distinct response ge
 `CompletionMessage` extends the base `Message` class and includes an additional attribute:
 
 - **`parsed`**  
-  Contains the deserialized structured data as defined by the `response_format` parameter provided in the `CompletionEngine` method. This allows for type-safe access to the response data.
+  Contains the deserialized structured data as defined by the `response_model` parameter provided in the `CompletionEngine` method. This allows for type-safe access to the response data.
 
 #### 3. `Usage`
 
@@ -438,7 +438,7 @@ engine = CompletionEngine()
 # Make a completion request
 response: CompletionOutput[Joke] = engine.complete(
     prompt="Tell me a joke",
-    response_format=Joke,
+    response_model=Joke,
     model=AIModel.GPT_4O
 )
 
@@ -591,7 +591,7 @@ messages = [
 try:
     chat_response = engine.chat(
         messages=messages,  # The conversation history
-        response_format=PresidentsResponse,  # Structured response format
+        response_model=PresidentsResponse,  # Structured response format
         model=AIModel.GPT_4O,  # Primary AI model
         fallback_models=[AIModel.STUDIO_GEMINI_1P5_FLASH, AIModel.GPT_3_5_TURBO],  # Fallback models
         n=2,  # Number of responses to generate
@@ -624,7 +624,7 @@ async def async_chat_example():
     try:
         chat_response = await engine.chat_async(
             messages=messages,  # The conversation history
-            response_format=PresidentsResponse,  # Structured response format
+            response_model=PresidentsResponse,  # Structured response format
             model=AIModel.GPT_4O,  # Primary AI model
             fallback_models=[AIModel.STUDIO_GEMINI_1P5_FLASH, AIModel.GPT_3_5_TURBO],  # Fallback models
             n=2,  # Number of responses to generate
@@ -677,7 +677,7 @@ Gracefully manage failures and retries.
 try:
     output = engine.chat(
         messages=messages,
-        response_format=None,  # No structured response
+        response_model=None,  # No structured response
         model=AIModel.GPT_4O,
         max_retries=5,
         # ... other parameters
@@ -703,7 +703,7 @@ rag_data_store = YourRAGDataStore()
 try:
     output = engine.chat(
         messages=messages,
-        response_format=None,
+        response_model=None,
         data_stores=[rag_data_store],  # Integrate RAG data stores *(Currently under development)*
         web_search=True,  # Enable web search capabilities *(Currently under development)*. Requires passing a `WebSearchConfig`.
         # ... other parameters
@@ -725,7 +725,7 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
 | Parameter | Type | Description |
 |---|---|---|
 | `messages` | `list[Message]` | **Required.** A list of `Message` objects representing the conversation history.  Each message has a `role` (e.g., `SYSTEM`, `USER`, `ASSISTANT`) and `content`. |
-| `response_format` | `Type[T]` or `None` | **Optional.** A structured data model (subclass of `msgspec.Struct`) to deserialize the AI's response. If `None`, the response remains unstructured (`str`). |
+| `response_model` | `Type[T]` or `None` | **Optional.** A structured data model (subclass of `msgspec.Struct`) to deserialize the AI's response. If `None`, the response remains unstructured (`str`). |
 | `model` | `AIModel` or `None` | **Optional.** The primary AI model. Defaults to `AIModel.STUDIO_GEMINI_1P5_FLASH`. |
 | `fallback_models` | `list[AIModel]` or `None` | **Optional.** Alternative AI models to try if the primary model fails. |
 | `n` | `int` or `None` | **Optional.** The number of completions to generate. Defaults to `1`. |
@@ -743,7 +743,7 @@ Here's a detailed explanation of each parameter used in the `CompletionEngine.ch
 ## 💡 Key Points to Consider
 
 - **📐 Structured Responses:**  
-  Utilize the `response_format` parameter with `msgspec.Struct` models to ensure AI responses adhere to predefined structures, facilitating easier downstream processing and validation.
+  Utilize the `response_model` parameter with `msgspec.Struct` models to ensure AI responses adhere to predefined structures, facilitating easier downstream processing and validation.
 
 - **🔄 Fallback Models:**  
   Enhance the resilience of your application by specifying `fallback_models`, providing alternative AI models in case the primary model encounters issues or fails to generate a response.

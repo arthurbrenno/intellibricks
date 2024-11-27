@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import hashlib
-import typing
 import uuid
+from typing import Annotated, Literal, Optional, Sequence
 
 import msgspec
-from architecture import BaseModel, Meta, field
+from architecture import Meta, field
+from architecture.utils.structs import dictify
 from langchain_core.documents import Document as LangchainDocument
 from langchain_core.documents.transformers import BaseDocumentTransformer
 from llama_index.core.schema import Document as LlamaIndexDocument
@@ -15,16 +15,16 @@ from llama_index.core.schema import Document as LlamaIndexDocument
 from intellibricks.llms import AIModel, CompletionEngineProtocol
 
 
-class Image(BaseModel):
-    name: typing.Annotated[
-        typing.Optional[str],
+class Image(msgspec.Struct, frozen=True):
+    name: Annotated[
+        Optional[str],
         Meta(
             title="Name",
-            description="The name of the image file present in the pdf.",
+            description="The name of the image file present in the original document.",
         ),
-    ] = ""
+    ] = field(default=None)
 
-    height: typing.Annotated[
+    height: Annotated[
         float,
         Meta(
             title="Height",
@@ -32,7 +32,7 @@ class Image(BaseModel):
         ),
     ] = 0
 
-    width: typing.Annotated[
+    width: Annotated[
         float,
         Meta(
             title="Width",
@@ -41,118 +41,111 @@ class Image(BaseModel):
     ] = 0
 
 
-class PageItem(BaseModel):
-    type: typing.Annotated[
-        typing.Literal["text", "heading", "table"],
+class PageItem(msgspec.Struct, frozen=True):
+    type: Annotated[
+        Literal["text", "heading", "table"],
         Meta(
             title="Type",
             description="Type of the item",
         ),
-    ] = "text"
+    ] = field(default_factory=lambda: "text")
 
-    rows: typing.Annotated[
-        typing.Optional[typing.Sequence[typing.Sequence[str]]],
+    rows: Annotated[
+        Optional[Sequence[Sequence[str]]],
         Meta(
             title="Rows",
             description="Rows of the table, if the item is a table.",
         ),
-    ] = []
+    ] = field(default_factory=list)
 
-    is_perfect_table: typing.Annotated[
-        typing.Optional[bool],
+    is_perfect_table: Annotated[
+        Optional[bool],
         Meta(
             title="Is Perfect Table",
             description="Whether the table is a perfect table",
         ),
     ] = False
 
-    value: typing.Annotated[
-        typing.Optional[str],
+    value: Annotated[
+        Optional[str],
         Meta(
             title="Value",
             description="Value of the item",
         ),
-    ] = ""
+    ] = None
 
-    md: typing.Annotated[
-        typing.Optional[str],
+    md: Annotated[
+        Optional[str],
         Meta(
             title="Markdown Representation",
             description="Markdown representation of the item",
         ),
-    ] = ""
+    ] = None
 
-    lvl: typing.Annotated[
-        typing.Optional[int],
+    lvl: Annotated[
+        Optional[int],
         Meta(
             title="Level",
             description="Level of the heading",
         ),
     ] = None
 
-    csv: typing.Annotated[
-        typing.Optional[str],
+    csv: Annotated[
+        Optional[str],
         Meta(
             title="CSV Representation",
             description="CSV representation of the table",
         ),
-    ] = ""
+    ] = None
 
 
-class PageContent(BaseModel):
-    id: typing.Annotated[
-        str,
-        Meta(
-            title="ID",
-            description="Unique identifier for this specific page."
-            "Pages may be converted to Langchain and LlamaIndex"
-            "Documents later.",
-        ),
-    ] = field(default_factory=lambda: uuid.uuid4().__str__())
-
-    page: typing.Annotated[
-        typing.Optional[int],
+class PageContent(msgspec.Struct, frozen=True):
+    page: Annotated[
+        int,
         Meta(
             title="Page",
             description="Page number",
         ),
-    ] = 0
+    ]
 
-    text: typing.Annotated[
-        str,
+    text: Annotated[
+        Optional[str],
         Meta(
             title="Text",
             description="Text content's of the page",
         ),
-    ] = ""
+    ] = None
 
-    md: typing.Annotated[
-        str,
+    md: Annotated[
+        Optional[str],
         Meta(
             title="Markdown Representation",
             description="Markdown representation of the page.",
         ),
-    ] = ""
+    ] = None
 
-    images: typing.Annotated[
-        list[typing.Optional[Image]],
+    images: Annotated[
+        list[Optional[Image]],
         Meta(
             title="Images",
             description="Images present in the page",
         ),
-    ] = []
+    ] = field(default_factory=list)
 
-    items: typing.Annotated[
+    items: Annotated[
         list[PageItem],
         Meta(
             title="Items",
             description="Items present in the page",
         ),
-    ] = []
+    ] = field(default_factory=list)
+
+    def get_id(self) -> str:
+        return f"page_{self.page}"
 
 
-class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
-    credits_used: typing.Annotated[
+class JobMetadata(msgspec.Struct, frozen=True):
+    credits_used: Annotated[
         float,
         Meta(
             title="Credits Used",
@@ -161,7 +154,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0.0
 
-    credits_max: typing.Annotated[
+    credits_max: Annotated[
         int,
         Meta(
             title="Credits Max",
@@ -170,7 +163,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0
 
-    job_credits_usage: typing.Annotated[
+    job_credits_usage: Annotated[
         int,
         Meta(
             title="Job Credits Usage",
@@ -179,7 +172,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0
 
-    job_pages: typing.Annotated[
+    job_pages: Annotated[
         int,
         Meta(
             title="Job Pages",
@@ -188,7 +181,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
         ),
     ] = 0
 
-    job_is_cache_hit: typing.Annotated[
+    job_is_cache_hit: Annotated[
         bool,
         Meta(
             title="Job Is Cache Hit",
@@ -259,7 +252,7 @@ class Schema(msgspec.Struct, frozen=True):
 
     """
 
-    entities: typing.Annotated[
+    entities: Annotated[
         list[str],
         Meta(
             title="Entities",
@@ -269,7 +262,7 @@ class Schema(msgspec.Struct, frozen=True):
         ),
     ]
 
-    relations: typing.Annotated[
+    relations: Annotated[
         list[str],
         Meta(
             title="Relations",
@@ -279,7 +272,7 @@ class Schema(msgspec.Struct, frozen=True):
         ),
     ]
 
-    validation_schema: typing.Annotated[
+    validation_schema: Annotated[
         dict[str, list[str]],
         Meta(
             title="Validation Schema",
@@ -295,8 +288,8 @@ class Schema(msgspec.Struct, frozen=True):
     ]
 
 
-class DocumentArtifact(BaseModel):
-    pages: typing.Annotated[
+class DocumentArtifact(msgspec.Struct, frozen=True):
+    pages: Annotated[
         list[PageContent],
         Meta(
             title="Pages",
@@ -304,15 +297,15 @@ class DocumentArtifact(BaseModel):
         ),
     ]
 
-    job_metadata: typing.Annotated[
-        typing.Optional[JobMetadata],
+    job_metadata: Annotated[
+        Optional[JobMetadata],
         Meta(
             title="Job Metadata",
             description="Metadata of the job",
         ),
     ] = None
 
-    job_id: typing.Annotated[
+    job_id: Annotated[
         str,
         Meta(
             title="Job ID",
@@ -320,42 +313,21 @@ class DocumentArtifact(BaseModel):
         ),
     ] = field(default_factory=lambda: str(uuid.uuid4()))
 
-    file_path: typing.Annotated[
-        typing.Optional[str],
+    file_path: Annotated[
+        Optional[str],
         Meta(
             title="File Path",
             description="Path of the file",
         ),
     ] = field(default=None)
 
-    uid: typing.Annotated[
-        str,
-        Meta(
-            title="UID",
-            description="An unique identifier for the DocumentArtifact. The same document"
-            "would return the same uid so we can keep track of",
-        ),
-    ] = field(default_factory=str)
-
-    def __post_init__(self) -> None:
-        # Serialize relevant parts of the document to JSON
-        content_dict = {
-            "pages": [page.as_dict() for page in self.pages],
-            "job_metadata": self.job_metadata.as_dict() if self.job_metadata else {},
-            "file_path": self.file_path,
-        }
-        # Convert the dictionary to a JSON string with sorted keys to ensure consistency
-        content_json = msgspec.json.encode(content_dict, order="sorted")
-        # Compute the SHA-256 hash of the JSON string
-        self.uid = hashlib.sha256(content_json).hexdigest()
-
     async def get_schema_async(
         self, completion_engine: CompletionEngineProtocol
     ) -> Schema:
         output = await completion_engine.complete_async(
-            system_prompt="TODO",
-            prompt=f"<documento> {[page.text for page in self.pages]} </documento>",
-            response_format=Schema,
+            system_prompt="You are an AI assistant who is an expert in natural language processing and especially name entity recognition.",
+            prompt=f"<document> {[page.text for page in self.pages]} </document>",
+            response_model=Schema,
             model=AIModel.VERTEX_GEMINI_1P5_FLASH_002,
             temperature=1,
             trace_params={
@@ -363,7 +335,9 @@ class DocumentArtifact(BaseModel):
                 "user_id": "cortex_content_extractor",
             },
         )
-        possible_schema: typing.Optional[Schema] = output.get_parsed()
+
+        possible_schema = output.get_parsed()
+
         if possible_schema is None:
             raise ValueError(
                 "The entities and relationships could not be extracted from this document."
@@ -374,19 +348,19 @@ class DocumentArtifact(BaseModel):
     def as_llamaindex_documents(self) -> list[LlamaIndexDocument]:
         adapted_docs: list[LlamaIndexDocument] = []
 
-        filename: typing.Optional[str] = self.file_path
+        filename: Optional[str] = self.file_path
         for page in self.pages:
             page_number: int = page.page or 0
-            images: list[typing.Optional[Image]] = page.images
+            images: list[Optional[Image]] = page.images
 
             metadata = {
                 "page_number": page_number,
-                "images": [image.as_dict() for image in images if image is not None]
+                "images": [dictify(image) for image in images if image is not None]
                 or [],
                 "source": filename,
             }
 
-            content: str = page.md
+            content: str = page.md or ""
             adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))  # type: ignore[call-arg]
 
         return adapted_docs
@@ -395,14 +369,14 @@ class DocumentArtifact(BaseModel):
         self, transformations: list[BaseDocumentTransformer]
     ) -> list[LangchainDocument]:
         """Converts itself representation to a List of Langchain Document"""
-        filename: typing.Optional[str] = self.file_path
+        filename: Optional[str] = self.file_path
 
         # May contain a whole page as document.page_content.
         # If text splitters are provided, this problem
         # will be gone.
         raw_docs: list[LangchainDocument] = [
             LangchainDocument(
-                page_content=page.md,
+                page_content=page.md or "",
                 id=page.id,
                 metadata={
                     "filename": filename,
@@ -413,6 +387,6 @@ class DocumentArtifact(BaseModel):
 
         transformed_documents: list[LangchainDocument] = []
 
-        # TODO
+        # TODO (arthur): Implement transformations
 
         return transformed_documents or raw_docs

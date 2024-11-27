@@ -80,7 +80,7 @@ class CompletionEngineProtocol(Protocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -102,7 +102,7 @@ class CompletionEngineProtocol(Protocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -123,7 +123,7 @@ class CompletionEngineProtocol(Protocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -144,7 +144,7 @@ class CompletionEngineProtocol(Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -165,7 +165,7 @@ class CompletionEngineProtocol(Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -185,7 +185,7 @@ class CompletionEngineProtocol(Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -207,7 +207,7 @@ class CompletionEngineProtocol(Protocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -229,7 +229,7 @@ class CompletionEngineProtocol(Protocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -250,7 +250,7 @@ class CompletionEngineProtocol(Protocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -271,7 +271,7 @@ class CompletionEngineProtocol(Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -292,7 +292,7 @@ class CompletionEngineProtocol(Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -312,7 +312,7 @@ class CompletionEngineProtocol(Protocol):
         self,
         *,
         messages: list[Message],
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -359,7 +359,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -381,7 +381,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -402,7 +402,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -435,7 +435,7 @@ class CompletionEngine(CompletionEngineProtocol):
 
         return self.chat(
             messages=messages,
-            response_format=response_format,
+            response_model=response_model,
             model=model,
             fallback_models=fallback_models,
             n=n,
@@ -455,7 +455,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -476,7 +476,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -496,7 +496,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -519,7 +519,7 @@ class CompletionEngine(CompletionEngineProtocol):
                 asyncio.run(
                     self._achat(
                         messages=messages,
-                        response_format=response_format,
+                        response_model=response_model,
                         model=model,
                         fallback_models=fallback_models,
                         n=n,
@@ -541,7 +541,7 @@ class CompletionEngine(CompletionEngineProtocol):
                 loop.run_until_complete(
                     self._achat(
                         messages=messages,
-                        response_format=response_format,
+                        response_model=response_model,
                         model=model,
                         fallback_models=fallback_models,
                         n=n,
@@ -564,7 +564,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -586,7 +586,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -607,7 +607,7 @@ class CompletionEngine(CompletionEngineProtocol):
         prompt: Union[str, Prompt],
         *,
         system_prompt: Optional[Union[str, Prompt]] = None,
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -640,7 +640,7 @@ class CompletionEngine(CompletionEngineProtocol):
 
         return await self.chat_async(
             messages=messages,
-            response_format=response_format,
+            response_model=response_model,
             model=model,
             fallback_models=fallback_models,
             n=n,
@@ -660,7 +660,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -681,7 +681,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -701,7 +701,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -718,7 +718,7 @@ class CompletionEngine(CompletionEngineProtocol):
     ) -> CompletionOutput[T] | CompletionOutput[None]:
         return await self._achat(
             messages=messages,
-            response_format=response_format,
+            response_model=response_model,
             model=model,
             fallback_models=fallback_models,
             n=n,
@@ -738,7 +738,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: Type[T],
+        response_model: Type[T],
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -759,7 +759,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: None = None,
+        response_model: None = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -779,7 +779,7 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: Optional[Type[T]] = None,
+        response_model: Optional[Type[T]] = None,
         model: AIModel = AIModel.STUDIO_GEMINI_1P5_FLASH,
         fallback_models: Optional[list[AIModel]] = None,
         n: Optional[int] = None,
@@ -838,7 +838,7 @@ class CompletionEngine(CompletionEngineProtocol):
                     choices, usage = await self._aget_choices(
                         model=model,
                         messages=messages,
-                        response_format=response_format,
+                        response_model=response_model,
                         n=n,
                         temperature=temperature,
                         max_tokens=max_tokens,
@@ -904,7 +904,7 @@ class CompletionEngine(CompletionEngineProtocol):
         span: Maybe[StatefulSpanClient],
         cache_config: CacheConfig,
         postergate_token_counting: bool,
-        response_format: Optional[Type[T]],
+        response_model: Optional[Type[T]],
         language: Language,
     ) -> Tuple[list[MessageChoice[T]], Usage]:
         choices: list[MessageChoice[T]] = []
@@ -923,10 +923,10 @@ class CompletionEngine(CompletionEngineProtocol):
         for i in range(n):
             current_messages = messages.copy()
 
-            if response_format is not None:
+            if response_model is not None:
                 current_messages = self._append_response_format_to_prompt(
                     messages=current_messages,
-                    response_format=response_format,
+                    response_model=response_model,
                     language=language,
                 )
 
@@ -981,7 +981,7 @@ class CompletionEngine(CompletionEngineProtocol):
                 role=MessageRole(chat_response.message.role.value),
                 content=chat_response.message.content,
                 parsed=self._get_parsed(
-                    response_format,
+                    response_model,
                     chat_response.message.content,
                     trace=trace,
                     span=span,
@@ -1140,7 +1140,7 @@ class CompletionEngine(CompletionEngineProtocol):
     # @overload
     # def _get_parsed(
     #     self,
-    #     response_format: Type[T],
+    #     response_model: Type[T],
     #     content: Optional[str],
     #     trace: Maybe[StatefulTraceClient],
     #     span: Maybe[StatefulSpanClient],
@@ -1149,7 +1149,7 @@ class CompletionEngine(CompletionEngineProtocol):
     # @overload
     # def _get_parsed(
     #     self,
-    #     response_format: None,
+    #     response_model: None,
     #     content: Optional[str],
     #     trace: Maybe[StatefulTraceClient],
     #     span: Maybe[StatefulSpanClient],
@@ -1157,25 +1157,25 @@ class CompletionEngine(CompletionEngineProtocol):
 
     def _get_parsed(
         self,
-        response_format: Optional[Type[T]],
+        response_model: Optional[Type[T]],
         content: Optional[str],
         trace: Maybe[StatefulTraceClient],
         span: Maybe[StatefulSpanClient],
     ) -> T:
-        if response_format is None:
-            logger.warning("Response format is None")
+        if response_model is None:
+            logger.warning("Response model is None")
             return cast(T, None)
 
         if content is None:
             logger.warning("Contents of the message are none")
             return cast(T, None)
 
-        if isinstance(response_format, dict):
+        if isinstance(response_model, dict):
             LLMResponse: Type[msgspec.Struct] = util.get_struct_from_schema(
-                response_format, bases=(BaseModel,), name="ResponseModel"
+                response_model, bases=(BaseModel,), name="ResponseModel"
             )
 
-            response_format = LLMResponse
+            response_model = LLMResponse
 
         tag: Optional[Tag] = Tag.from_string(
             content, tag_name="structured"
@@ -1189,7 +1189,7 @@ class CompletionEngine(CompletionEngineProtocol):
                     input=content,
                     output=None,
                     level="ERROR",
-                    metadata={"response_format": response_format, "content": content},
+                    metadata={"response_model": response_model, "content": content},
                 )
             )
             return cast(T, None)
@@ -1200,7 +1200,7 @@ class CompletionEngine(CompletionEngineProtocol):
             raise ValueError("Tag object could not be parsed as structured content")
 
         model: T = msgspec.json.decode(
-            msgspec.json.encode(structured), type=response_format
+            msgspec.json.encode(structured), type=response_model
         )
 
         span.map(
@@ -1210,7 +1210,7 @@ class CompletionEngine(CompletionEngineProtocol):
                 input=f"<structured>\n{tag.content}\n</structured>",
                 output=model,
                 level="DEBUG",
-                metadata={"response_format": response_format, "content": content},
+                metadata={"response_model": response_model, "content": content},
             )
         )
 
@@ -1295,14 +1295,14 @@ class CompletionEngine(CompletionEngineProtocol):
         self,
         *,
         messages: list[Message],
-        response_format: Type[T],
+        response_model: Type[T],
         language: Language,
         prompt_role: Optional[MessageRole] = None,
     ) -> list[Message]:
         if prompt_role is None:
             prompt_role = MessageRole.SYSTEM
 
-        basemodel_schema = msgspec.json.schema(response_format)
+        basemodel_schema = msgspec.json.schema(response_model)
 
         new_prompt = self._get_structured_prompt_instructions_by_language(
             language=language, schema=basemodel_schema
