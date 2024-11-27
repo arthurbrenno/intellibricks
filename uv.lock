@@ -1,7 +1,17 @@
 version = 1
 requires-python = ">=3.10"
 resolution-markers = [
-    "python_full_version < '3.11' and platform_python_implementation != 'PyPy'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system == 'Windows'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system == 'Linux'",
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform != 'darwin' and sys_platform != 'win32'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform != 'darwin' and sys_platform != 'win32'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32'",
     "python_full_version == '3.11.*' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.12' and python_full_version < '3.12.4' and platform_python_implementation != 'PyPy'",
     "python_full_version >= '3.12.4' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
@@ -202,6 +212,35 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/fc/0f/aafca9af9315aee06a89ffde799a10a582fe8de76c563ee80bbcdc08b3fb/attrs-24.2.0.tar.gz", hash = "sha256:5cfb1b9148b5b086569baec03f20d7b6bf3bcacc9a42bebf87ffaaca362f6346", size = 792678 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl", hash = "sha256:81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2", size = 63001 },
+]
+
+[[package]]
+name = "azure-core"
+version = "1.32.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "six" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cc/ee/668328306a9e963a5ad9f152cd98c7adad86c822729fd1d2a01613ad1e67/azure_core-1.32.0.tar.gz", hash = "sha256:22b3c35d6b2dae14990f6c1be2912bf23ffe50b220e708a28ab1bb92b1c730e5", size = 279128 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/39/83/325bf5e02504dbd8b4faa98197a44cdf8a325ef259b48326a2b6f17f8383/azure_core-1.32.0-py3-none-any.whl", hash = "sha256:eac191a0efb23bfa83fddf321b27b122b4ec847befa3091fa736a5c32c50d7b4", size = 198855 },
+]
+
+[[package]]
+name = "azure-storage-blob"
+version = "12.24.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "cryptography" },
+    { name = "isodate" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fe/f6/5a94fa935933c8483bf27af0140e09640bd4ee5b2f346e71eee06c197482/azure_storage_blob-12.24.0.tar.gz", hash = "sha256:eaaaa1507c8c363d6e1d1342bd549938fdf1adec9b1ada8658c8f5bf3aea844e", size = 569613 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/f8/ef0f76f8c424bedd20c685409836ddfb42ac76fd8a0f21c3c3659cf7207d/azure_storage_blob-12.24.0-py3-none-any.whl", hash = "sha256:4f0bb4592ea79a2d986063696514c781c9e62be240f09f6397986e01755bc071", size = 408579 },
 ]
 
 [[package]]
@@ -606,6 +645,33 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/09/35/2495c4ac46b980e4ca1f6ad6db102322ef3ad2410b79fdde159a4b0f3b92/exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc", size = 28883 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/02/cc/b7e31358aac6ed1ef2bb790a9746ac2c69bcb3c8588b41616914eb106eaf/exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b", size = 16453 },
+]
+
+[[package]]
+name = "faker"
+version = "33.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/c7/0782eb872b96ee571701237be0dd85aef3713a15045ba42752a8aac7c8ce/faker-33.0.0.tar.gz", hash = "sha256:9b01019c1ddaf2253ca2308c0472116e993f4ad8fc9905f82fa965e0c6f932e9", size = 1850076 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/c3/0451555e7a9a233bc17f128cff7654ec60036d4ccbb8397dd949f28df176/Faker-33.0.0-py3-none-any.whl", hash = "sha256:68e5580cb6b4226710886e595eabc13127149d6e71e9d1db65506a7fbe2c7fce", size = 1889118 },
+]
+
+[[package]]
+name = "fastapi"
+version = "0.115.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "starlette" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ae/29/f71316b9273b6552a263748e49cd7b83898dc9499a663d30c7b9cb853cb8/fastapi-0.115.5.tar.gz", hash = "sha256:0e7a4d0dc0d01c68df21887cce0945e72d3c48b9f4f79dfe7a7d53aa08fbb289", size = 301047 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/54/c4/148d5046a96c428464557264877ae5a9338a83bbe0df045088749ec89820/fastapi-0.115.5-py3-none-any.whl", hash = "sha256:596b95adbe1474da47049e802f9a65ab2ffa9c2b07e7efee70eb8a66c9f2f796", size = 94866 },
 ]
 
 [[package]]
@@ -1279,12 +1345,18 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "azure-storage-blob" },
+    { name = "boto3" },
+    { name = "fastapi" },
+    { name = "google-cloud-storage" },
+    { name = "litestar" },
     { name = "pyfiglet" },
     { name = "pyright" },
     { name = "questionary" },
     { name = "rich" },
     { name = "toml" },
     { name = "tomlkit" },
+    { name = "types-requests" },
     { name = "types-toml" },
     { name = "watchdog" },
 ]
@@ -1320,14 +1392,29 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "azure-storage-blob", specifier = ">=12.24.0" },
+    { name = "boto3", specifier = ">=1.35.58" },
+    { name = "fastapi", specifier = ">=0.115.5" },
+    { name = "google-cloud-storage", specifier = ">=2.18.2" },
+    { name = "litestar", specifier = ">=2.13.0" },
     { name = "pyfiglet", specifier = ">=1.0.2" },
     { name = "pyright", specifier = ">=1.1.388" },
     { name = "questionary", specifier = ">=2.0.1" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "toml", specifier = ">=0.10.2" },
     { name = "tomlkit", specifier = ">=0.13.2" },
+    { name = "types-requests", specifier = ">=2.32.0.20241016" },
     { name = "types-toml", specifier = ">=0.10.8.20240310" },
     { name = "watchdog", specifier = ">=6.0.0" },
+]
+
+[[package]]
+name = "isodate"
+version = "0.7.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/54/4d/e940025e2ce31a8ce1202635910747e5a87cc3a6a6bb2d00973375014749/isodate-0.7.2.tar.gz", hash = "sha256:4cd1aa0f43ca76f4a6c6c0292a85f40b35ec2e43e315b59f06e6d32171a953e6", size = 29705 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/aa/0aca39a37d3c7eb941ba736ede56d689e7be91cab5d9ca846bde3999eba6/isodate-0.7.2-py3-none-any.whl", hash = "sha256:28009937d8031054830160fce6d409ed342816b543597cece116d966c6d99e15", size = 22320 },
 ]
 
 [[package]]
@@ -1658,6 +1745,41 @@ wheels = [
 ]
 
 [[package]]
+name = "litestar"
+version = "2.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "click" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
+    { name = "httpx" },
+    { name = "litestar-htmx" },
+    { name = "msgspec" },
+    { name = "multidict" },
+    { name = "polyfactory" },
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "rich-click" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/53/0c/c17fc38194d63c538d65cf4bdfbfe6dfc476579c39732664858b6e5dbddc/litestar-2.13.0.tar.gz", hash = "sha256:51a3ab60b7bc8de2c126f3ad907c2ba6f9d22194bdf1be9df52253e57ed80f0e", size = 725824 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/43/1b/31c8d75c98f69748c49d7b4196539d0e56b3c785f2b6b8e6b4686e6a934a/litestar-2.13.0-py3-none-any.whl", hash = "sha256:a40765644115639015a54e8cd7e7bdbe597a58d3f2d8f6d21afe9f343df43916", size = 555532 },
+]
+
+[[package]]
+name = "litestar-htmx"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "litestar" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2c/4d/0371dca94659baa942e9863aadadc3e4db6986b4d107fa64668c35e3f8f9/litestar_htmx-0.3.0.tar.gz", hash = "sha256:dbdf7b64d7ad71ac5ca1af5663d5fba78a2742bb1056b9c49a82d0e23827b6a7", size = 98506 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/df/f97c310395acb477adfda31a84ab47c1da2296520c46f5cc8ed4d459d2ee/litestar_htmx-0.3.0-py3-none-any.whl", hash = "sha256:3cca09314470483c867faffa77b642fba5f39531e105d6ba9c74866a1e8ab0d8", size = 8923 },
+]
+
+[[package]]
 name = "llama-cloud"
 version = "0.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -1883,7 +2005,8 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index-core" },
     { name = "llama-index-llms-openai" },
-    { name = "transformers" },
+    { name = "transformers", version = "4.40.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "transformers", version = "4.46.2", source = { registry = "https://pypi.org/simple" }, marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f3/00/70dd565ff095b1becbabbeff4180bece3384c0f1df4be6c1fa46ddf3a929/llama_index_llms_openai_like-0.2.0.tar.gz", hash = "sha256:d04eebf1365a769979e7b0debc5ddd5cb1cbc7ca175f2796001bd43cb831ecdc", size = 2876 }
 wheels = [
@@ -2506,6 +2629,19 @@ wheels = [
 ]
 
 [[package]]
+name = "polyfactory"
+version = "2.18.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "faker" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/4f/0c/12b4e50ab0d165f34ae65fbf26bd93debc8d6c4e00ea62a0b086c9eb58d0/polyfactory-2.18.1.tar.gz", hash = "sha256:17c9db18afe4fb8d7dd8e5ba296e69da0fcf7d0f3b63d1840eb10d135aed5aad", size = 185001 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/80/e0bfd57b64009f476112fa81056eb64d9c95bbbbf5bb3257ad010f89907a/polyfactory-2.18.1-py3-none-any.whl", hash = "sha256:1a2b0715e08bfe9f14abc838fc013ab8772cb90e66f2e601e15e1127f0bc1b18", size = 59335 },
+]
+
+[[package]]
 name = "prompt-toolkit"
 version = "3.0.36"
 source = { registry = "https://pypi.org/simple" }
@@ -3035,6 +3171,20 @@ wheels = [
 ]
 
 [[package]]
+name = "rich-click"
+version = "1.8.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "rich" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fc/f4/e48dc2850662526a26fb0961aacb0162c6feab934312b109b748ae4efee2/rich_click-1.8.4.tar.gz", hash = "sha256:0f49471f04439269d0e66a6f43120f52d11d594869a2a0be600cfb12eb0616b9", size = 38247 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/f3/72f93d8494ee641bde76bfe1208cf4abc44c6f9448673762f6077bc162d6/rich_click-1.8.4-py3-none-any.whl", hash = "sha256:2d2841b3cebe610d5682baa1194beaf78ab00c4fa31931533261b5eba2ee80b7", size = 35071 },
+]
+
+[[package]]
 name = "rsa"
 version = "4.9"
 source = { registry = "https://pypi.org/simple" }
@@ -3309,6 +3459,18 @@ asyncio = [
 ]
 
 [[package]]
+name = "starlette"
+version = "0.41.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1a/4c/9b5764bd22eec91c4039ef4c55334e9187085da2d8a2df7bd570869aae18/starlette-0.41.3.tar.gz", hash = "sha256:0e4ab3d16522a255be6b28260b938eae2482f98ce5cc934cb08dce8dc3ba5835", size = 2574159 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/96/00/2b325970b3060c7cecebab6d295afe763365822b1306a12eeab198f74323/starlette-0.41.3-py3-none-any.whl", hash = "sha256:44cedb2b7c77a9de33a8b74b2b90e9f50d11fcf25d8270ea525ad71a25374ff7", size = 73225 },
+]
+
+[[package]]
 name = "striprtf"
 version = "0.0.26"
 source = { registry = "https://pypi.org/simple" }
@@ -3373,10 +3535,53 @@ wheels = [
 
 [[package]]
 name = "tokenizers"
+version = "0.19.1"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform != 'darwin' and sys_platform != 'win32'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform != 'darwin' and sys_platform != 'win32'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32'",
+]
+dependencies = [
+    { name = "huggingface-hub", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/48/04/2071c150f374aab6d5e92aaec38d0f3c368d227dd9e0469a1f0966ac68d1/tokenizers-0.19.1.tar.gz", hash = "sha256:ee59e6680ed0fdbe6b724cf38bd70400a0c1dd623b07ac729087270caeac88e3", size = 321039 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c1/60/91cac8d496b304ec5a22f07606893cad35ea8e1a8406dc8909e365f97a80/tokenizers-0.19.1-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:952078130b3d101e05ecfc7fc3640282d74ed26bcf691400f872563fca15ac97", size = 2533301 },
+    { url = "https://files.pythonhosted.org/packages/4c/12/9cb68762ff5fee1efd51aefe2f62cb225f26f060a68a3779e1060bbc7a59/tokenizers-0.19.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:82c8b8063de6c0468f08e82c4e198763e7b97aabfe573fd4cf7b33930ca4df77", size = 2440223 },
+    { url = "https://files.pythonhosted.org/packages/c8/d6/6e1d728d765eb4102767f071bf7f6439ab10d7f4a975c9217db65715207a/tokenizers-0.19.1-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:5c88d1481f1882c2e53e6bb06491e474e420d9ac7bdff172610c4f9ad3898059", size = 2533448 },
+    { url = "https://files.pythonhosted.org/packages/90/79/d17a0f491d10817cd30f1121a07aa09c8e97a81114b116e473baf1577f09/tokenizers-0.19.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ddf672ed719b4ed82b51499100f5417d7d9f6fb05a65e232249268f35de5ed14", size = 2440254 },
+    { url = "https://files.pythonhosted.org/packages/63/90/2890cd096898dcdb596ee172cde40c0f54a9cf43b0736aa260a5501252af/tokenizers-0.19.1-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:621d670e1b1c281a1c9698ed89451395d318802ff88d1fc1accff0867a06f153", size = 2530580 },
+    { url = "https://files.pythonhosted.org/packages/74/d1/f4e1e950adb36675dfd8f9d0f4be644f3f3aaf22a5677a4f5c81282b662e/tokenizers-0.19.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d924204a3dbe50b75630bd16f821ebda6a5f729928df30f582fb5aade90c818a", size = 2436682 },
+    { url = "https://files.pythonhosted.org/packages/cf/7b/38fb7207cde3d1dc5272411cd18178e6437cdc1ef08cac5d0e8cfd57f38c/tokenizers-0.19.1-pp310-pypy310_pp73-macosx_10_12_x86_64.whl", hash = "sha256:3b11853f17b54c2fe47742c56d8a33bf49ce31caf531e87ac0d7d13d327c9334", size = 2532668 },
+    { url = "https://files.pythonhosted.org/packages/1d/0d/2c452fe17fc17f0cdb713acb811eebb1f714b8c21d497c4672af4f491229/tokenizers-0.19.1-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:d26194ef6c13302f446d39972aaa36a1dda6450bc8949f5eb4c27f51191375bd", size = 2438321 },
+]
+
+[[package]]
+name = "tokenizers"
 version = "0.20.3"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system == 'Windows'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system == 'Linux'",
+    "python_full_version == '3.11.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy'",
+    "python_full_version < '3.11' and platform_python_implementation == 'PyPy'",
+    "python_full_version == '3.11.*' and platform_python_implementation == 'PyPy'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4' and platform_python_implementation == 'PyPy'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
+]
 dependencies = [
-    { name = "huggingface-hub" },
+    { name = "huggingface-hub", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/da/25/b1681c1c30ea3ea6e584ae3fffd552430b12faa599b558c4c4783f56d7ff/tokenizers-0.20.3.tar.gz", hash = "sha256:2278b34c5d0dd78e087e1ca7f9b1dcbf129d80211afa645f214bd6e051037539", size = 340513 }
 wheels = [
@@ -3469,19 +3674,64 @@ wheels = [
 
 [[package]]
 name = "transformers"
+version = "4.40.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_machine == 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform != 'darwin' and sys_platform != 'win32'",
+    "python_full_version < '3.11' and platform_machine != 'arm64' and platform_python_implementation != 'PyPy' and platform_system == 'Darwin' and sys_platform != 'darwin' and sys_platform != 'win32'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform == 'darwin'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform == 'win32'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Darwin' and platform_system != 'Linux' and platform_system != 'Windows' and sys_platform != 'darwin' and sys_platform != 'win32'",
+]
+dependencies = [
+    { name = "filelock", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "huggingface-hub", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "numpy", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "packaging", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "pyyaml", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "regex", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "requests", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "safetensors", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "tokenizers", version = "0.19.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+    { name = "tqdm", marker = "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system != 'Linux' and platform_system != 'Windows'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/43/01/5f16275cf57489733d16fbe188d67ed70908d62d35cf26fe7243f1f15608/transformers-4.40.0.tar.gz", hash = "sha256:fdb01dfe6a492bd34e3fa2aefffa470b1d8a2341db47a932f83ed33839d96b03", size = 7811511 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/09/c8/844d5518a6aeb4ffdc0cf0cae65ae13dbe5838306728c5c640b5a6e2a0c9/transformers-4.40.0-py3-none-any.whl", hash = "sha256:92797ec3368ed4476a053529a4039a12ad09167d9e371981dda4afb4bdf590ac", size = 8998461 },
+]
+
+[[package]]
+name = "transformers"
 version = "4.46.2"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system == 'Windows'",
+    "python_full_version < '3.11' and platform_python_implementation != 'PyPy' and platform_system == 'Linux'",
+    "python_full_version == '3.11.*' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13' and platform_python_implementation != 'PyPy'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy'",
+    "python_full_version < '3.11' and platform_python_implementation == 'PyPy'",
+    "python_full_version == '3.11.*' and platform_python_implementation == 'PyPy'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4' and platform_python_implementation == 'PyPy'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13' and platform_python_implementation == 'PyPy'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
+]
 dependencies = [
-    { name = "filelock" },
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "regex" },
-    { name = "requests" },
-    { name = "safetensors" },
-    { name = "tokenizers" },
-    { name = "tqdm" },
+    { name = "filelock", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "huggingface-hub", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "numpy", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "packaging", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "pyyaml", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "regex", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "requests", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "safetensors", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "tokenizers", version = "0.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
+    { name = "tqdm", marker = "(platform_python_implementation != 'PyPy' and platform_system == 'Linux') or (platform_python_implementation != 'PyPy' and platform_system == 'Windows') or platform_python_implementation == 'PyPy' or python_full_version >= '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/05/6f/8f964f61983e3989c8ff23b5c21464807c6bc6236f36cdd41108222556d9/transformers-4.46.2.tar.gz", hash = "sha256:3d85410881e1c074be767877bf33c83231ec11529f274a6044ecb20c157ba14e", size = 8611717 }
 wheels = [
@@ -3507,6 +3757,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b6/9d/f6fbcc8246f5e46845b4f989c4e17e6fb3ce572f7065b185e515bf8a3be7/types-html5lib-1.1.11.20241018.tar.gz", hash = "sha256:98042555ff78d9e3a51c77c918b1041acbb7eb6c405408d8a9e150ff5beccafa", size = 11370 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/7c/f862b1dc31268ef10fe95b43dcdf216ba21a592fafa2d124445cd6b92e93/types_html5lib-1.1.11.20241018-py3-none-any.whl", hash = "sha256:3f1e064d9ed2c289001ae6392c84c93833abb0816165c6ff0abfc304a779f403", size = 17292 },
+]
+
+[[package]]
+name = "types-requests"
+version = "2.32.0.20241016"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fa/3c/4f2a430c01a22abd49a583b6b944173e39e7d01b688190a5618bd59a2e22/types-requests-2.32.0.20241016.tar.gz", hash = "sha256:0d9cad2f27515d0e3e3da7134a1b6f28fb97129d86b867f24d9c726452634d95", size = 18065 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/01/485b3026ff90e5190b5e24f1711522e06c79f4a56c8f4b95848ac072e20f/types_requests-2.32.0.20241016-py3-none-any.whl", hash = "sha256:4195d62d6d3e043a4eaaf08ff8a62184584d2e8684e9d2aa178c7915a7da3747", size = 15836 },
 ]
 
 [[package]]

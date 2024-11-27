@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import asyncio
+import timeit
 import uuid
 from typing import (
     Any,
@@ -793,6 +794,7 @@ class CompletionEngine(CompletionEngineProtocol):
         web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
     ) -> CompletionOutput[T] | CompletionOutput[None]:
+        start_time = timeit.default_timer()
         trace_params = trace_params or {}
         cache_config = cache_config or CacheConfig()
 
@@ -853,6 +855,7 @@ class CompletionEngine(CompletionEngineProtocol):
 
                     output: CompletionOutput[T] | CompletionOutput[None] = (
                         CompletionOutput(
+                            elapsed_time=timeit.default_timer() - start_time,
                             id=completion_id,
                             model=model,
                             choices=choices,

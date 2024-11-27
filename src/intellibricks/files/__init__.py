@@ -1,10 +1,10 @@
 """init.py module"""
 
-from .extractors import DoclingFileExtractor, FileExtractorProtocol
+from .extractors import FileExtractor, FileExtractorBase
 from .schema import DocumentArtifact
 
 __all__: list[str] = [
     "DocumentArtifact",
-    "FileExtractorProtocol",
-    "DoclingFileExtractor",
+    "FileExtractorBase",
+    "FileExtractor",
 ]

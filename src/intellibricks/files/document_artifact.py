@@ -7,12 +7,12 @@ import typing
 import uuid
 
 import msgspec
+from architecture import BaseModel, Meta, field
 from langchain_core.documents import Document as LangchainDocument
 from langchain_core.documents.transformers import BaseDocumentTransformer
 from llama_index.core.schema import Document as LlamaIndexDocument
-from architecture import BaseModel, Meta, field
 
-from intellibricks.llms import AIModel, CompletionEngineProtocol, CompletionOutput
+from intellibricks.llms import AIModel, CompletionEngineProtocol
 
 
 class Image(BaseModel):
@@ -197,7 +197,7 @@ class JobMetadata(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
     ] = False
 
 
-class Schema(BaseModel, frozen=True):  # type: ignore[call-arg, misc]
+class Schema(msgspec.Struct, frozen=True):
     """
     A class representing the schema of entities and relations present in a document.
 
@@ -352,7 +352,7 @@ class DocumentArtifact(BaseModel):
     async def get_schema_async(
         self, completion_engine: CompletionEngineProtocol
     ) -> Schema:
-        output: CompletionOutput[Schema] = await completion_engine.complete_async(
+        output = await completion_engine.complete_async(
             system_prompt="TODO",
             prompt=f"<documento> {[page.text for page in self.pages]} </documento>",
             response_format=Schema,

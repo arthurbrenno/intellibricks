@@ -4,23 +4,24 @@ import abc
 
 from architecture.data.files import RawFile
 
+from .constants import ParsingMethod
+
 from .schema import DocumentArtifact
 
 
-class FileExtractorProtocol(abc.ABC):
+class FileExtractorBase(abc.ABC):
     """
     Abstract class for extracting content from files.
     This should be used as a base class for specific file extractors.
     """
 
     @abc.abstractmethod
-    async def extract_contents(self, file: RawFile) -> DocumentArtifact:
+    async def extract_contents(
+        self, file: RawFile, parsing_method: ParsingMethod, use_gpu: bool = False
+    ) -> DocumentArtifact:
         """Extracts content from the file."""
         raise NotImplementedError("This method should be implemented by subclasses.")
 
 
-"""This module contains the implementation of the FileExtractorProtocol class."""
-
-
-class DoclingFileExtractor(FileExtractorProtocol):
+class FileExtractor(FileExtractorBase):
     pass

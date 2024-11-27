@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from abc import ABC
 import dataclasses
 import datetime
 import re
@@ -209,7 +210,7 @@ class Tag(BaseModel):
 
 # FACADE
 @dataclasses.dataclass
-class Part:
+class Part(ABC):
     type: Literal["image_url", "text", "input_audio"]
 
     @classmethod
@@ -225,29 +226,32 @@ class Part:
     @classmethod
     def from_input_audio(cls: Type[Part], data: str, format: str) -> InputAudioPart:
         return InputAudioPart(input_audio=InputAudio(data=data, format=format))
-        
 
     def dict(self):
         return {k: str(v) for k, v in dataclasses.asdict(self).items()}
+
 
 class InputAudio(TypedDict):
     data: str
     format: str
 
+
 class ImageUrl(TypedDict):
     url: str
     detail: NotRequired[Optional[str]]
 
+
 @dataclasses.dataclass(kw_only=True)
 class InputAudioPart(Part):
     type: Literal["image_url", "text", "input_audio"] = dataclasses.field(
-        default=cast(Final[Literal["image_url", "text", "input_audio"]], lambda: "input_audio")
+        default=cast(Literal["image_url", "text", "input_audio"], lambda: "input_audio")
     )
     input_audio: InputAudio
 
+
 @dataclasses.dataclass(kw_only=True)
 class TextContentPart(Part):
-    type: Final[Literal["image_url", "text", "input_audio"]] = dataclasses.field(
+    type: Literal["image_url", "text", "input_audio"] = dataclasses.field(
         default=cast(Literal["image_url", "text", "input_audio"], lambda: "text")
     )
     text: str
@@ -280,7 +284,9 @@ class Prompt(BaseModel):
         ),
     ]
 
-    def compile(self, **replacements: dict[ReplacementText, ReplacementValue]) -> Prompt:
+    def compile(
+        self, **replacements: dict[ReplacementText, ReplacementValue]
+    ) -> Prompt:
         """
         Replace placeholders in the content with provided replacement values.
 
