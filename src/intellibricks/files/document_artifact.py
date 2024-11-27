@@ -378,7 +378,7 @@ class DocumentArtifact(msgspec.Struct, frozen=True):
             LangchainDocument(
                 page_content=page.md or "",
                 metadata={
-                    "filename": filename,
+                    "source": filename,
                 },
             )
             for page in self.pages
