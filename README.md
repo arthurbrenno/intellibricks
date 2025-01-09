@@ -1,6 +1,6 @@
 # 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
 
-Intellibricks is The World's best Agentic/LLM framework designed for you, developer. It was designed in a complete different way from other frameworks, which makes the language (Python) fit to it. Intellibricks takes advantage of the latest features and capabilities with the latest python versions (3.13), like `default generics` to provide the best experience with Structured Outputs and predictability on what the output of the LLM is.
+Intellibricks is an amazing Agentic/LLM framework designed for you, developer. It was designed in a complete different way from other frameworks, which makes the language (Python) fit to it. Intellibricks takes advantage of the latest features and capabilities with the latest python versions (3.13), like `default generics` to provide the best experience with Structured Outputs and predictability on what the output of the LLM is.
 
 
 Quick examples (no structured outputs):
@@ -286,3 +286,17 @@ print(output_obj)
 WIP:
 1. Advanced file parsing with Docling. (`files` module) with conversion to langchain document object and llama-index document object.
 2. Integration with common vector databases (`rag` module)
+3. Making fastAPI and litestar auto doc generation more powerful (in the case of FastAPI, I'll hace to write pydantic classes, I'll see how it works internally to build this auto docs and do it.)
+
+
+If you want to contribute:
+local development:
+```bash
+git clone https://github.com/arthurbrenno/intellibricks.git
+```
+
+install `uv` https://docs.astral.sh/uv/getting-started/installation/
+
+`uv sync`
+
+Done!
