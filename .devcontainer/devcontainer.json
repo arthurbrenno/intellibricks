@@ -1,0 +1,39 @@
+{
+  "name": "Python 3 Development Environment",
+  "image": "mcr.microsoft.com/devcontainers/python:3.10-buster",
+
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+  
+  "postCreateCommand": "sudo sh .devcontainer/setup.sh",
+
+  "forwardPorts": [80],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "usernamehw.errorlens",
+        "VisualStudioExptTeam.vscodeintellicode",
+        "VisualStudioExptTeam.intellicode-api-usage-examples",
+        "donjayamanne.python-environment-manager",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "GitHub.copilot",
+        "eamodio.gitlens",
+        "KevinRose.vsc-python-indent",
+        "vivaxy.vscode-conventional-commits",
+        "matangover.mypy"
+      ],
+      "settings": {
+        "python.formatting.provider": "none",
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        },
+        "ruff.format.args": ["--line-length", "88"]
+      }
+    }
+  },
+
+  "remoteUser": "root"
+}

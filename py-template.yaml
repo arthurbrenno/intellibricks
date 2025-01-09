@@ -1,0 +1,60 @@
+---
+project_name: py-example-project
+loglevel: info
+analyses:
+- analysis_name: py check
+  source_directory: /Users/arthurbrenno/Documents/Dev/Public/ctx/intellibricks/src/intellibricks/llms
+  only_permit_languages:
+  - py
+  only_permit_file_extensions:
+  - .py
+  ignore_directories_containing:
+  - __pycache__
+  - .git
+  - .idea
+  - .vscode
+  - .venv
+  - venv
+  - env
+  - node_modules
+  - build
+  - dist
+  - target
+  - out
+  - output
+  - logs
+  - tmp
+  - temp
+  - cache
+  - data
+  - docs
+  - doc
+  - test
+  - tests
+  - testing
+  - example
+  - examples
+  - sample
+  - samples
+  - backup
+  - backups
+  - archive
+  - archives
+  - history
+  - historical
+  - old
+  - obsolete
+  file_scan:
+  - number_of_methods
+  - source_lines_of_code
+  - dependency_graph
+  - louvain_modularity
+  - fan_in_out
+  - tfidf
+  export:
+  - directory: /Users/arthurbrenno/Documents/Dev/Public/ctx/intellibricks/export
+  - graphml
+  - json
+  - tabular_file
+  - tabular_console_overall
+  - d3
