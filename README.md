@@ -56,8 +56,8 @@ from langfuse import Langfuse
 import msgspec
 
 langfuse = Langfuse(
-    secret_key="sk-lf-0be2e5c3-6c86-421c-ad5f-ffb4c065daa0",
-    public_key="pk-lf-753848ca-2150-473e-a335-4970fb550a20",
+    secret_key="sk-lf-0be2e5c3-6c86-421c-ad5f-ffb4c065daa0", # Your secret key here
+    public_key="pk-lf-753848ca-2150-473e-a335-4970fb550a20", # Your public key here
     host="http://localhost:3000",
 )
 
@@ -95,7 +95,11 @@ model_info = chat_completion.parsed
 print(f"Model name: {model_info.name} | Creator: {model_info.creator}")
 ```
 
-In this example we defined a `ModelInfo` class using `msgspec.Struct` for structured outputs and passed this into the `synapse.chat()` method through the parameter `response_model`. We also defined some `TraceParams` which can be used to pass information to langfuse.
+In this example we defined a `ModelInfo` class using `msgspec.Struct` for structured outputs and passed this into the `synapse.chat()` method through the parameter `response_model`. We also defined some `TraceParams` which can be used to pass information to langfuse. Below, is how it could look like in langfuse:
+
+<p align="center">
+  <img src="/docs/readme_images/langfuse_view.jpeg" alt="Quick Overview" width="600" />
+</p>
 
 ### 🤖 Agents: Autonomous Entities
 
