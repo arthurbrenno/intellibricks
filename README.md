@@ -319,7 +319,7 @@ This code demonstrates how you can create a custom data source that can be retri
 
 ### 🏆 Why IntelliBricks?
 
-IntelliBricks stands out from other frameworks such as LangChain and LlamaIndex due to its unique approach. By treating Python as a first-class citizen and leveraging advanced Python features, IntelliBricks provides a more streamlined and developer-friendly experience, but let's see some examples:
+IntelliBricks stands out from other frameworks such as LangChain and LlamaIndex due to its unique approach. By treating Python as a first-class citizen and leveraging advanced Python features, IntelliBricks provides a more streamlined and developer-friendly experience, but let's see some examples, take the conclusions yourself:
 
 **LangChain**
 
@@ -342,8 +342,6 @@ joke = structured_llm.invoke(
 
 print(joke)
 ```
-
-While this method is straightforward, it lacks many features included in Intellibricks. Features like fallback models, tracing, etc.
 
 **LlamaIndex**
 
@@ -368,8 +366,6 @@ output_obj = output.raw # Joke object
 
 print(output_obj)
 ```
-
-LlamaIndex does not provide out-of-the-box features like intellibricks does.
 
 ## 📚 Deep Dive: The Schema Module
 
