@@ -2,10 +2,11 @@ import os
 import re
 import shutil
 import subprocess
+import sys
+import signal
 from enum import Enum, auto
 from typing import List, Optional
 
-import sys
 import msgspec
 import questionary
 import toml  # type: ignore
@@ -20,12 +21,16 @@ from rich.traceback import install
 
 install()  # Better traceback formatting with Rich
 
+# Force Python's default SIGINT handler so Ctrl+C isn't swallowed
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 def parse_version(version: str) -> list[int]:
+    """Parse a string version like 'v0.1.2' into a list of ints [0,1,2]."""
     return list(map(int, version.lstrip("v").split(".")))
 
 
 def compare_releases(version1: str, version2: str) -> int:
+    """Compare two version strings ('v0.1.2'). Return -1, 0, or 1."""
     parsed_version1 = parse_version(version1)
     parsed_version2 = parse_version(version2)
     if parsed_version1 < parsed_version2:
@@ -102,6 +107,7 @@ def run_command(
                     f"[success]{description} completed successfully (handled non-zero exit code).[/success]"
                 )
             else:
+                progress.update(task, completed=100)
                 console.print(Panel(f"Command {' '.join(cmd)} failed.", style="error"))
                 console.print(
                     Panel(
@@ -132,9 +138,7 @@ def main():
         gh_cli = shutil.which("gh")
         if not gh_cli:
             progress.stop()
-            console.print(
-                "[error]GitHub CLI ('gh') is required to run this script.[/error]"
-            )
+            console.print("[error]GitHub CLI ('gh') is required to run this script.[/error]")
             raise ValueError("GitHub CLI ('gh') is required to run this script.")
 
         # Fetch latest release tag
@@ -155,7 +159,33 @@ def main():
             raise e
 
     releases = msgspec.json.decode(result.stdout)
-    tag_version = releases[0].get("tagName") if releases else "v0.0.0"
+
+    # If no release found, ask user if they want to start from v0.0.1 or specify a custom version
+    if not releases:
+        console.print("[warning]No existing releases found on GitHub.[/warning]")
+        version_choice = questionary.select(
+            "No releases found. Do you want to use v0.0.1 or set your own version?",
+            choices=["Use v0.0.1", "Specify my own version"],
+        ).unsafe_ask()
+
+        if version_choice is None:
+            console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+            sys.exit(130)
+
+        if version_choice == "Use v0.0.1":
+            tag_version = "v0.0.1"
+        else:
+            custom_version = questionary.text(
+                "Enter your custom version (e.g., v0.1.0):"
+            ).unsafe_ask()
+            if custom_version is None:
+                console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+                sys.exit(130)
+            if not custom_version.startswith("v"):
+                custom_version = f"v{custom_version}"
+            tag_version = custom_version
+    else:
+        tag_version = releases[0].get("tagName") if releases else "v0.0.0"
 
     # Release type selection with beautiful prompts
     console.print(
@@ -181,21 +211,27 @@ def main():
                 ("pointer", "fg:#FF0000 bold"),
             ]
         ),
-    ).ask()
+    ).unsafe_ask()
+
+    if user_response is None:
+        console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+        sys.exit(130)
 
     # Double confirmation for major or feature releases
     if user_response in [ReleaseType.MAJOR, ReleaseType.FEATURE]:
         for _ in range(2):
-            if not questionary.confirm(
+            confirm_result = questionary.confirm(
                 f"Are you sure you want to proceed with a {user_response.name} release?",
                 default=False,
                 style=questionary.Style([("question", "fg:#FF69B4 bold")]),
-            ).ask():
+            ).unsafe_ask()
+            if confirm_result is None:
+                console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+                sys.exit(130)
+
+            if not confirm_result:
                 console.print(
-                    Panel(
-                        "[warning]Release process terminated.[/warning]",
-                        style="warning",
-                    )
+                    Panel("[warning]Release process terminated.[/warning]", style="warning")
                 )
                 return
 
@@ -227,9 +263,14 @@ def main():
     console.print(f"[info]New version calculated: {new_version}[/info]")
 
     # Git operations
-    if questionary.confirm(
+    confirm_git_ops = questionary.confirm(
         "Add, commit, and push all changes before releasing?", default=True
-    ).ask():
+    ).unsafe_ask()
+    if confirm_git_ops is None:
+        console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+        sys.exit(130)
+
+    if confirm_git_ops:
         commands = [
             (["git", "add", "."], "Staging changes"),
             (
@@ -254,9 +295,7 @@ def main():
     pyproject["project"]["version"] = new_version
     with open("pyproject.toml", "w") as f:
         f.write(tomlkit.dumps(pyproject))
-    console.print(
-        f"[success]Updated 'pyproject.toml' with new version {new_version}.[/success]"
-    )
+    console.print(f"[success]Updated 'pyproject.toml' with new version {new_version}.[/success]")
 
     # Ensure CHANGELOG.md exists
     changelog_path = "CHANGELOG.md"
@@ -279,10 +318,15 @@ def main():
 
         if current_version and new_version:
             if compare_releases(current_version, new_version) != 0:
-                if questionary.confirm(
+                confirm_changelog_overwrite = questionary.confirm(
                     f"The version in {changelog_path} ({current_version}) does not match the new version ({new_version}). Do you want to overwrite the file?",
                     default=True,
-                ).ask():
+                ).unsafe_ask()
+                if confirm_changelog_overwrite is None:
+                    console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+                    sys.exit(130)
+
+                if confirm_changelog_overwrite:
                     with open(changelog_path, "w") as f:
                         f.write(f"# Changelog\n\n## {new_version}\n\n- \n")
                     console.print(
@@ -322,11 +366,17 @@ def main():
     release_title = questionary.text(
         "Enter the release title (this will appear as the heading of the release on GitHub). Leave blank to use the default version tag:",
         default=new_version,
-    ).ask()
+    ).unsafe_ask()
+    if release_title is None:
+        console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+        sys.exit(130)
 
     extra_flags = questionary.text(
         "Enter additional GitHub CLI flags (optional):"
-    ).ask()
+    ).unsafe_ask()
+    if extra_flags is None:
+        console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
+        sys.exit(130)
 
     try:
         gh_release_cmd = [
