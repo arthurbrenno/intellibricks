@@ -343,7 +343,7 @@ joke = structured_llm.invoke(
 print(joke)
 ```
 
-While this method is straightforward, it lacks many features included in Intellibricks. Features like fallback models, caching, tracing, and custom tool integration are not readily available.
+While this method is straightforward, it lacks many features included in Intellibricks. Features like fallback models, tracing, etc.
 
 **LlamaIndex**
 
@@ -369,7 +369,7 @@ output_obj = output.raw # Joke object
 print(output_obj)
 ```
 
-LlamaIndex does not provide out-of-the-box features like the retry mechanisms, comprehensive tracing with Langfuse, and other advanced parameters offered by IntelliBricks for fine-grained control and observability.
+LlamaIndex does not provide out-of-the-box features like intellibricks does.
 
 ## 📚 Deep Dive: The Schema Module
 
@@ -378,11 +378,8 @@ This section provides a comprehensive overview of the core classes defined in th
 ### Configuration and Meta-Data
 
 *   **`GenerationConfig`**: Defines how completions are generated, including settings like `temperature`, `max_tokens`, `cache_config` and `trace_params`.
-*   **`MimeType`**: An enum that provides the mime types for several types of files.
-*   **`RawResponse`**: Represents a null object returned by the model.
+*   **`RawResponse`**: Represents a null object (design pattern) returned by the model.
 *   **`TraceParams`**: Parameters for updating the current trace metadata and context information (used with Langfuse).
-*   **`CacheConfig`**: Specifies how completion responses are cached (ttl, key).
-*   **`Tag`**: Represents structured tags that can be generated from strings, which can have a `tag_name`, `content` and attributes.
 *   **`WebsiteUrl`**: Represents a URL to a website.
 *   **`FileUrl`**: Represents a URL to a file.
 
