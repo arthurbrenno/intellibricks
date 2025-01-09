@@ -171,3 +171,4 @@ export
 experiments/
 __test.pdf
 service_account.json
+.DS_Store
