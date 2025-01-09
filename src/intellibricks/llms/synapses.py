@@ -436,7 +436,7 @@ class Synapse(msgspec.Struct, kw_only=True, frozen=True, omit_defaults=True):
 
         logger.debug("Starting chat completion.")
 
-        maybe_span = Maybe(
+        maybe_span: Maybe[StatefulSpanClient] = Maybe(
             trace.map(
                 lambda trace: trace.span(
                     id=f"sp-{completion_id}",
