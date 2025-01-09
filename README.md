@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/docs/readme_images/intellibrics_logo.png" alt="IntelliBricks Logo" width="500" />
+  <img src="/docs/readme_images/ogo.png" alt="IntelliBricks Logo" width="500" />
 </p>
 
 # 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
