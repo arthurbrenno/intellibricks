@@ -15,6 +15,10 @@
 
 IntelliBricks is a cutting-edge Agentic/LLM framework meticulously crafted for developers like you. It's designed from the ground up to make your language (Python) a first-class citizen when building AI-powered applications. By leveraging the latest features and capabilities of modern Python (3.13+), including `default generics`, IntelliBricks ensures a seamless experience with structured outputs and predictable LLM interactions. Say goodbye to the boilerplate and hello to intelligent applications built with ease!
 
+```bash
+pip install intellibricks
+```
+
 ## Core Concepts & Getting Started
 
 ### ⚙️ Synapses: The Foundation of Interaction
