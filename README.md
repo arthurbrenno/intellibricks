@@ -1,11 +1,29 @@
 # 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
 
-Intellibricks is an amazing Agentic/LLM framework designed for you, developer. It was designed in a complete different way from other frameworks, which makes the language (Python) fit to it. Intellibricks takes advantage of the latest features and capabilities with the latest python versions (3.13), like `default generics` to provide the best experience with Structured Outputs and predictability on what the output of the LLM is.
+<p align="center">
+  <img src="/docs/readme_images/intellibrics_logo.png" alt="IntelliBricks Logo" width="500" />
+</p>
+
+<p align="center">
+  <img src="/docs/readme_images/quick_overview.jpeg" alt="Quick Overview" width="600" />
+</p>
 
 
-Quick examples (no structured outputs):
-Synapses:
-```py
+<p align="center">
+ <img src="/docs/readme_images/advantages.jpeg" alt="IntelliBricks Advantages" width="600"/>
+</p>
+
+IntelliBricks is a cutting-edge Agentic/LLM framework meticulously crafted for developers like you. It's designed from the ground up to make your language (Python) a first-class citizen when building AI-powered applications. By leveraging the latest features and capabilities of modern Python (3.13+), including `default generics`, IntelliBricks ensures a seamless experience with structured outputs and predictable LLM interactions. Say goodbye to the boilerplate and hello to intelligent applications built with ease!
+
+## Core Concepts & Getting Started
+
+### ⚙️ Synapses: The Foundation of Interaction
+
+Imagine a synapse in your brain—a connection that allows signals to pass between neurons. In IntelliBricks, a `Synapse` is that connection, linking your code to powerful AI models. It's your go-to for interacting with LLMs.
+
+**Basic Usage:**
+
+```python
 from intellibricks import Synapse
 
 synapse = Synapse.of("google/genai/gemini-2.0-flash-exp")
@@ -15,22 +33,13 @@ completion = synapse.complete("Hello, how are you?")  # Completion[RawResponse]
 print(completion)
 ```
 
-Agents:
-```py
-from intellibricks import Synapse, Agent
+This simple code snippet shows the core of how IntelliBricks simplifies LLM interactions.  `Synapse.of()` creates an instance of the `Synapse` object. Then the `complete` method is used for single-turn prompts. The type of the completion is `Completion[RawResponse]`.
 
-synapse = Synapse.of("google/genai/gemini-2.0-flash-exp")
+**Advanced Synapse Usage:**
 
-messages = (
-    UserMessage
-)
-```
+IntelliBricks gives you the power to obtain more robust, structured data from LLMs through the use of *Structured Outputs*. It also provides powerful tools for observability with Langfuse. Here's an example:
 
-
-Advanced examples (structured outputs, tools, chat_history, observability with Langfuse)
-
-Synapses:
-```py
+```python
 from typing import Annotated
 from intellibricks import (
     Synapse,
@@ -82,8 +91,15 @@ model_info = chat_completion.parsed
 print(f"Model name: {model_info.name} | Creator: {model_info.creator}")
 ```
 
-Agents:
-```py
+In this example we defined a `ModelInfo` class using `msgspec.Struct` for structured outputs and passed this into the `synapse.chat()` method through the parameter `response_model`. We also defined some `TraceParams` which can be used to pass information to langfuse.
+
+### 🤖 Agents: Autonomous Entities
+
+Agents in IntelliBricks represent autonomous entities capable of performing specific tasks. They leverage Synapses for LLM interaction and can be customized with instructions, tools, and even context from your own knowledge bases.
+
+**Basic Agent Usage:**
+
+```python
 from typing import Annotated
 from intellibricks import (
     Synapse,
@@ -148,13 +164,29 @@ model_info = agent_response.parsed
 print(f"Model name: {model_info.name} | Creator: {model_info.creator}")
 ```
 
-Innovative: turn your agents into a FastAPI API:
-```py
+In this example we created an `Agent` and passed a task, instructions, metadata and the `synapse` object. We also passed the `ModelInfo` as the `response_model`. Then we can call the `run` method passing in a text prompt and get an AgentResponse object.
+
+**Advanced Agent Usage**
+
+IntelliBricks Agents can make use of *Tool Calling*, which allows them to connect with external world.
+
+```python
+
+```
+
+### 🚀 Real World Magic: Turning Agents into APIs
+
+IntelliBricks truly shines with its ability to seamlessly convert your agents into fully functional APIs. Whether you prefer FastAPI or Litestar, IntelliBricks makes this process incredibly simple.
+
+**FastAPI Integration:**
+
+```python
 from intellibricks import (
     Synapse,
     Agent,
 )
 import uvicorn
+from fastapi import FastAPI
 
 agent = Agent(
     task="Chat With the User",
@@ -165,14 +197,31 @@ agent = Agent(
     synapse=Synapse.of("google/genai/gemini-2.0-flash-exp"),
 )
 
-uvicorn.run(agent.to_fastapi_async_app())
-
-# Endpoint will be POST /agents/{lower_agent_name}/completions
+# Create an app using the method to_fastapi_async_app
+# Note that this will automatically create the endpoints with the `metadata.name`
+# e.g. /agents/{lower_agent_name}/completions
+uvicorn.run(agent.fastapi_app)
 ```
 
+Or you can just get the router itself:
+```python
+from intellibricks import (
+    Synapse,
+    Agent,
+)
+import uvicorn
+from fastapi import FastAPI
 
-or just to a simple FastAPI router:
-```py
+agent = Agent(
+    task="Chat With the User",
+    instructions=[
+        "Chat with the user",
+    ],
+    metadata={"name": "Bob", "description": "A simple chat agent."},
+    synapse=Synapse.of("google/genai/gemini-2.0-flash-exp"),
+)
+
+# Create the router using the method to_fastapi_async_router
 router = agent.to_fastapi_async_router("/agents/bob/completions", "post")
 
 app = FastAPI()
@@ -180,13 +229,40 @@ app.include_router(router)
 uvicorn.run(app)
 ```
 
-The same goes for Litestar:
-```py
-uvicorn.run(agent.to_litestar_async_app())
+This code will create a fully functional REST API for your agent with just a few lines of code. The API endpoint will be  `POST /agents/bob/completions`.
+
+**Litestar Integration:**
+
+The same goes for Litestar!
+```python
+from intellibricks import (
+    Synapse,
+    Agent,
+)
+import uvicorn
+from litestar import Litestar
+
+agent = Agent(
+    task="Chat With the User",
+    instructions=[
+        "Chat with the user",
+    ],
+    metadata={"name": "Bob", "description": "A simple chat agent."},
+    synapse=Synapse.of("google/genai/gemini-2.0-flash-exp"),
+)
+
+# Create an app using the method to_litestar_async_app
+# Note that this will automatically create the endpoints with the `metadata.name`
+# e.g. /agents/{lower_agent_name}/completions
+uvicorn.run(agent.litestar_app)
 ```
 
-# Providing additional context using the intellibrics.rag module
-```py
+The API endpoint will be `POST /agents/bob/completions`.
+### 🔍 Contextual Understanding with RAG
+
+IntelliBricks integrates seamlessly with Retrieval-Augmented Generation (RAG) to provide your agents with relevant contextual information.
+
+```python
 from dataclasses import dataclass
 from intellibricks import (
     Synapse,
@@ -230,19 +306,21 @@ agent = Agent(
     ],
     metadata={"name": "Bob", "description": "A simple chat agent."},
     synapse=Synapse.of("google/genai/gemini-2.0-flash-exp"),
-    context_sources=[MyGraphDB("localhost")],
+    context_sources=[MyFakeGraphDB("localhost")],
 )
-
 ```
-Please note that I'm currently writing some useful vector db connections for you
 
-Now, imagine all the possibilities! Imagine merging all agents easily and creating an API in seconds!
-Incomind (february): advanced RawFile -> ParsedDocument module. which will help convert your files into RAG ready files for any kind of database.
+This code demonstrates how you can create a custom data source that can be retrieved during an agent execution.
 
-How to do it with LangChain 🦜️🔗
-LangChain offers a simplified approach to structured outputs using with_structured_output. While convenient, it lacks some of the advanced features and flexibility of IntelliBricks. For instance, features like fallback models, caching, tracing, and custom tool integration are not readily available. Additionally, the reliance on a single invoke method for diverse operations can make customization and specific parameter handling less intuitive.
+### 🏆 Why IntelliBricks?
 
-```py
+IntelliBricks stands out from other frameworks such as LangChain and LlamaIndex due to its unique approach. By treating Python as a first-class citizen and leveraging advanced Python features, IntelliBricks provides a more streamlined and developer-friendly experience, but let's see some examples:
+
+**LangChain**
+
+Langchain offers structured output parsing using the `with_structured_output` method.
+
+```python
 from langchain.chat_models import ChatOpenAI
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel
@@ -259,10 +337,14 @@ joke = structured_llm.invoke(
 
 print(joke)
 ```
-How to do it with LlamaIndex 🦙
-LlamaIndex also provides a way to achieve structured outputs, involving wrapping the LLM with as_structured_llm. This, however, introduces additional steps compared to IntelliBricks. You also need to construct ChatMessage. LlamaIndex's approach lacks the built-in retry mechanisms, comprehensive tracing with Langfuse, and other advanced parameters offered by IntelliBricks for fine-grained control and observability.
 
-```py
+While this method is straightforward, it lacks many features included in Intellibricks. Features like fallback models, caching, tracing, and custom tool integration are not readily available.
+
+**LlamaIndex**
+
+LlamaIndex provides the method `as_structured_llm` to achieve structured outputs.
+
+```python
 from llama_index.llms.openai import OpenAI
 from llama_index.core.llms import ChatMessage
 from pydantic import BaseModel
@@ -282,21 +364,86 @@ output_obj = output.raw # Joke object
 print(output_obj)
 ```
 
+LlamaIndex does not provide out-of-the-box features like the retry mechanisms, comprehensive tracing with Langfuse, and other advanced parameters offered by IntelliBricks for fine-grained control and observability.
 
-WIP:
-1. Advanced file parsing with Docling. (`files` module) with conversion to langchain document object and llama-index document object.
-2. Integration with common vector databases (`rag` module)
-3. Making fastAPI and litestar auto doc generation more powerful (in the case of FastAPI, I'll hace to write pydantic classes, I'll see how it works internally to build this auto docs and do it.)
+## 📚 Deep Dive: The Schema Module
 
+This section provides a comprehensive overview of the core classes defined in the `schema.py` module.
 
-If you want to contribute:
-local development:
-```bash
-git clone https://github.com/arthurbrenno/intellibricks.git
-```
+### Configuration and Meta-Data
 
-install `uv` https://docs.astral.sh/uv/getting-started/installation/
+*   **`GenerationConfig`**: Defines how completions are generated, including settings like `temperature`, `max_tokens`, `cache_config` and `trace_params`.
+*   **`MimeType`**: An enum that provides the mime types for several types of files.
+*   **`RawResponse`**: Represents a null object returned by the model.
+*   **`TraceParams`**: Parameters for updating the current trace metadata and context information (used with Langfuse).
+*   **`CacheConfig`**: Specifies how completion responses are cached (ttl, key).
+*   **`Tag`**: Represents structured tags that can be generated from strings, which can have a `tag_name`, `content` and attributes.
+*   **`WebsiteUrl`**: Represents a URL to a website.
+*   **`FileUrl`**: Represents a URL to a file.
 
-`uv sync`
+### Data Types
 
-Done!
+*   **`Part`**:  Abstract base class representing a piece of content in a message. Several useful implementations:
+    *   **`TextPart`**: Contains a plain text piece of content.
+    *   **`ToolResponsePart`**: A specific type of content representing a response from a called tool.
+    *   **`FilePart`**: An abstract class that represents file-based part, with the following implementations:
+        *   `VideoFilePart`: Represents a file of a type of a video (`.mp4`, `.avi`, etc).
+        *   `AudioFilePart`: Represents a file of a type of an audio (`.mp3`, `.wav`, etc).
+        *   `ImageFilePart`: Represents a file of a type of an image (`.jpeg`, `.png`, etc).
+    *   **`ToolCallPart`**: Represents a function call and its arguments.
+*   **`PartType`**: A type alias that represents all types of `Part`.
+*   **`Prompt`**: Represents a string of text which can be compiled and have placeholders.
+*   **`ToolCall`**: Represents a call to a specific tool (`function`).
+*   **`CalledFunction`**: Represents a function that was called with arguments by the LLM
+*   **`Function`**: Represents a function with a name, description, parameters, and callable object. It can be used to construct an openai, groq, google and cerebras function object.
+    *   `Property`: Represents a property of a parameter.
+    *   `Parameter`: Represents a parameter of a function.
+*   **`Message`**:  An abstract base class for different message types.
+    *   **`DeveloperMessage`**: A system message used to inform the model about its role and instructions.
+    *   **`UserMessage`**: A message sent by the user.
+    *   **`ToolMessage`**: A message representing the output of a called tool.
+    *   **`AssistantMessage`**: A response from the language model.
+    *   **`MessageType`**: A type alias representing all types of messages.
+    *   **`MessageSequence`**: Represents a sequence of `Messages`.
+*   **`LogProb`**: Represents the log probability of a token.
+*   **`MessageChoice`**: Represents a specific choice returned by a language model.
+*   **`PromptTokensDetails`**: Represents tokens used by the prompt, such as `audio_tokens`, `cached_tokens`.
+*   **`CompletionTokensDetails`**: Represents tokens generated in the completion, such as `audio_tokens` and `reasoning_tokens`.
+*   **`Usage`**: Represents usage statistics for a completion, including prompt tokens, completion tokens, and costs.
+*   **`ChatCompletion`**: Represents a full response from an LLM, containing message choices, usage statistics, model information, and elapsed time.
+*    **`ToolLike`**: A Protocol for defining a class that can be converted to a Tool for several different APIs.
+
+### Relationships
+
+The key relationships between classes revolve around creating a structured way to interact with LLMs:
+
+*   A `Synapse` uses `Prompt`s or `Messages` to interact with an LLM and get a `ChatCompletion`.
+*   A `ChatCompletion` contains `MessageChoice`s, each including an `AssistantMessage` that contains `Part`s.
+*   `AssistantMessage` may contain `ToolCall`s, or even `ToolMessage`s.
+*   `Agent` uses `Synapse`,  `GenerationConfig`, `Context`s and tools to generate `ChatCompletion`s and `AgentResponse`s.
+
+## 🚧 WIP (Work in Progress) & Contribution
+
+*   Advanced file parsing with Docling. (`files` module) with conversion to langchain document object and llama-index document object.
+*   Integration with common vector databases (`rag` module)
+*   Making fastAPI and litestar auto doc generation more powerful
+
+If you're excited about pushing the boundaries of AI development and want to contribute, here's how you can get involved:
+
+**Local Development:**
+
+1.  Clone the repository:
+
+    ```bash
+    git clone https://github.com/arthurbrenno/intellibricks.git
+    ```
+2.  Install `uv` following the instructions here:  https://docs.astral.sh/uv/getting-started/installation/
+3.  Sync dependencies:
+    ```bash
+    uv sync
+    ```
+    That's it!
+
+## 📜 License
+
+This project is licensed under the MIT license.
