@@ -1,11 +1,11 @@
-# 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
-
 <p align="center">
   <img src="/docs/readme_images/intellibrics_logo.png" alt="IntelliBricks Logo" width="500" />
 </p>
 
+# 🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications
+
 <p align="center">
-  <img src="/docs/readme_images/quick_overview.jpeg" alt="Quick Overview" width="600" />
+  <img src="/docs/readme_images/quick_overv.jpeg" alt="Quick Overview" width="600" />
 </p>
 
 
