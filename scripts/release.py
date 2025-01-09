@@ -5,6 +5,7 @@ import subprocess
 from enum import Enum, auto
 from typing import List, Optional
 
+import sys
 import msgspec
 import questionary
 import toml  # type: ignore
@@ -351,4 +352,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        console.print("[warning]Received Ctrl+C! Exiting immediately...[/warning]")
+        sys.exit(130)
