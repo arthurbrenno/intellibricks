@@ -178,9 +178,6 @@ In this example we created an `Agent` and passed a task, instructions, metadata 
 
 IntelliBricks Agents can make use of *Tool Calling*, which allows them to connect with external world.
 
-```python
-
-```
 
 ### 🚀 Real World Magic: Turning Agents into APIs
 
