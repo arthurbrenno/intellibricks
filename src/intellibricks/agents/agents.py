@@ -9,6 +9,7 @@ from typing import (
     Literal,
     Optional,
     Sequence,
+    TypeVar,
     TypedDict,
     cast,
 )
@@ -45,6 +46,7 @@ if TYPE_CHECKING:
 
 
 type AgentInput = Sequence[MessageType]
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 
 class AgentMetadata(TypedDict):
