@@ -211,12 +211,12 @@ class SynapseProtocol(Protocol):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
 
-class Synapse(msgspec.Struct, kw_only=True, frozen=True, omit_defaults=True):
+class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
     model: AIModel = msgspec.field(
         default_factory=lambda: "google/genai/gemini-2.0-flash-exp"
     )
     api_key: Optional[str] = None
-    langfuse: Maybe[Langfuse]
+    langfuse: Maybe[Langfuse] = Maybe(None)
     web_searcher: Optional[WebSearchable] = None
 
     @classmethod
