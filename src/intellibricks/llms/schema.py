@@ -107,6 +107,9 @@ M = TypeVar(
     "M", bound="Message"
 )  # NOTE: if I used "type M = Message" the "type[M]" would not work in the function signature
 
+T = TypeVar("T", default="RawResponse")
+R = TypeVar("R", default=Any)
+
 logger = LoggerFactory.create(__name__)
 
 
