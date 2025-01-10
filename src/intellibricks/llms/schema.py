@@ -1895,7 +1895,7 @@ class AssistantMessage[T = RawResponse, R = Any](
             title="Structured Model",
             description="Structured model of the message",
         ),
-    ] = msgspec.field(default_factory=lambda: RawResponse)  # type: ignore
+    ] = msgspec.field(default_factory=lambda: None)  # type: ignore
 
     refusal: Annotated[
         Optional[str],
