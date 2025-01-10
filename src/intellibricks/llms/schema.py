@@ -19,7 +19,6 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    Generic,
     Iterable,
     Iterator,
     Literal,
@@ -1887,8 +1886,8 @@ class ToolCallSequence[R = Any](msgspec.Struct, frozen=True):
         return self.sequence[index]
 
 
-class AssistantMessage(
-    Message, Generic[T, R], frozen=True, kw_only=True, tag="assistant"
+class AssistantMessage[T = RawResponse, R = Any](
+    Message, frozen=True, kw_only=True, tag="assistant"
 ):
     parsed: Annotated[
         T,
