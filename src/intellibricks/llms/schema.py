@@ -2477,7 +2477,7 @@ class Usage(msgspec.Struct, frozen=True):
 """
 
 
-class ChatCompletion[T](msgspec.Struct, kw_only=True, frozen=True):
+class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True):
     """Immutable, memory-efficient representation of a completion response from a chat model."""
 
     elapsed_time: Annotated[
