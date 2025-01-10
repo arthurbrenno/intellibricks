@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Literal, Optional, Sequence, TypeAlias, TypeVar, cast
 
 import msgspec
-from architecture.types import NOT_GIVEN as NOT_GIVEN_INTERNAL
 from architecture.utils.decorators import ensure_module_installed
 from langfuse.client import os
 from typing_extensions import override
@@ -355,32 +354,28 @@ class DeepInfraLanguageModel(SupportsAsyncChat):
             system_fingerprint=openai_completion.system_fingerprint or "fp_none",
             choices=choices,
             usage=Usage(
-                prompt_tokens=usage.prompt_tokens if usage else NOT_GIVEN_INTERNAL,
-                completion_tokens=usage.completion_tokens
-                if usage
-                else NOT_GIVEN_INTERNAL,
-                total_tokens=usage.total_tokens if usage else NOT_GIVEN_INTERNAL,
+                prompt_tokens=usage.prompt_tokens if usage else None,
+                completion_tokens=usage.completion_tokens if usage else None,
+                total_tokens=usage.total_tokens if usage else None,
                 input_cost=input_cost,
                 output_cost=output_cost,
                 total_cost=total_cost,
                 prompt_tokens_details=PromptTokensDetails(
-                    audio_tokens=prompt_tokens_details.audio_tokens
-                    or NOT_GIVEN_INTERNAL,
-                    cached_tokens=prompt_tokens_details.cached_tokens
-                    or NOT_GIVEN_INTERNAL,
+                    audio_tokens=prompt_tokens_details.audio_tokens,
+                    cached_tokens=prompt_tokens_details.cached_tokens,
                 )
                 if prompt_tokens_details
-                else NOT_GIVEN_INTERNAL,
+                else None,
                 completion_tokens_details=CompletionTokensDetails(
                     audio_tokens=completion_tokens_details.audio_tokens
                     if completion_tokens_details
-                    else NOT_GIVEN_INTERNAL,
+                    else None,
                     reasoning_tokens=completion_tokens_details.reasoning_tokens
                     if completion_tokens_details
-                    else NOT_GIVEN_INTERNAL,
+                    else None,
                 )
                 if completion_tokens_details
-                else NOT_GIVEN_INTERNAL,
+                else None,
             ),
         )
 

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import base64
-import dataclasses
+
+# import dataclasses
 import datetime
 import inspect
 import re
 import uuid
-from abc import ABC, abstractmethod
+
+# from abc import ABC, abstractmethod
 from enum import Enum
 from io import BytesIO
 from itertools import chain
@@ -413,7 +415,7 @@ class CacheConfig(msgspec.Struct, frozen=True, kw_only=True):
     """
 
 
-class Tag(msgspec.Struct, frozen=True):
+class XMLTag(msgspec.Struct, frozen=True):
     tag_name: str
     content: Optional[str] = msgspec.field(default=None)
     attributes: dict[str, Optional[str]] = msgspec.field(default_factory=dict)
@@ -425,11 +427,11 @@ class Tag(msgspec.Struct, frozen=True):
         *,
         tag_name: Optional[str] = None,
         attributes: Optional[dict[str, Optional[str]]] = None,
-    ) -> Tag:
+    ) -> XMLTag:
         """
-        Create a Tag instance from a string containing a tag.
+        Create a XMLTag instance from a string containing a tag.
 
-        This method searches for a tag in the given string and creates a Tag instance
+        This method searches for a tag in the given string and creates a XMLTag instance
         if a matching tag is found. It can optionally filter by tag name or attributes.
 
         Args:
@@ -438,10 +440,10 @@ class Tag(msgspec.Struct, frozen=True):
             attributes (Optional[dict[str, str]], optional): If provided, only match tags with these attributes.
 
         Returns:
-            Optional[Tag]: A Tag instance if a matching tag is found, None otherwise.
+            Optional[XMLTag]: A XMLTag instance if a matching tag is found, None otherwise.
         """
         # logger.debug(f"Parsing tag from string: {string}")
-        # logger.debug(f"Tag name: {tag_name}, Attributes: {attributes}")
+        # logger.debug(f"XMLTag name: {tag_name}, Attributes: {attributes}")
 
         # Remove leading and trailing code block markers if present
         string = string.strip()
@@ -503,7 +505,7 @@ class Tag(msgspec.Struct, frozen=True):
                 attributes=elem_attributes,
             )
 
-        raise RuntimeError("Tag not found in the string.")
+        raise RuntimeError("XMLTag not found in the string.")
 
     def as_object(self) -> dict[str, Any]:
         """
@@ -523,30 +525,30 @@ class Tag(msgspec.Struct, frozen=True):
             ValueError: If no valid JSON content is found in the tag or if the JSON content is not a dictionary.
 
         Examples:
-            >>> tag = Tag(content='```json\\n{\\n  "key": "value"\\n}\\n```')
+            >>> tag = XMLTag(content='```json\\n{\\n  "key": "value"\\n}\\n```')
             >>> tag.as_object()
             {'key': 'value'}
 
-            >>> tag = Tag(content='Some text before { "key": "value" } some text after')
+            >>> tag = XMLTag(content='Some text before { "key": "value" } some text after')
             >>> tag.as_object()
             {'key': 'value'}
 
-            >>> tag = Tag(content='{"key": "value with backticks ``` inside"}')
+            >>> tag = XMLTag(content='{"key": "value with backticks ``` inside"}')
             >>> tag.as_object()
             {'key': 'value with backticks ``` inside'}
 
-            >>> tag = Tag(content='[1, 2, 3]')
+            >>> tag = XMLTag(content='[1, 2, 3]')
             Traceback (most recent call last):
                 ...
             ValueError: JSON content is not a dictionary.
 
-            >>> tag = Tag(content=None)
+            >>> tag = XMLTag(content=None)
             Traceback (most recent call last):
                 ...
-            ValueError: Tag content is None.
+            ValueError: XMLTag content is None.
         """
         if self.content is None:
-            raise ValueError("Tag content is None.")
+            raise ValueError("XMLTag content is None.")
 
         content: str = self.content.strip()
 
@@ -621,7 +623,7 @@ class FileUrl(msgspec.Struct, frozen=True):
 """
 
 
-class Part(ABC):
+class Part(msgspec.Struct, tag_field="type", frozen=True):
     """
     Represents a part of a multi-content message. The use-case is for
     multimodal completions.
@@ -864,25 +866,25 @@ class Part(ABC):
             case _:
                 raise ValueError("Not supported yet.")
 
-    @abstractmethod
+    # @abstractmethod
     def to_anthropic_part(self) -> dict[str, Any]: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_openai_part(self) -> OpenAIChatCompletionContentPartParam: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_google_part(self) -> GenAIPart: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_groq_part(self) -> GroqChatCompletionContentPartParam: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_cerebras_part(self) -> MessageUserMessageRequestContentUnionMember1: ...
 
-    @abstractmethod
+    # @abstractmethod
     def __str__(self) -> str: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_llm_described_text(self) -> str: ...
 
     @classmethod
@@ -890,10 +892,8 @@ class Part(ABC):
         return cls(**_d)
 
 
-@dataclasses.dataclass(frozen=True)
-class WebsitePart(Part):
+class WebsitePart(Part, frozen=True, tag="website"):
     url: str
-    type: Literal["website"] = dataclasses.field(default_factory=lambda: "website")
 
     def __post_init__(self) -> None:
         if not is_url(self.url):
@@ -956,10 +956,8 @@ class WebsitePart(Part):
         return self.get_md_contents()
 
 
-@dataclasses.dataclass(frozen=True)
-class TextPart(Part):
+class TextPart(Part, frozen=True, tag="text"):
     text: str
-    type: Literal["text"] = dataclasses.field(default_factory=lambda: "text")
 
     @ensure_module_installed("anthropic", "anthropic")
     @override
@@ -1014,8 +1012,7 @@ class TextPart(Part):
         return self.text
 
 
-@dataclasses.dataclass(frozen=True)
-class ToolResponsePart(Part):
+class ToolResponsePart(Part, frozen=True, tag="tool_response"):
     """Represents a tool part in a multi-content message."""
 
     tool_name: str
@@ -1026,10 +1023,6 @@ class ToolResponsePart(Part):
 
     tool_response: str
     """The tool response."""
-
-    type: Literal["tool_response"] = dataclasses.field(
-        default_factory=lambda: "tool_response"
-    )
 
     @override
     def to_anthropic_part(self) -> dict[str, Any]:
@@ -1086,16 +1079,15 @@ class ToolResponsePart(Part):
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class FilePart(Part):
+class FilePart(Part, frozen=True, tag="file"):
     mime_type: MimeType
 
     """The MIME type of the file."""
 
-    url: str | NotGiven = dataclasses.field(default_factory=lambda: NOT_GIVEN)
+    url: str | NotGiven = msgspec.field(default_factory=lambda: NOT_GIVEN)
     """The URL of the file. If located on the web."""
 
-    data: bytes | NotGiven = dataclasses.field(default_factory=lambda: NOT_GIVEN)
+    data: bytes | NotGiven = msgspec.field(default_factory=lambda: NOT_GIVEN)
     """Base64 encoded file data."""
 
     @overload
@@ -1167,10 +1159,7 @@ class FilePart(Part):
             raise ValueError("Either data or url must be provided.")
 
 
-@dataclasses.dataclass(frozen=True)
-class VideoFilePart(FilePart):
-    type: Literal["video"] = dataclasses.field(default_factory=lambda: "video")
-
+class VideoFilePart(FilePart, frozen=True, tag="video"):
     @ensure_module_installed("google.genai", "google-genai")
     @override
     def to_google_part(self) -> GenAIPart:
@@ -1230,10 +1219,7 @@ class VideoFilePart(FilePart):
         return f"VideoFilePart({self.mime_type})"
 
 
-@dataclasses.dataclass(frozen=True)
-class AudioFilePart(FilePart):
-    type: Literal["audio"] = dataclasses.field(default_factory=lambda: "audio")
-
+class AudioFilePart(FilePart, frozen=True, tag="audio"):
     @override
     def to_anthropic_part(self) -> dict[str, Any]:
         raise NotImplementedError(
@@ -1312,10 +1298,7 @@ class AudioFilePart(FilePart):
         return f"AudioFilePart({self.mime_type})"
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class ImageFilePart(FilePart):
-    type: Literal["image"] = dataclasses.field(default_factory=lambda: "image")
-
+class ImageFilePart(FilePart, frozen=True, tag="image"):
     @ensure_module_installed("anthropic.types.image_block_param", "anthropic")
     @override
     def to_anthropic_part(self) -> dict[str, Any]:
@@ -1416,11 +1399,9 @@ class ImageFilePart(FilePart):
         return f"ImageFilePart({self.mime_type})"
 
 
-@dataclasses.dataclass(frozen=True)
-class ToolCallPart(Part):
+class ToolCallPart(Part, frozen=True, tag="tool_call"):
     function_name: str
     arguments: dict[str, Any]
-    type: Literal["tool_call"] = dataclasses.field(default_factory=lambda: "tool_call")
 
     @ensure_module_installed("anthropic", "anthropic")
     @override
@@ -1529,7 +1510,7 @@ class PartFactory:
 
 
 class PartSequece(msgspec.Struct, frozen=True):
-    parts: Sequence[Part]
+    parts: Sequence[PartType]
 
 
 """
@@ -1661,8 +1642,7 @@ class ToolCall[R = Any](msgspec.Struct, kw_only=True, frozen=True):
 """
 
 
-@dataclasses.dataclass(frozen=True)
-class Message(ABC):
+class Message(msgspec.Struct, tag_field="role", frozen=True):
     contents: Annotated[
         Sequence[PartType],
         msgspec.Meta(
@@ -1674,16 +1654,16 @@ class Message(ABC):
         ),
     ]
 
-    @abstractmethod
+    # @abstractmethod
     def to_google_format(self) -> GenaiContent: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_openai_format(self) -> ChatCompletionMessageParam: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_groq_format(self) -> GroqChatCompletionMessageParam: ...
 
-    @abstractmethod
+    # @abstractmethod
     def to_cerebras_format(self) -> CerebrasMessage: ...
 
     def to_markdown_str_message(self) -> str:
@@ -1711,10 +1691,7 @@ class Message(ABC):
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class DeveloperMessage(Message):
-    role: Literal["developer"] = dataclasses.field(default_factory=lambda: "developer")
-
+class DeveloperMessage(Message, frozen=True, tag="developer"):
     name: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -1780,9 +1757,7 @@ class DeveloperMessage(Message):
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class UserMessage(Message):
-    role: Literal["user"] = dataclasses.field(default_factory=lambda: "user")
+class UserMessage(Message, frozen=True, tag="user"):
     name: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -1850,8 +1825,7 @@ class UserMessage(Message):
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class ToolCallSequence[R = Any]:
+class ToolCallSequence[R = Any](msgspec.Struct, frozen=True):
     """
     Container for a heterogeneous list of ToolCall objects.
     Each item in *Ts can be a different type, e.g. [str, int, float].
@@ -1901,17 +1875,16 @@ class ToolCallSequence[R = Any]:
         return self.sequence[index]
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class AssistantMessage[T = RawResponse, R = Any](Message):
-    role: Literal["assistant"] = dataclasses.field(default_factory=lambda: "assistant")
-
+class AssistantMessage[T = RawResponse, R = Any](
+    Message, frozen=True, kw_only=True, tag="assistant"
+):
     parsed: Annotated[
         T,
         msgspec.Meta(
             title="Structured Model",
             description="Structured model of the message",
         ),
-    ] = dataclasses.field(default_factory=lambda: cast(T, RawResponse()))
+    ] = msgspec.field(default_factory=lambda: cast(T, RawResponse()))
 
     refusal: Annotated[
         Optional[str],
@@ -1936,7 +1909,7 @@ class AssistantMessage[T = RawResponse, R = Any](Message):
         msgspec.Meta(
             title="Tool Calls", description="The tools called by the assistant"
         ),
-    ] = dataclasses.field(default_factory=lambda: ToolCallSequence([]))
+    ] = msgspec.field(default_factory=lambda: ToolCallSequence([]))
 
     @property
     def text(self) -> str:
@@ -2055,9 +2028,7 @@ class AssistantMessage[T = RawResponse, R = Any](Message):
         )
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class ToolMessage(Message):
-    role: Literal["tool"] = dataclasses.field(default_factory=lambda: "tool")
+class ToolMessage(Message, frozen=True, tag="tool"):
     tool_call_id: str
     name: str
 
@@ -2205,7 +2176,7 @@ class LogProb(msgspec.Struct):
     bytes: list[int] = msgspec.field(default_factory=list)
 
 
-class MessageChoice[T](msgspec.Struct, frozen=True, kw_only=True):  # type: ignore
+class MessageChoice[T](msgspec.Struct, frozen=True, kw_only=True):
     index: Annotated[
         int,
         msgspec.Meta(
@@ -2260,7 +2231,7 @@ class PromptTokensDetails(msgspec.Struct, frozen=True):
     """Breakdown of tokens used in prompt"""
 
     audio_tokens: Annotated[
-        int | NotGiven,
+        int | None,
         msgspec.Meta(
             title="Audio Tokens",
             description="The number of audio tokens used in the prompt.",
@@ -2269,7 +2240,7 @@ class PromptTokensDetails(msgspec.Struct, frozen=True):
     ]
 
     cached_tokens: Annotated[
-        int | NotGiven,
+        int | None,
         msgspec.Meta(
             title="Cached Tokens",
             description="The number of cached tokens used in the prompt.",
@@ -2278,12 +2249,12 @@ class PromptTokensDetails(msgspec.Struct, frozen=True):
     ]
 
     def __add__(self, other: PromptTokensDetails) -> PromptTokensDetails:
-        def safe_add_ints(a: int | NotGiven, b: int | NotGiven) -> int | NotGiven:
-            if isinstance(a, NotGiven) and isinstance(b, NotGiven):
-                return NOT_GIVEN
-            if isinstance(a, NotGiven):
+        def safe_add_ints(a: int | None, b: int | None) -> int | None:
+            if a is None and b is None:
+                return None
+            if a is None:
                 return b
-            if isinstance(b, NotGiven):
+            if b is None:
                 return a
             return a + b
 
@@ -2300,7 +2271,7 @@ class CompletionTokensDetails(msgspec.Struct, frozen=True):
     """Breakdown of tokens generated in completion"""
 
     audio_tokens: Annotated[
-        int | NotGiven | None,
+        int | None,
         msgspec.Meta(
             title="Audio Tokens",
             description="The number of audio tokens used in the prompt.",
@@ -2309,7 +2280,7 @@ class CompletionTokensDetails(msgspec.Struct, frozen=True):
     ]
 
     reasoning_tokens: Annotated[
-        int | NotGiven | None,
+        int | None,
         msgspec.Meta(
             title="Reasoning Tokens",
             description="Tokens generated by the model for reasoning.",
@@ -2317,25 +2288,13 @@ class CompletionTokensDetails(msgspec.Struct, frozen=True):
     ]
 
     def __add__(self, other: CompletionTokensDetails) -> CompletionTokensDetails:
-        def safe_add_ints(
-            a: int | NotGiven | None, b: int | NotGiven | None
-        ) -> int | NotGiven | None:
-            if isinstance(a, NotGiven) and isinstance(b, NotGiven):
-                return NOT_GIVEN
-            if isinstance(a, NotGiven):
-                return b
-            if isinstance(b, NotGiven):
-                return a
-
+        def safe_add_ints(a: int | None, b: int | None) -> int | None:
             if a is None and b is None:
                 return None
-
             if a is None:
                 return b
-
             if b is None:
                 return a
-
             return a + b
 
         audio_tokens = safe_add_ints(self.audio_tokens, other.audio_tokens)
@@ -2360,91 +2319,91 @@ class CompletionTokensDetails(msgspec.Struct, frozen=True):
 
 class Usage(msgspec.Struct, frozen=True):
     prompt_tokens: Annotated[
-        int | NotGiven,
+        int | None,
         msgspec.Meta(
             title="Prompt Tokens",
             description="The number of tokens consumed by the input prompt.",
             examples=[9, 145, 3, 25],
         ),
-    ] = NOT_GIVEN
+    ] = None
 
     completion_tokens: Annotated[
-        int | NotGiven,
+        int | None,
         msgspec.Meta(
             title="Completion Tokens",
             description="The number of tokens generated in the completion response.",
             examples=[12, 102, 32],
         ),
-    ] = NOT_GIVEN
+    ] = None
 
     total_tokens: Annotated[
-        int | NotGiven,
+        int | None,
         msgspec.Meta(
             title="Total Tokens",
             description="The total number of tokens consumed, including both prompt and completion.",
             examples=[21, 324, 12],
         ),
-    ] = NOT_GIVEN
+    ] = None
 
     input_cost: Annotated[
-        float | NotGiven, msgspec.Meta(title="Input Cost", description="input cost")
-    ] = NOT_GIVEN
+        float | None, msgspec.Meta(title="Input Cost", description="input cost")
+    ] = None
 
     output_cost: Annotated[
-        float | NotGiven, msgspec.Meta(title="Output Cost", description="Output Cost")
-    ] = NOT_GIVEN
+        float | None, msgspec.Meta(title="Output Cost", description="Output Cost")
+    ] = None
 
     total_cost: Annotated[
-        float | NotGiven, msgspec.Meta(title="Total Cost", description="Total Cost")
-    ] = NOT_GIVEN
+        float | None, msgspec.Meta(title="Total Cost", description="Total Cost")
+    ] = None
 
     prompt_tokens_details: Annotated[
-        PromptTokensDetails | NotGiven,
+        PromptTokensDetails | None,
         msgspec.Meta(
             title="Prompt Tokens Details",
             description="Breakdown of tokens used in the prompt.",
         ),
-    ] = NOT_GIVEN
+    ] = None
 
     completion_tokens_details: Annotated[
-        CompletionTokensDetails | NotGiven,
+        CompletionTokensDetails | None,
         msgspec.Meta(
             title="Completion Tokens Details",
             description="Breakdown of tokens generated in completion.",
         ),
-    ] = NOT_GIVEN
+    ] = None
 
     def __add__(self, other: Usage) -> Usage:
-        def safe_add_ints(a: int | NotGiven, b: int | NotGiven) -> int | NotGiven:
-            if isinstance(a, NotGiven) and isinstance(b, NotGiven):
-                return NOT_GIVEN
-            if isinstance(a, NotGiven):
+        def safe_add_ints(a: int | None, b: int | None) -> int | None:
+            if a is None and b is None:
+                return None
+            if a is None:
                 return b
-            if isinstance(b, NotGiven):
+            if b is None:
                 return a
-            return a + b  # both are ints at this point
+            return a + b
 
         def safe_add_prompt_details(
-            a: PromptTokensDetails | NotGiven, b: PromptTokensDetails | NotGiven
-        ) -> PromptTokensDetails | NotGiven:
-            if isinstance(a, NotGiven) and isinstance(b, NotGiven):
-                return NOT_GIVEN
-            if isinstance(a, NotGiven):
+            a: PromptTokensDetails | None, b: PromptTokensDetails | None
+        ) -> PromptTokensDetails | None:
+            if a is None and b is None:
+                return None
+            if a is None:
                 return b
-            if isinstance(b, NotGiven):
+            if b is None:
                 return a
-            return a + b  # both are PromptTokensDetails
+            return a + b
 
         def safe_add_completion_details(
-            a: CompletionTokensDetails | NotGiven, b: CompletionTokensDetails | NotGiven
-        ) -> CompletionTokensDetails | NotGiven:
-            if isinstance(a, NotGiven) and isinstance(b, NotGiven):
-                return NOT_GIVEN
-            if isinstance(a, NotGiven):
+            a: CompletionTokensDetails | None, b: CompletionTokensDetails | None
+        ) -> CompletionTokensDetails | None:
+            if a is None and b is None:
+                return None
+            if a is None:
                 return b
-            if isinstance(b, NotGiven):
+            if b is None:
                 return a
-            return a + b  # both are CompletionTokensDetails
+            return a + b
 
         prompt_tokens = safe_add_ints(self.prompt_tokens, other.prompt_tokens)
         completion_tokens = safe_add_ints(

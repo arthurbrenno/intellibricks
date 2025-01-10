@@ -15,7 +15,6 @@ from typing import (
 
 from architecture.utils.decorators import ensure_module_installed
 import msgspec
-from architecture.types import NOT_GIVEN as NOT_GIVEN_INTERNAL
 
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
@@ -192,12 +191,11 @@ class CerebrasLanguageModel(SupportsAsyncChat):
             model=cast(CerebrasModelType, f"cerebras/api/{self.model_name}"),
             choices=choices,
             usage=Usage(
-                prompt_tokens=completion_usage.prompt_tokens or NOT_GIVEN_INTERNAL,
-                completion_tokens=completion_usage.completion_tokens
-                or NOT_GIVEN_INTERNAL,
+                prompt_tokens=completion_usage.prompt_tokens,
+                completion_tokens=completion_usage.completion_tokens,
                 input_cost=input_cost,
                 output_cost=output_cost,
-                total_tokens=completion_usage.total_tokens or NOT_GIVEN_INTERNAL,
+                total_tokens=completion_usage.total_tokens,
             ),
         )
 

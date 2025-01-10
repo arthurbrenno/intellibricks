@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Literal, Optional, Sequence, TypeAlias, TypeVar, cast
 
 import msgspec
-from architecture.types import NOT_GIVEN as NOT_GIVEN_INTERNAL
 from architecture.utils.decorators import ensure_module_installed
 from typing_extensions import override
 
@@ -209,16 +208,14 @@ class GroqLanguageModel(SupportsAsyncChat):
             system_fingerprint=groq_completion.system_fingerprint or "fp_none",
             choices=choices,
             usage=Usage(
-                prompt_tokens=usage.prompt_tokens if usage else NOT_GIVEN_INTERNAL,
-                completion_tokens=usage.completion_tokens
-                if usage
-                else NOT_GIVEN_INTERNAL,
-                total_tokens=usage.total_tokens if usage else NOT_GIVEN_INTERNAL,
+                prompt_tokens=usage.prompt_tokens if usage else None,
+                completion_tokens=usage.completion_tokens if usage else None,
+                total_tokens=usage.total_tokens if usage else None,
                 input_cost=input_cost,
                 output_cost=output_cost,
                 total_cost=total_cost,
-                prompt_tokens_details=NOT_GIVEN_INTERNAL,
-                completion_tokens_details=NOT_GIVEN_INTERNAL,
+                prompt_tokens_details=None,
+                completion_tokens_details=None,
             ),
         )
 

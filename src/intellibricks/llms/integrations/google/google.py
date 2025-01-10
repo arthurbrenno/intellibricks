@@ -6,7 +6,6 @@ import uuid
 
 from architecture.logging import LoggerFactory
 import msgspec
-from architecture.types import NOT_GIVEN
 from architecture.utils.decorators import ensure_module_installed
 from typing_extensions import override
 
@@ -313,9 +312,9 @@ class GoogleLanguageModel(SupportsAsyncChat):
         output_cost = (candidates_token_count or 0) * pricing.get("text_output", 0)
 
         usage: Usage = Usage(
-            prompt_tokens=prompt_token_count or NOT_GIVEN,
-            completion_tokens=candidates_token_count or NOT_GIVEN,
-            total_tokens=usage_metadata.total_token_count or NOT_GIVEN,
+            prompt_tokens=prompt_token_count,
+            completion_tokens=candidates_token_count,
+            total_tokens=usage_metadata.total_token_count,
             input_cost=input_cost if self.vertexai else 0.0,
             output_cost=output_cost if self.vertexai else 0.0,
             total_cost=(input_cost + output_cost) if self.vertexai else 0.0,
