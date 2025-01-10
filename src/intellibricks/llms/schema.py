@@ -561,7 +561,8 @@ class XMLTag(msgspec.Struct, frozen=True):
     @staticmethod
     def _parse_attributes(attributes_string: str) -> dict[str, str]:
         """Parse the attributes string into a dictionary."""
-        return dict(re.findall(r'(\w+)="([^"]*)"', attributes_string))
+        matches = re.findall(r'(\w+)="([^"]*)"', attributes_string)
+        return {key: value for key, value in matches}
 
     def as_string(self) -> str:
         return str(self)
@@ -1894,7 +1895,7 @@ class AssistantMessage[T = RawResponse, R = Any](
             title="Structured Model",
             description="Structured model of the message",
         ),
-    ] = msgspec.field(default_factory=lambda: cast(T, RawResponse()))
+    ] = msgspec.field(default_factory=lambda: RawResponse())  # type: ignore
 
     refusal: Annotated[
         Optional[str],
