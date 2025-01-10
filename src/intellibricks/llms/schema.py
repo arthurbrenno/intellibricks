@@ -102,9 +102,6 @@ if TYPE_CHECKING:
     )
 
 
-type ReplacementText = str
-type ReplacementValue = str
-
 _P = TypeVar("_P", bound="Part")
 M = TypeVar(
     "M", bound="Message"
@@ -1559,9 +1556,7 @@ class Prompt(msgspec.Struct, frozen=True):
         ),
     ]
 
-    def compile(
-        self, **replacements: dict[ReplacementText, ReplacementValue]
-    ) -> Prompt:
+    def compile(self, **replacements: Any) -> Prompt:
         """
         Replace placeholders in the content with provided replacement values.
 
