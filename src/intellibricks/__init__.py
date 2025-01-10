@@ -9,6 +9,7 @@ from .llms import (
     TraceParams,
     Usage,
     Prompt,
+    SynapticFallbackChain,
 )
 from .files import RawFile
 
@@ -27,4 +28,5 @@ __all__: list[str] = [
     "Prompt",
     "Agent",
     "RawFile",
+    "SynapticFallbackChain",
 ]
