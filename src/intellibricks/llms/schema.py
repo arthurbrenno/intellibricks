@@ -867,25 +867,32 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                 raise ValueError("Not supported yet.")
 
     # @abstractmethod
-    def to_anthropic_part(self) -> dict[str, Any]: ...
+    def to_anthropic_part(self) -> dict[str, Any]:
+        raise NotImplementedError
 
     # @abstractmethod
-    def to_openai_part(self) -> OpenAIChatCompletionContentPartParam: ...
+    def to_openai_part(self) -> OpenAIChatCompletionContentPartParam:
+        raise NotImplementedError
 
     # @abstractmethod
-    def to_google_part(self) -> GenAIPart: ...
+    def to_google_part(self) -> GenAIPart:
+        raise NotImplementedError
 
     # @abstractmethod
-    def to_groq_part(self) -> GroqChatCompletionContentPartParam: ...
+    def to_groq_part(self) -> GroqChatCompletionContentPartParam:
+        raise NotImplementedError
 
     # @abstractmethod
-    def to_cerebras_part(self) -> MessageUserMessageRequestContentUnionMember1: ...
+    def to_cerebras_part(self) -> MessageUserMessageRequestContentUnionMember1:
+        raise NotImplementedError
 
     # @abstractmethod
-    def __str__(self) -> str: ...
+    def __str__(self) -> str:
+        raise NotImplementedError
 
     # @abstractmethod
-    def to_llm_described_text(self) -> str: ...
+    def to_llm_described_text(self) -> str:
+        raise NotImplementedError
 
     @classmethod
     def from_dict(cls: Type[_P], _d: dict[str, Any], /) -> _P:
@@ -1658,13 +1665,16 @@ class Message(msgspec.Struct, tag_field="role", frozen=True):
     def to_google_format(self) -> GenaiContent: ...
 
     # @abstractmethod
-    def to_openai_format(self) -> ChatCompletionMessageParam: ...
+    def to_openai_format(self) -> ChatCompletionMessageParam:
+        raise NotImplementedError
 
     # @abstractmethod
-    def to_groq_format(self) -> GroqChatCompletionMessageParam: ...
+    def to_groq_format(self) -> GroqChatCompletionMessageParam:
+        raise NotImplementedError
 
     # @abstractmethod
-    def to_cerebras_format(self) -> CerebrasMessage: ...
+    def to_cerebras_format(self) -> CerebrasMessage:
+        raise NotImplementedError
 
     def to_markdown_str_message(self) -> str:
         """
