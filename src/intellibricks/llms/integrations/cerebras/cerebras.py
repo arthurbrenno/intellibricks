@@ -1,4 +1,3 @@
-import copy
 import timeit
 from dataclasses import dataclass, field
 from typing import (
@@ -33,9 +32,9 @@ from intellibricks.llms.schema import (
 from intellibricks.llms.types import CerebrasModelType
 from intellibricks.llms.util import (
     get_function_name,
-    get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
+from intellibricks.util import flatten_msgspec_schema
 
 from ...base import SupportsAsyncChat
 
@@ -88,7 +87,8 @@ class CerebrasLanguageModel(SupportsAsyncChat):
             ChatCompletionResponseUsage,
         )
         from cerebras.cloud.sdk.types.chat.completion_create_params import (
-            ResponseFormatTyped,
+            ResponseFormatResponseFormatJsonSchemaTyped,
+            ResponseFormatResponseFormatJsonSchemaJsonSchemaTyped,
             ToolTyped,
         )
 
@@ -97,21 +97,25 @@ class CerebrasLanguageModel(SupportsAsyncChat):
             api_key=self.api_key, timeout=timeout, max_retries=self.max_retries
         )
 
-        new_messages = copy.copy(messages)
-        if response_model is not None:
-            new_messages = get_new_messages_with_response_format_instructions(
-                messages=messages, response_model=response_model
-            )
-
         cerebras_completion: CerebrasChatCompletion = cast(
             CerebrasChatCompletion,
             await client.chat.completions.create(
-                messages=[message.to_cerebras_format() for message in new_messages],
+                messages=[message.to_cerebras_format() for message in messages],
                 model=self.model_name,
                 max_completion_tokens=max_completion_tokens,
                 n=n,
                 stop=list(stop_sequences) if stop_sequences else None,
-                response_format=ResponseFormatTyped(type="json_object")
+                response_format=ResponseFormatResponseFormatJsonSchemaTyped(
+                    json_schema=ResponseFormatResponseFormatJsonSchemaJsonSchemaTyped(
+                        name=response_model.__name__,
+                        description="Structured Response",
+                        schema=flatten_msgspec_schema(
+                            msgspec.json.schema(response_model), openai_like=True
+                        ),
+                        strict=True,
+                    ),
+                    type="json_schema",
+                )
                 if response_model
                 else None,
                 temperature=temperature,

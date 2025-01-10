@@ -162,7 +162,7 @@ wheels = [
 
 [[package]]
 name = "cerebras-cloud-sdk"
-version = "1.15.0"
+version = "1.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -172,9 +172,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/d7/aaefcd46497f7c8fb3722f6319bf3586ce257535231bd9a834cb61b3c95a/cerebras_cloud_sdk-1.15.0.tar.gz", hash = "sha256:a2c2b7ca6b3f01c9f93307f54a23cdfb78b776eb5d957452a8bbba88cc4fe9e5", size = 107033 }
+sdist = { url = "https://files.pythonhosted.org/packages/68/92/be88d2f92c8fe494caa1ca39468293bb963ebd6454552e3ca59afc55597d/cerebras_cloud_sdk-1.16.0.tar.gz", hash = "sha256:b34f4c579c2a2d7040854ce45cb77e29bd2f524405afb1700aa4356f7a5c76cb", size = 107678 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/ba/fb2174aa8d0392173b8ed3e7a1ed47898b55d110a84d2a20acc67c2219d5/cerebras_cloud_sdk-1.15.0-py3-none-any.whl", hash = "sha256:f5bae91d43061538dae8080ef80074ff27c5d81e25d9dbaed83a59ae3f43fc96", size = 87853 },
+    { url = "https://files.pythonhosted.org/packages/f4/5a/6faebebc5fc5d1b0ad014fbd92a4760bf06fc87c73287eed4fe83a426863/cerebras_cloud_sdk-1.16.0-py3-none-any.whl", hash = "sha256:677e2324bdb4feee0f32abc9904e25a6adbfccb12f2f6e2d0c3347b27cb95346", size = 88135 },
 ]
 
 [[package]]
@@ -442,7 +442,7 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.2.38"
+version = "0.2.39"
 source = { editable = "." }
 dependencies = [
     { name = "architecture" },
@@ -491,7 +491,7 @@ dev = [
 requires-dist = [
     { name = "architecture", specifier = ">=0.2.3" },
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
-    { name = "cerebras-cloud-sdk", marker = "extra == 'cerebras'" },
+    { name = "cerebras-cloud-sdk", marker = "extra == 'cerebras'", specifier = ">=1.16.0" },
     { name = "google-genai", specifier = ">=0.3.0" },
     { name = "groq", specifier = ">=0.13.1" },
     { name = "langchain-core", specifier = "==0.3.28" },
@@ -505,7 +505,7 @@ dev = [
     { name = "anthropic", specifier = ">=0.39.0" },
     { name = "azure-storage-blob", specifier = ">=12.24.0" },
     { name = "boto3", specifier = ">=1.35.58" },
-    { name = "cerebras-cloud-sdk", specifier = ">=1.15.0" },
+    { name = "cerebras-cloud-sdk", specifier = ">=1.16.0" },
     { name = "fastapi", specifier = ">=0.115.5" },
     { name = "google-genai", specifier = ">=0.3.0" },
     { name = "ipython", specifier = ">=8.18.0" },

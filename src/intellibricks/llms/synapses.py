@@ -7,6 +7,7 @@ Welcome to the synapses
 
 from __future__ import annotations
 
+from google.auth.credentials import Credentials as GoogleCredentials
 import uuid
 from typing import (
     Any,
@@ -149,6 +150,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
     api_key: Optional[str] = None
     langfuse: Maybe[Langfuse] = Maybe(None)
     web_searcher: Optional[WebSearchable] = None
+    google_credentials: Optional[GoogleCredentials] = None
 
     @classmethod
     def of(

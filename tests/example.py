@@ -6,10 +6,7 @@ class Response(msgspec.Struct):
     response: str
 
 
-print(Response.__qualname__)
-exit()
-
-synapse = Synapse.of("google/genai/gemini-1.5-flash")
+synapse = Synapse.of("cerebras/api/llama3.1-70b")
 
 completion = synapse.complete("Hello, how are you?", response_model=Response)
 print(completion)

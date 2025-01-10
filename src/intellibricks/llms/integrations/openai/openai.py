@@ -141,7 +141,7 @@ class OpenAILanguageModel(SupportsAsyncChat):
             n=n or 1,
             response_format=ResponseFormatJSONSchema(
                 json_schema=JSONSchema(
-                    name="structured_response",
+                    name=response_model.__name__,
                     description="Structured response",
                     schema=flatten_msgspec_schema(
                         msgspec.json.schema(response_model), openai_like=True
