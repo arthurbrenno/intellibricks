@@ -5,10 +5,10 @@ from .llms import (
     DeveloperMessage,
     UserMessage,
     MessageChoice,
-    MessageRole,
     TraceParams,
     Usage,
     Prompt,
+    MessageType,
     SynapticFallbackChain,
 )
 from .files import RawFile
@@ -23,10 +23,10 @@ __all__: list[str] = [
     "DeveloperMessage",
     "UserMessage",
     "MessageChoice",
-    "MessageRole",
     "TraceParams",
     "Prompt",
     "Agent",
     "RawFile",
+    "MessageType",
     "SynapticFallbackChain",
 ]

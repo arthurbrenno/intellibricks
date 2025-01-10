@@ -1,4 +1,3 @@
-from .constants import MessageRole
 from .schema import (
     AssistantMessage,
     CacheConfig,
@@ -10,6 +9,7 @@ from .schema import (
     Usage,
     UserMessage,
     TraceParams,
+    MessageType,
 )
 from .synapses import Synapse, SynapticFallbackChain
 
@@ -19,9 +19,9 @@ __all__ = [
     "AssistantMessage",
     "DeveloperMessage",
     "UserMessage",
-    "MessageRole",
     "Usage",
     "Tag",
+    "MessageType",
     "MessageChoice",
     "TraceParams",
     "Prompt",

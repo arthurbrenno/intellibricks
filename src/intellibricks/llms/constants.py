@@ -15,15 +15,6 @@ class Language(str, Enum):
     PORTUGUESE = "pt"
 
 
-class MessageRole(str, Enum):
-    """Represents the role of a message."""
-
-    SYSTEM = "system"
-    USER = "user"
-    ASSISTANT = "assistant"
-    TOOL = "tool"
-
-
 class FinishReason(str, Enum):
     """Represents the reason the model stopped generating tokens."""
 
