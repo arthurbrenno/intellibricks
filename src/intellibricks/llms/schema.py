@@ -2145,7 +2145,9 @@ class MessageSequence(msgspec.Struct, frozen=True):
         return MessageSequence(messages=list(chain(self.messages, other.messages)))
 
 
-MessageType: TypeAlias = DeveloperMessage | UserMessage | ToolMessage | AssistantMessage
+MessageType: TypeAlias = (
+    DeveloperMessage | UserMessage | ToolMessage | AssistantMessage[Any, Any]
+)
 
 
 class MessageFactory(msgspec.Struct, frozen=True):
