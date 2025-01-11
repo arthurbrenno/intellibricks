@@ -125,6 +125,8 @@ class GoogleLanguageModel(SupportsAsyncChat):
 
     vertexai: Optional[bool]
     api_key: Optional[str] = None
+    project: Optional[str] = None
+    location: Optional[str] = None
 
     @override
     @ensure_module_installed("google.genai", "google-genai")
@@ -147,7 +149,10 @@ class GoogleLanguageModel(SupportsAsyncChat):
         from google.genai import types
 
         client: genai.Client = genai.Client(
-            vertexai=self.vertexai, api_key=self.api_key
+            vertexai=self.vertexai,
+            api_key=self.api_key,
+            project=self.project,
+            location=self.location,
         )
 
         now = timeit.default_timer()

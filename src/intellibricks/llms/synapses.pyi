@@ -216,6 +216,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         default_factory=lambda: "google/genai/gemini-2.0-flash-exp"
     )
     api_key: Optional[str] = None
+    cloud_project: Optional[str] = None
+    cloud_location: Optional[str] = None
     langfuse: Maybe[Langfuse] = Maybe(None)
     web_searcher: Optional[WebSearchable] = None
 
