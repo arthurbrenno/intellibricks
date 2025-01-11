@@ -7,7 +7,6 @@ Welcome to the synapses
 
 from __future__ import annotations
 
-from google.auth.credentials import Credentials as GoogleCredentials
 import uuid
 from typing import (
     Any,

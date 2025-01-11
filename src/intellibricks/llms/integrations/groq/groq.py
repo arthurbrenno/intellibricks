@@ -11,7 +11,7 @@ from typing_extensions import override
 from intellibricks.llms.base.contracts import SupportsAsyncChat
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
-    AssistantMessage,
+    GeneratedAssistantMessage,
     CalledFunction,
     ChatCompletion,
     Function,
@@ -168,7 +168,7 @@ class GroqLanguageModel(SupportsAsyncChat):
             choices.append(
                 MessageChoice(
                     index=choice.index,
-                    message=AssistantMessage(
+                    message=GeneratedAssistantMessage(
                         contents=[Part.from_text(message.content or "")],
                         parsed=get_parsed_response(
                             message.content or "", response_model=response_model

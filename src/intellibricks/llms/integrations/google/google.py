@@ -12,7 +12,7 @@ from typing_extensions import override
 from google.genai.types import GenerateContentResponseUsageMetadata
 from intellibricks.llms.base import SupportsAsyncChat
 from intellibricks.llms.schema import (
-    AssistantMessage,
+    GeneratedAssistantMessage,
     ChatCompletion,
     Function,
     Message,
@@ -267,7 +267,7 @@ class GoogleLanguageModel(SupportsAsyncChat):
             choices.append(
                 MessageChoice(
                     index=index,
-                    message=AssistantMessage(
+                    message=GeneratedAssistantMessage(
                         contents=candidate_parts,
                         parsed=get_parsed_response(candidate_parts, response_model)
                         if response_model

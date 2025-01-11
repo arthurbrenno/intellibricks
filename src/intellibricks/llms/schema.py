@@ -1890,25 +1890,15 @@ class ToolCallSequence[R = Any](msgspec.Struct, frozen=True):
         return self.sequence[index]
 
 
-class AssistantMessage[T = RawResponse, R = Any](
-    Message, frozen=True, kw_only=True, tag="assistant"
-):
-    parsed: Annotated[
-        T,
-        msgspec.Meta(
-            title="Structured Model",
-            description="Structured model of the message",
-        ),
-    ] = msgspec.field(default=RawResponse())  # type: ignore
-
+class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assistant"):
     refusal: Annotated[
         Optional[str],
         msgspec.Meta(
             title="Refusal",
-            description="The reason for refusal, if the message was refused.",
+            description="The refusal message by the assistant. If the message was refused",
             examples=["I cannot provide that information."],
         ),
-    ] = None
+    ] = msgspec.field(default=None)
 
     name: Annotated[
         Optional[str],
@@ -1917,7 +1907,7 @@ class AssistantMessage[T = RawResponse, R = Any](
             description="An optional name for the participant. Provides the model"
             "information to differentiate between participants of the same role.",
         ),
-    ] = None
+    ] = msgspec.field(default=None)
 
     tool_calls: Annotated[
         ToolCallSequence[R],
@@ -2043,6 +2033,18 @@ class AssistantMessage[T = RawResponse, R = Any](
         )
 
 
+class GeneratedAssistantMessage[T = RawResponse, R = Any](
+    AssistantMessage[R], frozen=True, kw_only=True, tag="generated_assistant"
+):
+    parsed: Annotated[
+        T,
+        msgspec.Meta(
+            title="Structured Model",
+            description="Structured model of the message",
+        ),
+    ] = msgspec.field(default=cast(T, RawResponse()))
+
+
 class ToolMessage(Message, frozen=True, tag="tool"):
     tool_call_id: str
     name: str
@@ -2150,11 +2152,7 @@ class MessageSequence(msgspec.Struct, frozen=True):
 
 
 MessageType: TypeAlias = (
-    DeveloperMessage
-    | UserMessage
-    | ToolMessage
-    | AssistantMessage[Any, Any]
-    | SystemMessage
+    DeveloperMessage | UserMessage | ToolMessage | AssistantMessage[Any] | SystemMessage
 )
 
 
@@ -2211,16 +2209,19 @@ class MessageChoice[T](msgspec.Struct, frozen=True, kw_only=True):
     ]
 
     message: Annotated[
-        AssistantMessage[T],
+        GeneratedAssistantMessage[T, Any],
         msgspec.Meta(
             title="Message",
             description="The message content for this choice, including role and text.",
             examples=[
-                AssistantMessage(
+                GeneratedAssistantMessage(
                     contents=[
                         TextPart(text="Hello there, how may I assist you today?")
                     ],
-                    parsed=None,
+                    parsed=cast(
+                        T,
+                        msgspec.defstruct("Example", [("example", str)])("example"),
+                    ),
                 )
             ],
         ),
