@@ -1768,6 +1768,10 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
         )
 
 
+class SystemMessage(DeveloperMessage, frozen=True, tag="system"):
+    pass
+
+
 class UserMessage(Message, frozen=True, tag="user"):
     name: Annotated[
         Optional[str],
@@ -2146,7 +2150,11 @@ class MessageSequence(msgspec.Struct, frozen=True):
 
 
 MessageType: TypeAlias = (
-    DeveloperMessage | UserMessage | ToolMessage | AssistantMessage[Any, Any]
+    DeveloperMessage
+    | UserMessage
+    | ToolMessage
+    | AssistantMessage[Any, Any]
+    | SystemMessage
 )
 
 
@@ -2159,6 +2167,9 @@ class MessageFactory(msgspec.Struct, frozen=True):
         role = _dict["role"]
         match role:
             case "developer":
+                return DeveloperMessage.from_dict(_dict)
+            case "system":
+                _dict.update({"role": "developer"})
                 return DeveloperMessage.from_dict(_dict)
             case "user":
                 return UserMessage.from_dict(_dict)

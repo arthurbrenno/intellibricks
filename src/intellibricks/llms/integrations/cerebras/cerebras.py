@@ -94,7 +94,10 @@ class CerebrasLanguageModel(SupportsAsyncChat):
 
         now = timeit.default_timer()
         client = AsyncCerebras(
-            api_key=self.api_key, timeout=timeout, max_retries=self.max_retries
+            api_key=self.api_key,
+            timeout=timeout,
+            max_retries=self.max_retries,
+            warm_tcp_connection=True,
         )
 
         cerebras_completion: CerebrasChatCompletion = cast(

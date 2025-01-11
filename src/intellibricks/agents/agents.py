@@ -445,10 +445,10 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         message_sequence = MessageSequence(inp)
         context_sequence: ContextSourceSequence = ContextSourceSequence(
             [
-                await store.retrieve_context_async(
+                await source.retrieve_context_async(
                     query=Query.from_text(message_sequence.full_llm_described_text)
                 )
-                for store in self.context_sources
+                for source in self.context_sources
             ]
         )
 
@@ -482,9 +482,9 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             chain([DeveloperMessage.from_text(developer_prompt)], inp)
         )
 
-        agent_has_tools: bool = bool(self.tools)
+        this_agent_has_tools = bool(self.tools)
         tool_call_sequence: ToolCallSequence = ToolCallSequence([])
-        if agent_has_tools:
+        if this_agent_has_tools:
             final_tools: Sequence[Callable[..., Any]] = [
                 tool.to_callable()
                 if isinstance(tool, SupportsCallableConversion)
