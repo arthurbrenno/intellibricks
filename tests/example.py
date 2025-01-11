@@ -9,4 +9,4 @@ class Response(msgspec.Struct):
 synapse = Synapse.of("cerebras/api/llama3.1-70b")
 
 completion = synapse.complete("Hello, how are you?", response_model=Response)
-print(completion)
+completion.message

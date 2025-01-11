@@ -2576,7 +2576,7 @@ class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True)
         return self.get_text(0)
 
     @property
-    def message(self) -> AssistantMessage[T]:
+    def message(self) -> GeneratedAssistantMessage[T]:
         if len(self.choices) > 1:
             raise ValueError(
                 "Completion has multiple choices. Please use get_text(choice=...), instead."
@@ -2596,7 +2596,7 @@ class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True)
         message_contents = self.choices[choice].message.contents
         return get_parts_raw_text(parts=message_contents)
 
-    def get_message(self, choice: int = 0) -> AssistantMessage[T]:
+    def get_message(self, choice: int = 0) -> GeneratedAssistantMessage[T]:
         selected_choice = self.choices[choice]
         return selected_choice.message
 
