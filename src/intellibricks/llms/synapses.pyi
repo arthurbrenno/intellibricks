@@ -229,6 +229,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         api_key: Optional[str] = None,
         langfuse: Optional[Langfuse] = None,
         web_searcher: Optional[WebSearchable] = None,
+        cloud_project: Optional[str] = None,
+        cloud_location: Optional[str] = None,
     ) -> Synapse: ...
     @overload
     def complete(
