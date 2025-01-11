@@ -161,12 +161,16 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         api_key: Optional[str] = None,
         langfuse: Optional[Langfuse] = None,
         web_searcher: Optional[WebSearchable] = None,
+        cloud_project: Optional[str] = None,
+        cloud_location: Optional[str] = None,
     ) -> Synapse:
         return cls(
             model=model,
             langfuse=Maybe(langfuse),
             api_key=api_key,
             web_searcher=web_searcher,
+            cloud_project=cloud_project,
+            cloud_location=cloud_location,
         )
 
     def complete(
