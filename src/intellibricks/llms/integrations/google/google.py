@@ -155,6 +155,16 @@ class GoogleLanguageModel(SupportsAsyncChat):
             location=self.location,
         )
 
+        # TODO(arthur): make intellibricks support this kind of integration:
+        # tools = [
+        #     types.Tool(
+        #         retrieval=types.Retrieval(
+        #             vertex_ai_search=types.VertexAISearch(
+        #                 datastore="..."
+        #             )
+        #         )
+        #     ),
+        # ]
         now = timeit.default_timer()
         try:
             generate_response: types.GenerateContentResponse = await asyncio.wait_for(
