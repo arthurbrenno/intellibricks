@@ -1463,7 +1463,6 @@ PartType: TypeAlias = (
     | ImageFilePart
     | ToolCallPart
     | ToolResponsePart
-    | FilePart
     | WebsitePart
 )
 
