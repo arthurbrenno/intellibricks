@@ -1013,7 +1013,7 @@ class TextPart(Part, frozen=True, tag="text"):
 
     @override
     def to_llm_described_text(self) -> str:
-        return f"<|text_part|>\n" f"Text: {self.text}\n" f"<|end_text_part|>"
+        return f"<|text_part|>\nText: {self.text}\n<|end_text_part|>"
 
     @override
     def __str__(self) -> str:

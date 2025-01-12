@@ -443,7 +443,7 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.2.43"
+version = "0.2.44"
 source = { editable = "." }
 dependencies = [
     { name = "architecture" },
