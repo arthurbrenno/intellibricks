@@ -1,19 +1,10 @@
-from typing import Literal, Protocol, Any, Callable, runtime_checkable
-from abc import abstractmethod
-from dataclasses import dataclass, field
+from typing import Literal
+from dataclasses import field
+
+from intellibricks.llms.schema import Tool
 
 
-@runtime_checkable
-class SupportsCallableConversion(Protocol):
-    @abstractmethod
-    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
-
-    @abstractmethod
-    def to_callable(self) -> Callable[..., Any]: ...
-
-
-@dataclass(frozen=True, kw_only=True)
-class DuckDuckGoTool(SupportsCallableConversion):
+class DuckDuckGoTool(Tool, frozen=True):
     query: str
     n: int = 1
     safe_search: bool = False

@@ -29,6 +29,7 @@ from intellibricks.llms.schema import (
     MessageSequence,
     MessageType,
     RawResponse,
+    Tool,
     ToolCall,
     ToolCallSequence,
     TraceParams,
@@ -37,7 +38,6 @@ from intellibricks.llms.schema import (
 from intellibricks.llms.synapses import SynapticFallbackChain
 from intellibricks.rag.contracts import SupportsContextRetrieval
 from intellibricks.rag.schema import ContextSourceSequence, Query
-from .tools import SupportsCallableConversion
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
@@ -177,7 +177,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
     ] = msgspec.field(default_factory=GenerationConfig)
 
     tools: Annotated[
-        Sequence[Callable[..., Any] | SupportsCallableConversion],
+        Sequence[Callable[..., Any] | Tool],
         msgspec.Meta(title="Tools", description="Tools that the agent can call"),
     ] = msgspec.field(default_factory=list)
 
@@ -485,17 +485,10 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         this_agent_has_tools = bool(self.tools)
         tool_call_sequence: ToolCallSequence = ToolCallSequence([])
         if this_agent_has_tools:
-            final_tools: Sequence[Callable[..., Any]] = [
-                tool.to_callable()
-                if isinstance(tool, SupportsCallableConversion)
-                else tool
-                for tool in self.tools
-            ]
-
             tool_synapse = self.tool_synapse or self.synapse
             tool_completion = await tool_synapse.chat_async(
                 messages,
-                tools=final_tools,
+                tools=self.tools or None,
                 n=self.generation_config.n,
                 temperature=self.generation_config.temperature,
                 max_tokens=self.generation_config.max_tokens,
