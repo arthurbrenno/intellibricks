@@ -2,9 +2,6 @@ from __future__ import annotations
 
 # NOTE: use case of __future__ annotations
 from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
     Optional,
     Protocol,
     Sequence,
@@ -21,10 +18,10 @@ from intellibricks.llms.schema import (
     Prompt,
     RawResponse,
     UserMessage,
+    ToolInputType,
+    ChatCompletion,
+    Message,
 )
-
-if TYPE_CHECKING:
-    from intellibricks.llms.schema import ChatCompletion, Message
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
@@ -39,11 +36,10 @@ class SupportsAsyncChat(Protocol):
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]: ...
 
@@ -55,11 +51,10 @@ class SupportsAsyncChat(Protocol):
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         return run_sync(
@@ -69,7 +64,6 @@ class SupportsAsyncChat(Protocol):
             n=n,
             temperature=temperature,
             max_completion_tokens=max_completion_tokens,
-            max_retries=max_retries,
             top_p=top_p,
             top_k=top_k,
             stop_sequences=stop_sequences,
@@ -86,11 +80,10 @@ class SupportsAsyncChat(Protocol):
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         if system_prompt is None:
@@ -139,7 +132,6 @@ class SupportsAsyncChat(Protocol):
             n=n,
             temperature=temperature,
             max_completion_tokens=max_completion_tokens,
-            max_retries=max_retries,
             top_p=top_p,
             top_k=top_k,
             stop_sequences=stop_sequences,

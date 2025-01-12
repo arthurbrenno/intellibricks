@@ -21,7 +21,7 @@ class SupportsAsyncChatFactory:
     ) -> SupportsAsyncChat:
         logger.info(f"Creating model: {model}")
 
-        model_to_model_class: dict[AIModel, type[SupportsAsyncChat]] = {
+        model_to_model_class: dict[AIModel, Any] = {
             "google/genai/gemini-2.0-flash-exp": GoogleLanguageModel,
             "google/genai/gemini-1.5-flash": GoogleLanguageModel,
             "google/genai/gemini-1.5-flash-8b": GoogleLanguageModel,

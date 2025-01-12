@@ -1,14 +1,10 @@
 import copy
-import os
 import timeit
-from dataclasses import dataclass
-from typing import Any, Callable, Literal, Optional, Sequence, TypeAlias, TypeVar, cast
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
-from typing_extensions import override
 
-from intellibricks.llms.base.contracts import SupportsAsyncChat
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     AssistantMessage,
@@ -21,11 +17,12 @@ from intellibricks.llms.schema import (
     RawResponse,
     ToolCall,
     ToolCallSequence,
+    ToolInputType,
     Usage,
 )
 from intellibricks.llms.types import GroqModelType
 from intellibricks.llms.util import (
-    get_function_name,
+    _create_function_mapping_by_tools,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
@@ -68,13 +65,12 @@ MODEL_PRICING: dict[GroqModel, dict[Literal["input_cost", "output_cost"], float]
 }
 
 
-@dataclass(frozen=True)
-class GroqLanguageModel(SupportsAsyncChat):
+class GroqLanguageModel(msgspec.Struct, frozen=True):
     model_name: GroqModel
     api_key: Optional[str] = None
+    max_retries: int = 2
 
     @ensure_module_installed("groq", "groq")
-    @override
     async def chat_async(
         self,
         messages: Sequence[Message],
@@ -83,11 +79,10 @@ class GroqLanguageModel(SupportsAsyncChat):
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
         from groq import AsyncGroq
@@ -104,8 +99,8 @@ class GroqLanguageModel(SupportsAsyncChat):
 
         now = timeit.default_timer()
         client = AsyncGroq(
-            api_key=self.api_key or os.getenv("GROQ_API_KEY"),
-            max_retries=max_retries or 2,
+            api_key=self.api_key,
+            max_retries=self.max_retries,
         )
 
         new_messages = copy.copy(messages)
@@ -126,10 +121,12 @@ class GroqLanguageModel(SupportsAsyncChat):
             temperature=temperature,
             tools=[
                 ChatCompletionToolParam(
-                    function=Function.from_callable(call).to_groq_function(),
+                    function=Function.from_callable(tool).to_groq_function(),
                     type="function",
                 )
-                for call in tools
+                if callable(tool)
+                else tool.to_groq_tool()
+                for tool in tools
             ]
             if tools
             else NOT_GIVEN,
@@ -147,10 +144,9 @@ class GroqLanguageModel(SupportsAsyncChat):
             )
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = {
-                get_function_name(function): Function.from_callable(function)
-                for function in tools or []
-            }
+            functions: dict[str, Function] = _create_function_mapping_by_tools(
+                tools or []
+            )
 
             for groq_tool_call in groq_tool_calls:
                 tool_calls.append(

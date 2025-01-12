@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING,
-    Any,
-    Callable,
     Optional,
     Protocol,
     Sequence,
@@ -17,7 +15,7 @@ import msgspec
 from intellibricks.llms.schema import PartType, Prompt, RawResponse
 
 if TYPE_CHECKING:
-    from intellibricks.llms.schema import ChatCompletion, Message
+    from intellibricks.llms.schema import ChatCompletion, Message, ToolInputType
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
@@ -36,7 +34,7 @@ class SupportsAsyncChat(Protocol):
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
     @overload
@@ -52,7 +50,7 @@ class SupportsAsyncChat(Protocol):
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
@@ -68,7 +66,7 @@ class SupportsAsyncChat(Protocol):
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
     @overload
@@ -84,7 +82,7 @@ class SupportsAsyncChat(Protocol):
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
@@ -101,7 +99,7 @@ class SupportsAsyncChat(Protocol):
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
@@ -118,6 +116,6 @@ class SupportsAsyncChat(Protocol):
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...

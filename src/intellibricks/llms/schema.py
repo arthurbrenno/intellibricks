@@ -24,7 +24,6 @@ from typing import (
     Literal,
     Never,
     Optional,
-    Protocol,
     Sequence,
     Type,
     TypeAlias,
@@ -37,7 +36,6 @@ from typing import (
     get_type_hints,
     overload,
     override,
-    runtime_checkable,
 )
 
 import msgspec
@@ -69,9 +67,16 @@ if TYPE_CHECKING:
     from cerebras.cloud.sdk.types.chat.completion_create_params import (
         MessageUserMessageRequestContentUnionMember1,
     )
+    from cerebras.cloud.sdk.types.chat.completion_create_params import (
+        ToolFunctionTyped as CerebrasFunctionDefinition,
+    )
+    from cerebras.cloud.sdk.types.chat.completion_create_params import (
+        ToolTyped as CerebrasTool,
+    )
     from google.genai.types import Content as GenaiContent
     from google.genai.types import FunctionDeclaration as GenAIFunctionDeclaration
     from google.genai.types import Part as GenAIPart
+    from google.genai.types import Tool as GenAITool
     from groq.types.chat.chat_completion_content_part_param import (
         ChatCompletionContentPartParam as GroqChatCompletionContentPartParam,
     )
@@ -80,6 +85,9 @@ if TYPE_CHECKING:
     )
     from groq.types.chat.chat_completion_message_tool_call_param import (
         Function as GroqCalledFunction,
+    )
+    from groq.types.chat.chat_completion_tool_param import (
+        ChatCompletionToolParam as GroqTool,
     )
     from groq.types.shared.function_definition import (
         FunctionDefinition as GroqFunctionDefinition,
@@ -93,15 +101,16 @@ if TYPE_CHECKING:
     from openai.types.chat.chat_completion_message_tool_call_param import (
         Function as OpenAICalledFunction,
     )
+    from openai.types.chat.chat_completion_tool_param import (
+        ChatCompletionToolParam as OpenAITool,
+    )
     from openai.types.shared.function_definition import (
         FunctionDefinition as OpenAIFunctionDefinition,
     )
+
     from PIL.Image import Image
 
     from intellibricks.llms.types import FileExtension
-    from cerebras.cloud.sdk.types.chat.completion_create_params import (
-        ToolFunctionTyped as CerebrasFunctionDefinition,
-    )
 
 
 _P = TypeVar("_P", bound="Part")
@@ -1013,7 +1022,7 @@ class TextPart(Part, frozen=True, tag="text"):
 
     @override
     def to_llm_described_text(self) -> str:
-        return f"<|text_part|>\n" f"Text: {self.text}\n" f"<|end_text_part|>"
+        return f"<|text_part|>\nText: {self.text}\n<|end_text_part|>"
 
     @override
     def __str__(self) -> str:
@@ -1582,6 +1591,69 @@ class Prompt(msgspec.Struct, frozen=True):
 
     def __str__(self) -> str:
         return self.content
+
+
+"""
+.########..#######...#######..##........######.
+....##....##.....##.##.....##.##.......##....##
+....##....##.....##.##.....##.##.......##......
+....##....##.....##.##.....##.##........######.
+....##....##.....##.##.....##.##.............##
+....##....##.....##.##.....##.##.......##....##
+....##.....#######...#######..########..######.
+"""
+
+
+class Tool(msgspec.Struct, frozen=True):
+    def to_callable(self) -> Callable[..., Any]:
+        raise NotImplementedError
+
+    def to_google_tool(self) -> GenAITool:
+        from google.genai.types import Tool as GenAITool
+
+        return GenAITool(
+            function_declarations=[
+                Function.from_callable(self.to_callable()).to_genai_function()
+            ]
+        )
+
+    @ensure_module_installed("openai", "openai")
+    def to_openai_tool(self) -> OpenAITool:
+        from openai.types.chat.chat_completion_tool_param import (
+            ChatCompletionToolParam as OpenAITool,
+        )
+
+        return OpenAITool(
+            function=Function.from_callable(self.to_callable()).to_openai_function(),
+            type="function",
+        )
+
+    @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
+    def to_cerebras_tool(self) -> CerebrasTool:
+        from cerebras.cloud.sdk.types.chat.completion_create_params import (
+            ToolTyped as CerebrasTool,
+        )
+
+        return CerebrasTool(
+            function=Function.from_callable(self.to_callable()).to_cerebras_function(),
+            type="function",
+        )
+
+    def to_groq_tool(self) -> GroqTool:
+        from groq.types.chat.chat_completion_tool_param import (
+            ChatCompletionToolParam as GroqTool,
+        )
+
+        return GroqTool(
+            function=Function.from_callable(self.to_callable()).to_groq_function(),
+            type="function",
+        )
+
+    def to_deepinfra_tool(self) -> OpenAITool:
+        return self.to_openai_tool()
+
+
+type ToolInputType = Tool | Callable[..., Any]
 
 
 class ToolCall[R = Any](msgspec.Struct, kw_only=True, frozen=True):
@@ -2616,23 +2688,6 @@ class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True)
             choices=list(self.choices) + list(other.choices),
             usage=self.usage + other.usage,
         )
-
-
-class VertexAITool:
-    pass
-
-
-class GenAITool:
-    pass
-
-
-@runtime_checkable
-class ToolLike(Protocol):
-    def as_openai_tool(self) -> dict[str, Any]: ...
-
-    def as_vertexai_tool(self) -> VertexAITool: ...
-
-    def as_genai_tool(self) -> GenAITool: ...
 
 
 class Property(msgspec.Struct, frozen=True, kw_only=True):

@@ -1,16 +1,13 @@
 import asyncio
 import timeit
-from dataclasses import dataclass
-from typing import Any, Callable, Literal, Optional, Sequence, TypeVar, cast
+from typing import Any, Literal, Optional, Sequence, TypeVar, cast
 import uuid
 
 from architecture.logging import LoggerFactory
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
-from typing_extensions import override
 
 from google.genai.types import GenerateContentResponseUsageMetadata
-from intellibricks.llms.base import SupportsAsyncChat
 from intellibricks.llms.schema import (
     AssistantMessage,
     ChatCompletion,
@@ -24,10 +21,14 @@ from intellibricks.llms.schema import (
     ToolCall,
     CalledFunction,
     ToolCallSequence,
+    ToolInputType,
     Usage,
 )
 from intellibricks.llms.types import GoogleModelType
-from intellibricks.llms.util import get_function_name, get_parsed_response
+from intellibricks.llms.util import (
+    _create_function_mapping_by_tools,
+    get_parsed_response,
+)
 from intellibricks.util import flatten_msgspec_schema
 
 logger = LoggerFactory.create(__name__)
@@ -107,8 +108,7 @@ MODEL_PRICING = {
 }
 
 
-@dataclass(frozen=True)
-class GoogleLanguageModel(SupportsAsyncChat):
+class GoogleLanguageModel(msgspec.Struct, frozen=True):
     model_name: Literal[
         "gemini-2.0-flash-exp",
         "gemini-1.5-flash",
@@ -128,7 +128,6 @@ class GoogleLanguageModel(SupportsAsyncChat):
     project: Optional[str] = None
     location: Optional[str] = None
 
-    @override
     @ensure_module_installed("google.genai", "google-genai")
     async def chat_async(
         self,
@@ -138,11 +137,10 @@ class GoogleLanguageModel(SupportsAsyncChat):
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[list[str]] = None,
-        tools: Optional[list[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
         from google import genai
@@ -166,7 +164,12 @@ class GoogleLanguageModel(SupportsAsyncChat):
                         top_p=top_p,
                         top_k=top_k,
                         candidate_count=n,
-                        tools=cast(types.ToolListUnion, tools),
+                        tools=[
+                            tool if callable(tool) else tool.to_google_tool()
+                            for tool in tools
+                        ]
+                        if tools
+                        else None,
                         max_output_tokens=max_completion_tokens,
                         stop_sequences=stop_sequences,
                         response_mime_type="application/json"
@@ -239,10 +242,9 @@ class GoogleLanguageModel(SupportsAsyncChat):
             ]
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = {
-                get_function_name(function): Function.from_callable(function)
-                for function in tools or []
-            }
+            functions: dict[str, Function] = _create_function_mapping_by_tools(
+                tools or []
+            )
 
             for function in function_calls:
                 function_id: Optional[str] = function.id

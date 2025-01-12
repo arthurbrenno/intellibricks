@@ -1,13 +1,10 @@
 import timeit
-from dataclasses import dataclass
-from typing import Any, Callable, Literal, Optional, Sequence, TypeAlias, TypeVar, cast
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 from langfuse.client import os
-from typing_extensions import override
 
-from intellibricks.llms.base.contracts import SupportsAsyncChat
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     AssistantMessage,
@@ -23,9 +20,13 @@ from intellibricks.llms.schema import (
     ToolCall,
     ToolCallSequence,
     Usage,
+    ToolInputType,
 )
 from intellibricks.llms.types import DeepInfraModelType
-from intellibricks.llms.util import get_function_name, get_parsed_response
+from intellibricks.llms.util import (
+    _create_function_mapping_by_tools,
+    get_parsed_response,
+)
 from intellibricks.util import flatten_msgspec_schema
 
 T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
@@ -203,13 +204,11 @@ MODEL_PRICING: dict[ChatModel, dict[Literal["input_cost", "output_cost"], float]
 }
 
 
-@dataclass(frozen=True)
-class DeepInfraLanguageModel(SupportsAsyncChat):
+class DeepInfraLanguageModel(msgspec.Struct, frozen=True):
     model_name: ChatModel
     api_key: Optional[str] = None
 
     @ensure_module_installed("openai", "openai")
-    @override
     async def chat_async(
         self,
         messages: Sequence[Message],
@@ -222,7 +221,7 @@ class DeepInfraLanguageModel(SupportsAsyncChat):
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
         from openai import NOT_GIVEN, AsyncOpenAI
@@ -267,10 +266,12 @@ class DeepInfraLanguageModel(SupportsAsyncChat):
             temperature=temperature,
             tools=[
                 ChatCompletionToolParam(
-                    function=Function.from_callable(call).to_openai_function(),
+                    function=Function.from_callable(tool).to_openai_function(),
                     type="function",
                 )
-                for call in tools
+                if callable(tool)
+                else tool.to_openai_tool()
+                for tool in tools
             ]
             if tools
             else NOT_GIVEN,
@@ -288,10 +289,9 @@ class DeepInfraLanguageModel(SupportsAsyncChat):
             )
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = {
-                get_function_name(function): Function.from_callable(function)
-                for function in tools or []
-            }
+            functions: dict[str, Function] = _create_function_mapping_by_tools(
+                tools or []
+            )
 
             for openai_tool_call in openai_tool_calls:
                 tool_calls.append(
