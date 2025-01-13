@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import (
     Optional,
     Sequence,
+    TypeVar,
     overload,
 )
 
@@ -17,9 +18,11 @@ from intellibricks.llms.schema import (
     ToolInputType,
 )
 
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
+
 class LanguageModel(msgspec.Struct, frozen=True):
     @overload
-    async def chat_async[S: msgspec.Struct = RawResponse](
+    async def chat_async(
         self,
         messages: Sequence[Message],
         *,
@@ -35,7 +38,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
     @overload
-    async def chat_async[S: msgspec.Struct = RawResponse](
+    async def chat_async(
         self,
         messages: Sequence[Message],
         *,
@@ -51,7 +54,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
-    def chat[S: msgspec.Struct = RawResponse](
+    def chat(
         self,
         messages: Sequence[Message],
         *,
@@ -67,7 +70,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
     @overload
-    def chat[S: msgspec.Struct = RawResponse](
+    def chat(
         self,
         messages: Sequence[Message],
         *,
@@ -83,7 +86,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
-    def complete[S: msgspec.Struct = RawResponse](
+    def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
         *,
@@ -100,7 +103,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
-    def complete[S: msgspec.Struct = RawResponse](
+    def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
         *,

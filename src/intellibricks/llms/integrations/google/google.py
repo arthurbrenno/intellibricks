@@ -1,6 +1,6 @@
 import asyncio
 import timeit
-from typing import Any, Literal, Optional, Sequence, cast, override
+from typing import Any, Literal, Optional, Sequence, TypeVar, cast, override
 import uuid
 
 from architecture.logging import LoggerFactory
@@ -33,6 +33,8 @@ from intellibricks.llms.util import (
 from intellibricks.util import flatten_msgspec_schema
 
 logger = LoggerFactory.create(__name__)
+
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 
 MODEL_PRICING = {
@@ -131,7 +133,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
 
     @ensure_module_installed("google.genai", "google-genai")
     @override
-    async def chat_async[S: msgspec.Struct = RawResponse](
+    async def chat_async(
         self,
         messages: Sequence[Message],
         *,

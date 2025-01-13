@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import (
     Optional,
     Sequence,
+    TypeVar,
 )
 from architecture.utils import run_sync
 import msgspec
@@ -20,9 +21,11 @@ from intellibricks.llms.schema import (
     Message,
 )
 
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
+
 
 class LanguageModel(msgspec.Struct, frozen=True):
-    async def chat_async[S: msgspec.Struct = RawResponse](
+    async def chat_async(
         self,
         messages: Sequence[Message],
         *,
@@ -38,7 +41,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         raise NotImplementedError
 
-    def chat[S: msgspec.Struct = RawResponse](
+    def chat(
         self,
         messages: Sequence[Message],
         *,
@@ -66,7 +69,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
             timeout=timeout,
         )
 
-    def complete[S: msgspec.Struct = RawResponse](
+    def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
         *,
