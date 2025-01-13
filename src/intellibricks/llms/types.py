@@ -178,8 +178,6 @@ DeepInfraModelType: TypeAlias = Literal[
 ]
 
 AIModel: TypeAlias = Literal[
-    # Instructions to the Developer:
-    "_PROVIDER/PLATFORM/MODEL_NAME",
     # -- Google --
     GoogleModelType,
     # -- Cerebras --
@@ -190,4 +188,16 @@ AIModel: TypeAlias = Literal[
     GroqModelType,
     # -- DeepInfra --
     DeepInfraModelType,
+]
+
+GroqTranscriptionModelType: TypeAlias = Literal[
+    "groq/api/whisper-large-v3-turbo",
+    "groq/api/distil-whisper-large-v3-en",
+    "groq/api/whisper-large-v3",
+]
+
+OpenAITranscriptionsModelType: TypeAlias = Literal["openai/api/whisper-1"]
+
+TranscriptionModelType: TypeAlias = Literal[
+    GroqTranscriptionModelType, OpenAITranscriptionsModelType
 ]

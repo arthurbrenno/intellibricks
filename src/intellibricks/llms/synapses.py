@@ -30,8 +30,8 @@ from langfuse.client import (
 )
 from langfuse.model import ModelUsage
 
-from intellibricks.llms.base.contracts import LanguageModel
-from intellibricks.llms.factories import LanguageModelFactory
+from intellibricks.llms.base import LanguageModel, TranscriptionModel, FileContent
+from intellibricks.llms.factories import LanguageModelFactory, TranscriptionModelFactory
 from intellibricks.llms.general_web_search import WebSearchable
 
 from .constants import (
@@ -49,8 +49,9 @@ from .schema import (
     CacheConfig,
     TraceParams,
     ToolInputType,
+    TranscriptionOutput,
 )
-from .types import AIModel
+from .types import AIModel, TranscriptionModelType
 
 
 logger = LoggerFactory.create(__name__)
@@ -492,7 +493,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 "location": self.cloud_location,
             },
         )
-        logger.debug(f"Language Model instance created.")
+        logger.debug("Language Model instance created.")
 
         try:
             logger.debug("Calling chat_async method of the Language Model.")
@@ -781,3 +782,48 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         if last_exception:
             raise last_exception
         raise RuntimeError("All synapses failed for chat_async method.")
+
+
+class TranscriptionSynapse(msgspec.Struct, frozen=True):
+    """A synapse for audio transcriptions"""
+
+    model: TranscriptionModelType
+    api_key: Optional[str] = None
+    langfuse: Optional[Langfuse] = None
+
+    @classmethod
+    def of(
+        cls,
+        model: TranscriptionModelType,
+        api_key: Optional[str] = None,
+        langfuse: Optional[Langfuse] = None,
+    ) -> TranscriptionSynapse:
+        return cls(
+            model=model,
+            api_key=api_key,
+        )
+
+    def transcribe(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+    ) -> TranscriptionOutput:
+        return run_sync(
+            self.transcribe_async,
+            audio=audio,
+            temperature=temperature,
+            language=language,
+            prompt=prompt,
+        )
+
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+    ) -> TranscriptionOutput: ...

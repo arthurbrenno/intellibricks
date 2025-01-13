@@ -17,7 +17,12 @@ from openai.types.shared_params.response_format_json_schema import (
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
 )
-from intellibricks.llms.base.contracts import LanguageModel
+from intellibricks.llms.base import (
+    LanguageModel,
+    TranscriptionModel,
+    Language,
+    FileContent,
+)
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     GeneratedAssistantMessage,
@@ -30,10 +35,12 @@ from intellibricks.llms.schema import (
     Part,
     PromptTokensDetails,
     RawResponse,
+    TypeAlias,
     ToolCall,
     ToolCallSequence,
     Usage,
     ToolInputType,
+    TranscriptionOutput,
 )
 from intellibricks.llms.types import OpenAIModelType
 from intellibricks.llms.util import (
@@ -42,6 +49,8 @@ from intellibricks.llms.util import (
 )
 from intellibricks.util import flatten_msgspec_schema
 from openai.types.chat_model import ChatModel
+
+OpenAITranscriptionModelType: TypeAlias = Literal["whisper-1"]
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
@@ -307,3 +316,36 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
         )
 
         return chat_completion
+
+
+class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
+    model_name: OpenAITranscriptionModelType
+    api_key: Optional[str] = None
+    max_retries: int = 2
+
+    @ensure_module_installed("openai", "openai")
+    @override
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TranscriptionOutput:
+        from openai import AsyncOpenAI
+        from openai._types import NOT_GIVEN
+
+        client = AsyncOpenAI(api_key=self.api_key, max_retries=self.max_retries)
+
+        now = timeit.default_timer()
+        transcription = await client.audio.transcriptions.create(
+            file=audio,
+            model=self.model_name,
+            language=language or NOT_GIVEN,
+            temperature=temperature or NOT_GIVEN,
+            prompt=prompt or NOT_GIVEN,
+        )
+
+        return TranscriptionOutput(
+            elapsed_time=timeit.default_timer() - now, text=transcription.text
+        )

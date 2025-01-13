@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from os import PathLike
 
-from typing import IO, Optional, Sequence, TypeAlias, TypeVar, overload, Literal
+from typing import Optional, Sequence, TypeVar, overload
 
 import msgspec
 from architecture.utils import run_sync
@@ -19,110 +18,7 @@ from intellibricks.llms.schema import (
     TranscriptionOutput,
     UserMessage,
 )
-
-FileContent: TypeAlias = IO[bytes] | bytes | PathLike[str]
-Language: TypeAlias = Literal[
-    "en",
-    "zh",
-    "de",
-    "es",
-    "ru",
-    "ko",
-    "fr",
-    "ja",
-    "pt",
-    "tr",
-    "pl",
-    "ca",
-    "nl",
-    "ar",
-    "sv",
-    "it",
-    "id",
-    "hi",
-    "fi",
-    "vi",
-    "he",
-    "uk",
-    "el",
-    "ms",
-    "cs",
-    "ro",
-    "da",
-    "hu",
-    "ta",
-    "no",
-    "th",
-    "ur",
-    "hr",
-    "bg",
-    "lt",
-    "la",
-    "mi",
-    "ml",
-    "cy",
-    "sk",
-    "te",
-    "fa",
-    "lv",
-    "bn",
-    "sr",
-    "az",
-    "sl",
-    "kn",
-    "et",
-    "mk",
-    "br",
-    "eu",
-    "is",
-    "hy",
-    "ne",
-    "mn",
-    "bs",
-    "kk",
-    "sq",
-    "sw",
-    "gl",
-    "mr",
-    "pa",
-    "si",
-    "km",
-    "sn",
-    "yo",
-    "so",
-    "af",
-    "oc",
-    "ka",
-    "be",
-    "tg",
-    "sd",
-    "gu",
-    "am",
-    "yi",
-    "lo",
-    "uz",
-    "fo",
-    "ht",
-    "ps",
-    "tk",
-    "nn",
-    "mt",
-    "sa",
-    "lb",
-    "my",
-    "bo",
-    "tl",
-    "mg",
-    "as",
-    "tt",
-    "haw",
-    "ln",
-    "ha",
-    "ba",
-    "jv",
-    "su",
-    "yue",
-]
+from .types import FileContent, Language
 
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
@@ -340,8 +236,15 @@ class TranscriptionModel(msgspec.Struct, frozen=True):
         audio: FileContent,
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
+        prompt: Optional[str] = None,
     ) -> TranscriptionOutput:
-        return run_sync(self.transcribe_async, audio)
+        return run_sync(self.transcribe_async, audio, temperature, language, prompt)
 
-    async def transcribe_async(self, audio: FileContent) -> TranscriptionOutput:
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TranscriptionOutput:
         raise NotImplementedError

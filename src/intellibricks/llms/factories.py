@@ -1,15 +1,22 @@
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from architecture.logging import LoggerFactory
 from architecture.utils.creators import DynamicInstanceCreator
 
+from intellibricks.llms.base import TranscriptionModel
 from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.integrations.cerebras.cerebras import CerebrasLanguageModel
 from intellibricks.llms.integrations.deepinfra import DeepInfraLanguageModel
 from intellibricks.llms.integrations.google import GoogleLanguageModel
-from intellibricks.llms.integrations.groq import GroqLanguageModel
-from intellibricks.llms.integrations.openai import OpenAILanguageModel
-from intellibricks.llms.types import AIModel
+from intellibricks.llms.integrations.groq import (
+    GroqLanguageModel,
+    GroqTranscriptionModel,
+)
+from intellibricks.llms.integrations.openai import (
+    OpenAILanguageModel,
+    OpenAITranscriptionModel,
+)
+from intellibricks.llms.types import AIModel, TranscriptionModelType
 
 logger = LoggerFactory.create(__name__)
 
@@ -194,7 +201,35 @@ class LanguageModelFactory:
         params = params or {}
         params.update(model_extra_params.get(model, {}))
 
-        instance = DynamicInstanceCreator(
-            cls=cast(type[LanguageModel], async_chat_model_cls)
-        ).create_instance(**params)
+        instance = DynamicInstanceCreator(cls=async_chat_model_cls).create_instance(
+            **params
+        )
+        return instance
+
+
+class TranscriptionModelFactory:
+    @classmethod
+    def create(
+        cls,
+        model: TranscriptionModelType,
+        params: Optional[dict[str, Any]] = None,
+    ) -> TranscriptionModel:
+        logger.info(f"Creating transcription model: {model}")
+
+        transcription_model_type_to_transcription_model_class: dict[
+            TranscriptionModelType, type[TranscriptionModel]
+        ] = {
+            "groq/api/whisper-large-v3-turbo": GroqTranscriptionModel,
+            "groq/api/distil-whisper-large-v3-en": GroqTranscriptionModel,
+            "groq/api/whisper-large-v3": GroqTranscriptionModel,
+            "openai/api/whisper-1": OpenAITranscriptionModel,
+        }
+
+        async_chat_model_cls: type[TranscriptionModel] = (
+            transcription_model_type_to_transcription_model_class[model]
+        )
+
+        instance = DynamicInstanceCreator(cls=async_chat_model_cls).create_instance(
+            **(params or {})
+        )
         return instance
