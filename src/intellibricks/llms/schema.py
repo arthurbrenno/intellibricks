@@ -469,7 +469,7 @@ class XMLTag(msgspec.Struct, frozen=True):
         code_blocks = {}
 
         # Function to replace code blocks with placeholders
-        def replace_code_blocks(match: re.Match) -> str:
+        def replace_code_blocks(match: re.Match[str]) -> str:
             code_block = match.group(0)
             placeholder = f"__CODE_BLOCK_{uuid.uuid4()}__"
             code_blocks[placeholder] = code_block

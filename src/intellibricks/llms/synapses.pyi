@@ -396,8 +396,11 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
 
-class SynapticFallbackChain:
+class SynapseCascade:
     synapses: Sequence[Synapse]
+
+    @classmethod
+    def from_synapses(cls, *synapses: Synapse) -> SynapseCascade: ...
 
     @overload
     def complete(

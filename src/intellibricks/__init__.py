@@ -9,7 +9,7 @@ from .llms import (
     Usage,
     Prompt,
     MessageType,
-    SynapticFallbackChain,
+    SynapseCascade,
 )
 from .files import RawFile
 
@@ -28,5 +28,5 @@ __all__: list[str] = [
     "Agent",
     "RawFile",
     "MessageType",
-    "SynapticFallbackChain",
+    "SynapseCascade",
 ]

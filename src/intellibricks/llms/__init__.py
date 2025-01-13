@@ -11,7 +11,7 @@ from .schema import (
     TraceParams,
     MessageType,
 )
-from .synapses import Synapse, SynapticFallbackChain
+from .synapses import Synapse, SynapseCascade
 
 __all__ = [
     "Synapse",
@@ -26,5 +26,5 @@ __all__ = [
     "TraceParams",
     "Prompt",
     "CacheConfig",
-    "SynapticFallbackChain",
+    "SynapseCascade",
 ]

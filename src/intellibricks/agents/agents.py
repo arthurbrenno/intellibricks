@@ -35,7 +35,7 @@ from intellibricks.llms.schema import (
     TraceParams,
     UserMessage,
 )
-from intellibricks.llms.synapses import SynapticFallbackChain
+from intellibricks.llms.synapses import SynapseCascade
 from intellibricks.rag.contracts import SupportsContextRetrieval
 from intellibricks.rag.schema import ContextSourceSequence, Query
 
@@ -131,7 +131,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
     ]
 
     synapse: Annotated[
-        Synapse | SynapticFallbackChain,
+        Synapse | SynapseCascade,
         msgspec.Meta(
             title="Synapse",
             description="The synapse to use for the agent.",
@@ -139,7 +139,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
     ]
 
     tool_synapse: Annotated[
-        Optional[Synapse | SynapticFallbackChain],
+        Optional[Synapse | SynapseCascade],
         msgspec.Meta(
             title="Tool Synapse",
             description="The synapse to use for the tools.",

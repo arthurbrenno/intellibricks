@@ -602,17 +602,17 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         logger.debug("Langfuse span scored successfully.")
 
 
-class SynapticFallbackChain(msgspec.Struct, frozen=True):
+class SynapseCascade(msgspec.Struct, frozen=True):
     """If one synapse fails, the next one will be used. This class
     implements the same interface as Synapse, so you can use it
     like a normal Synapse object and also with union type hints like
-    synapse: Synapse | SynapticFallbackChain
+    synapse: Synapse | SynapseCascade
     """
 
     synapses: Sequence[Synapse]
 
     @classmethod
-    def from_synapses(cls, *synapses: Synapse) -> SynapticFallbackChain:
+    def from_synapses(cls, *synapses: Synapse) -> SynapseCascade:
         return cls(synapses=synapses)
 
     def complete(
