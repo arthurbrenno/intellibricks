@@ -15,11 +15,12 @@ from typing import (
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 
-from intellibricks.llms.base.contracts import LanguageModel
+from intellibricks.llms.base.contracts import LanguageModel, TranscriptionModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     GeneratedAssistantMessage,
     CalledFunction,
+    TranscriptionOutput,
     ChatCompletion,
     Function,
     Message,
@@ -56,6 +57,12 @@ GroqModel: TypeAlias = Literal[
     "llama3-70b-8192",
     "llama3-8b-8192",
     "mixtral-8x7b-32768",
+]
+
+GroqTranscriptionModelType: TypeAlias = Literal[
+    "whisper-large-v3-turbo",
+    "distil-whisper-large-v3-en",
+    "whisper-large-v3"
 ]
 
 MODEL_PRICING: dict[GroqModel, dict[Literal["input_cost", "output_cost"], float]] = {
@@ -259,3 +266,18 @@ class GroqLanguageModel(LanguageModel, frozen=True):
         )
 
         return chat_completion
+
+
+class GroqTranscriptionModel(TranscriptionModel, frozen=True):
+    model_name: GroqTranscriptionModelType
+    api_key: Optional[str] = None
+    max_retries: int = 2
+
+    async def transcribe_async(self, audio: bytes) -> TranscriptionOutput:
+        from groq import AsyncGroq
+        client = AsyncGroq(api_key=self.api_key, max_retries=self.max_retries)
+
+        transcription = client.audio.transcriptions.create(
+            file=audio,
+            model=self.model_name
+        )
