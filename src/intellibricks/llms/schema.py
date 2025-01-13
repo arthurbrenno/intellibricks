@@ -29,10 +29,7 @@ from typing import (
     TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
     cast,
-    get_args,
-    get_origin,
     get_type_hints,
     overload,
     override,
@@ -52,7 +49,6 @@ from intellibricks.util import (
     get_file_extension,
     is_file_url,
     is_url,
-    python_type_to_json_type,
 )
 
 from .constants import FinishReason, Language
@@ -548,7 +544,7 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     ) -> Part:
         match openai_part["type"]:
             case "text":
-                return TextPart(text=openai_part["text"])
+                    return TextPart(text=openai_part["text"])
             case "image_url":
                 url_or_base_64 = openai_part["image_url"]["url"]
                 if is_url(url_or_base_64):
@@ -2684,7 +2680,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
             FunctionDefinition as OpenAIFunctionDefinition,
         )
 
-        def property_to_schema(prop: Property) -> dict:
+        def property_to_schema(prop: Property) -> dict[str, Any]:
             """Convert a Property instance into a schema dictionary."""
             schema: dict[str, Any] = {"type": prop.type}
 
@@ -2705,7 +2701,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
 
             return schema
 
-        def parameter_to_schema(param: Parameter) -> dict:
+        def parameter_to_schema(param: Parameter) -> dict[str, Any]:
             """Convert a Parameter instance into a schema dictionary."""
             schema: dict[str, Any] = {"type": param.type}
 
@@ -2756,7 +2752,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
             FunctionDefinition as GroqFunctionDefinition,
         )
 
-        def property_to_schema(prop: Property) -> dict:
+        def property_to_schema(prop: Property) -> dict[str, Any]:
             """Convert a Property instance into a schema dictionary."""
             schema: dict[str, Any] = {"type": prop.type}
 
@@ -2777,7 +2773,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
 
             return schema
 
-        def parameter_to_schema(param: Parameter) -> dict:
+        def parameter_to_schema(param: Parameter) -> dict[str, Any]:
             """Convert a Parameter instance into a schema dictionary."""
             schema: dict[str, Any] = {"type": param.type}
 
@@ -2939,7 +2935,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
             ToolFunctionTyped as CerebrasFunctionDefinition,
         )
 
-        def property_to_schema(prop: Property) -> dict:
+        def property_to_schema(prop: Property) -> dict[str, Any]:
             """Convert a Property instance into a schema dictionary."""
             schema: dict[str, Any] = {"type": prop.type}
 
@@ -2960,7 +2956,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
 
             return schema
 
-        def parameter_to_schema(param: Parameter) -> dict:
+        def parameter_to_schema(param: Parameter) -> dict[str, Any]:
             """Convert a Parameter instance into a schema dictionary."""
             schema: dict[str, Any] = {"type": param.type}
 
@@ -2999,50 +2995,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
         )
 
     @staticmethod
-    def __parse_annotation(annotation: Any) -> tuple[str, Optional[list[Any]]]:
-        """
-        Parse the annotation to determine the JSON type and enum values.
-
-        Args:
-            annotation (Any): The type annotation of the parameter.
-
-        Returns:
-            Tuple contendo o tipo JSON como string e valores enum opcionais.
-        """
-        param_type: str
-        enum_values: Optional[list[Any]] = None
-
-        origin = get_origin(annotation)
-        args = get_args(annotation)
-
-        if origin is Union:
-            # Handle Optional[X] which is Union[X, NoneType]
-            non_none_args = [arg for arg in args if arg is not type(None)]
-            if len(non_none_args) == 1:
-                annotation = non_none_args[0]
-                origin = get_origin(annotation)
-                args = get_args(annotation)
-            # Check for Literal types within Union
-            literals = [arg for arg in args if get_origin(arg) is Literal]
-            if literals:
-                enum_values = []
-                for lit in literals:
-                    enum_values.extend(get_args(lit))
-                # Assuming all literals are of the same type
-                param_type = python_type_to_json_type(type(enum_values[0]))
-            else:
-                param_type = python_type_to_json_type(annotation)
-        elif origin is Literal:
-            enum_values = list(get_args(annotation))
-            # Assuming all literals are of the same type
-            param_type = python_type_to_json_type(type(enum_values[0]))
-        else:
-            param_type = python_type_to_json_type(annotation)
-
-        return param_type, enum_values
-
-    @staticmethod
-    def _extract_param_description(func: Callable, param_name: str) -> Optional[str]:
+    def _extract_param_description(func: Callable[..., Any], param_name: str) -> Optional[str]:
         """
         Extract parameter description from the function's docstring.
 

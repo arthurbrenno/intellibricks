@@ -612,7 +612,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
     synapses: Sequence[Synapse]
 
     @classmethod
-    def from_synapses(cls, *synapses: Synapse) -> SynapseCascade:
+    def of(cls, *synapses: Synapse) -> SynapseCascade:
         return cls(synapses=synapses)
 
     def complete(

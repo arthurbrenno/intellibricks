@@ -400,7 +400,7 @@ class SynapseCascade:
     synapses: Sequence[Synapse]
 
     @classmethod
-    def from_synapses(cls, *synapses: Synapse) -> SynapseCascade: ...
+    def of(cls, *synapses: Synapse) -> SynapseCascade: ...
 
     @overload
     def complete(
