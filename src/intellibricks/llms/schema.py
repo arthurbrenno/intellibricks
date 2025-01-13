@@ -89,7 +89,7 @@ if TYPE_CHECKING:
     from groq.types.chat.chat_completion_tool_param import (
         ChatCompletionToolParam as GroqTool,
     )
-    from groq.types.shared.function_definition import (
+    from groq.types.shared_params.function_definition import (
         FunctionDefinition as GroqFunctionDefinition,
     )
     from openai.types.chat.chat_completion_content_part_param import (
@@ -104,7 +104,7 @@ if TYPE_CHECKING:
     from openai.types.chat.chat_completion_tool_param import (
         ChatCompletionToolParam as OpenAITool,
     )
-    from openai.types.shared.function_definition import (
+    from openai.types.shared_params.function_definition import (
         FunctionDefinition as OpenAIFunctionDefinition,
     )
 
@@ -1245,7 +1245,7 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
 
     @ensure_module_installed("openai", "openai")
     @override
-    def to_openai_part(self) -> dict[str, Any]:
+    def to_openai_part(self) -> OpenAIChatCompletionContentPartParam:
         """
         Returns the Input Audio part in the OpenAI format.
         In this case, OpenAI uses typed dicts, so it
@@ -1259,16 +1259,12 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
         if not self.data:
             raise ValueError("Audio data (bytes) is required.")
 
-        return cast(
-            dict[str, Any],
-            ChatCompletionContentPartInputAudioParam(
+        return ChatCompletionContentPartInputAudioParam(
                 input_audio=InputAudio(
                     data=base64.b64encode(self.data).decode("utf-8"),
                     format=cast(Literal["mp3"], self.mime_type.split("/")[1]),
                 ),
-                type="input_audio",
-            ),
-        )
+                type="input_audio")
 
     @ensure_module_installed("groq", "groq")
     @override
@@ -2862,7 +2858,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
         Returns:
             dict: The OpenAI-compatible function definition.
         """
-        from openai.types.shared.function_definition import (
+        from openai.types.shared_params.function_definition import (
             FunctionDefinition as OpenAIFunctionDefinition,
         )
 
@@ -2934,7 +2930,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
         Returns:
             GroqFunctionDeclaration: The Groq-compatible function declaration.
         """
-        from groq.types.shared.function_definition import (
+        from groq.types.shared_params.function_definition import (
             FunctionDefinition as GroqFunctionDefinition,
         )
 

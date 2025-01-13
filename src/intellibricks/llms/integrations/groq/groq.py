@@ -1,6 +1,6 @@
 import copy
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, override
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, overload, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
@@ -28,7 +28,7 @@ from intellibricks.llms.util import (
     get_parsed_response,
 )
 
-T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 GroqModel: TypeAlias = Literal[
     "gemma2-9b-it",
@@ -71,13 +71,12 @@ class GroqLanguageModel(LanguageModel, frozen=True):
     api_key: Optional[str] = None
     max_retries: int = 2
 
-    @ensure_module_installed("groq", "groq")
-    @override
+    @overload
     async def chat_async(
         self,
         messages: Sequence[Message],
         *,
-        response_model: Optional[type[T]] = None,
+        response_model: None = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
@@ -86,7 +85,39 @@ class GroqLanguageModel(LanguageModel, frozen=True):
         stop_sequences: Optional[Sequence[str]] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
+    ) -> ChatCompletion[RawResponse]: ...
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
+    
+    @ensure_module_installed("groq", "groq")
+    @override
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: Optional[type[S]] = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         from groq import AsyncGroq
         from groq._types import NOT_GIVEN
         from groq.types.chat.chat_completion import (
@@ -137,7 +168,7 @@ class GroqLanguageModel(LanguageModel, frozen=True):
         )
 
         # Construct Choices
-        choices: list[MessageChoice[T]] = []
+        choices: list[MessageChoice[S]] = []
         for choice in groq_completion.choices:
             message = choice.message
 
@@ -172,7 +203,7 @@ class GroqLanguageModel(LanguageModel, frozen=True):
                             message.content or "", response_model=response_model
                         )
                         if response_model
-                        else cast(T, RawResponse()),
+                        else cast(S, RawResponse()),
                         tool_calls=ToolCallSequence(tool_calls),
                     ),
                     logprobs=None,

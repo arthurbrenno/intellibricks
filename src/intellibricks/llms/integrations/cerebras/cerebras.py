@@ -1,6 +1,6 @@
 import copy
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, override
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, overload, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
@@ -28,7 +28,7 @@ from intellibricks.llms.util import (
     get_parsed_response,
 )
 
-T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 CerebrasModel: TypeAlias = Literal["llama3.1-8b", "llama3.1-70b", "llama-3.3-70b"]
 
 MODEL_PRICING: dict[
@@ -49,23 +49,53 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
     max_retries: int = 2
     parallel_tool_calls: bool = True
 
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
+
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
     @override
     async def chat_async(
         self,
         messages: Sequence[Message],
         *,
-        response_model: Optional[type[T]] = None,
+        response_model: Optional[type[S]] = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         from cerebras.cloud.sdk import AsyncCerebras
         from cerebras.cloud.sdk.types.chat.chat_completion import (
             ChatCompletionResponse as CerebrasChatCompletion,
@@ -121,7 +151,7 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
         )
 
         # Construct choices
-        choices: list[MessageChoice[T]] = []
+        choices: list[MessageChoice[S]] = []
         for choice in cerebras_completion.choices:
             message: ChatCompletionResponseChoiceMessage = choice.message
 
@@ -155,7 +185,7 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
                             message.content or "", response_model=response_model
                         )
                         if response_model
-                        else cast(T, RawResponse()),
+                        else cast(S, RawResponse()),
                         tool_calls=ToolCallSequence(tool_calls),
                     ),
                     logprobs=None,
@@ -266,7 +296,6 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
 #         n: Optional[int] = None,
 #         temperature: Optional[float] = None,
 #         max_completion_tokens: Optional[int] = None,
-#         max_retries: Optional[int] = None,
 #         top_p: Optional[float] = None,
 #         top_k: Optional[int] = None,
 #         stop_sequences: Optional[Sequence[str]] = None,

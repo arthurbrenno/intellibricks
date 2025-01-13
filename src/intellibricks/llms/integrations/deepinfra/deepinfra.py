@@ -1,5 +1,5 @@
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, override
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, overload, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
@@ -30,7 +30,7 @@ from intellibricks.llms.util import (
 )
 from intellibricks.util import flatten_msgspec_schema
 
-T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 
 ChatModel: TypeAlias = Literal[
@@ -208,6 +208,38 @@ MODEL_PRICING: dict[ChatModel, dict[Literal["input_cost", "output_cost"], float]
 class DeepInfraLanguageModel(LanguageModel, frozen=True):
     model_name: ChatModel
     api_key: Optional[str] = None
+    max_retries: int = 2
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
 
     @ensure_module_installed("openai", "openai")
     @override
@@ -215,17 +247,16 @@ class DeepInfraLanguageModel(LanguageModel, frozen=True):
         self,
         messages: Sequence[Message],
         *,
-        response_model: Optional[type[T]] = None,
+        response_model: Optional[type[S]] = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         from openai import NOT_GIVEN, AsyncOpenAI
         from openai.types.chat.chat_completion import (
             ChatCompletion as OpenAIChatCompletion,
@@ -244,7 +275,7 @@ class DeepInfraLanguageModel(LanguageModel, frozen=True):
         client = AsyncOpenAI(
             api_key=self.api_key or os.environ.get("DEEPINFRA_API_KEY", None),
             base_url="https://api.deepinfra.com/v1/openai",
-            max_retries=max_retries or 2,
+            max_retries=self.max_retries or 2,
         )
 
         openai_completion: OpenAIChatCompletion = await client.chat.completions.create(
@@ -282,7 +313,7 @@ class DeepInfraLanguageModel(LanguageModel, frozen=True):
         )
 
         # Construct Choices
-        choices: list[MessageChoice[T]] = []
+        choices: list[MessageChoice[S]] = []
         for choice in openai_completion.choices:
             message = choice.message
 
@@ -317,7 +348,7 @@ class DeepInfraLanguageModel(LanguageModel, frozen=True):
                             message.content or "", response_model=response_model
                         )
                         if response_model
-                        else cast(T, RawResponse()),
+                        else cast(S, RawResponse()),
                         tool_calls=ToolCallSequence(tool_calls),
                     ),
                     logprobs=None,

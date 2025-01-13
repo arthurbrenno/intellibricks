@@ -1,6 +1,6 @@
 import asyncio
 import timeit
-from typing import Any, Literal, Optional, Sequence, TypeVar, cast, override
+from typing import Any, Literal, Optional, Sequence, TypeVar, cast, overload, override
 import uuid
 
 from architecture.logging import LoggerFactory
@@ -131,6 +131,38 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
     project: Optional[str] = None
     location: Optional[str] = None
 
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
+
     @ensure_module_installed("google.genai", "google-genai")
     @override
     async def chat_async(
@@ -143,7 +175,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
         max_completion_tokens: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
-        stop_sequences: Optional[list[str]] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -175,7 +207,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                         if tools
                         else None,
                         max_output_tokens=max_completion_tokens,
-                        stop_sequences=stop_sequences,
+                        stop_sequences=list(stop_sequences) if stop_sequences else None,
                         response_mime_type="application/json"
                         if response_model
                         else None,
@@ -335,7 +367,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
             ),
         )
 
-        return ChatCompletion(
+        completion: ChatCompletion[S] | ChatCompletion[RawResponse] = ChatCompletion(
             elapsed_time=timeit.default_timer() - now,
             choices=choices,
             usage=usage,
@@ -344,3 +376,5 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                 f"google/{'vertexai' if self.vertexai else 'genai'}/{self.model_name}",
             ),
         )
+        
+        return completion

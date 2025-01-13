@@ -11,5 +11,6 @@
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "mypy.dmypyExecutable": "${workspaceFolder}/.venv/bin/dmypy"
+    "mypy.dmypyExecutable": "${workspaceFolder}/.venv/bin/dmypy",
+    "makefile.configureOnOpen": false
 }

@@ -5,6 +5,7 @@ from typing import (
     Optional,
     Sequence,
     TypeVar,
+    overload,
 )
 from architecture.utils import run_sync
 import msgspec
@@ -23,8 +24,37 @@ from intellibricks.llms.schema import (
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
-
 class LanguageModel(msgspec.Struct, frozen=True):
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
     async def chat_async(
         self,
         messages: Sequence[Message],
@@ -41,6 +71,36 @@ class LanguageModel(msgspec.Struct, frozen=True):
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         raise NotImplementedError
 
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
     def chat(
         self,
         messages: Sequence[Message],
@@ -69,6 +129,38 @@ class LanguageModel(msgspec.Struct, frozen=True):
             timeout=timeout,
         )
 
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
     def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
