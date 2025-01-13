@@ -546,19 +546,18 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             logger.error(
                 f"An error occurred during chat completion: {e}", exc_info=True
             )
-            if maybe_span:
-                logger.debug("Ending Langfuse span due to error.")
-                maybe_span.end(output={})
-                logger.debug("Updating Langfuse span status due to error.")
-                maybe_span.update(status_message="Error in completion", level="ERROR")
-                logger.debug("Scoring Langfuse span as failure due to error.")
-                maybe_span.score(
-                    id=f"sc-{maybe_span.unwrap()}",
-                    name="Sucess",
-                    value=0.0,
-                    comment=f"Error while generating choices: {e}",
-                )
-                logger.debug("Langfuse span error handling completed.")
+            logger.debug("Ending Langfuse span due to error.")
+            maybe_span.end(output={})
+            logger.debug("Updating Langfuse span status due to error.")
+            maybe_span.update(status_message="Error in completion", level="ERROR")
+            logger.debug("Scoring Langfuse span as failure due to error.")
+            maybe_span.score(
+                id=f"sc-{maybe_span.unwrap()}",
+                name="Sucess",
+                value=0.0,
+                comment=f"Error while generating choices: {e}",
+            )
+            logger.debug("Langfuse span error handling completed.")
             raise e
 
     async def __end_observability_logic(
