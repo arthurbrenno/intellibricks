@@ -1,5 +1,4 @@
 import inspect
-import logging
 import mimetypes
 import os
 import re
@@ -13,7 +12,6 @@ from typing import (
     Optional,
     cast,
     get_args,
-    get_origin,
     Mapping
 )
 from urllib.parse import urlparse
@@ -23,8 +21,6 @@ from architecture.logging import LoggerFactory
 from typing_extensions import TypedDict
 
 from intellibricks.llms.types import FileExtension
-
-from .types import JsonType
 
 logger = LoggerFactory.create(__name__)
 
@@ -231,7 +227,6 @@ def str_replace(
                     s = s.replace(old, new)
     return s
 
-
 def get_struct_from_schema(
     json_schema: dict[str, Any],
     *,
@@ -276,16 +271,13 @@ def get_struct_from_schema(
         using `root_schema` as the top-level reference container.
         """
         if isinstance(node, dict):
-            if "$ref" in node:
-                ref_val: Any = node["$ref"]
+            node_dict = cast(dict[str, Any], node)   # <-- The crucial fix (type cast)
+            if "$ref" in node_dict:
+                ref_val: Any = node_dict["$ref"]
                 if not isinstance(ref_val, str):
-                    """
-                    Argument type is unknown
-                    Argument corresponds to parameter "o" in function "__init__"PylancereportUnknownArgumentType
-                    (variable) ref_val: Unknown
-                    """
-                    raise TypeError(f"Expected $ref to be a string, got {type(ref_val)!r}.")
-
+                    raise TypeError(
+                        f"Expected $ref to be a string, got {type(ref_val)!r}."
+                    )
                 if not ref_val.startswith("#/"):
                     raise ValueError(
                         f"Only local references of the form '#/...'' are supported, got: {ref_val}"
@@ -307,16 +299,9 @@ def get_struct_from_schema(
                 return resolve_refs(current, root_schema)
             else:
                 # Recurse into child values
-                """
-                Argument type is partially unknown
-                Argument corresponds to parameter "iterable" in function "__init__"
-                Argument type is "dict_items[Unknown, Unknown]"PylancereportUnknownArgumentType
-                (method) def items() -> dict_items[Unknown, Unknown]
-                Return a set-like object providing a view on the dict's items.
-                """
-                for k, v in list(node.items()):
-                    node[k] = resolve_refs(v, root_schema)
-                return node
+                for k, v in list(node_dict.items()):
+                    node_dict[k] = resolve_refs(v, root_schema)
+                return node_dict
 
         elif isinstance(node, list):
             new_list: list[Any] = []
@@ -350,13 +335,13 @@ def get_struct_from_schema(
         raise ValueError("JSON schema must define a top-level 'object' type.")
 
     # 4) "properties" must be a dict
-    if "properties" in resolved_schema:
-        raw_properties = resolved_schema["properties"]
-        if not isinstance(raw_properties, dict):
-            raise ValueError("JSON schema must define a 'properties' dict at the top level.")
-    else:
+    if "properties" not in resolved_schema:
         raise ValueError("JSON schema must define a 'properties' key at the top level.")
-    
+  
+    raw_properties: dict[str, Any] = resolved_schema["properties"]
+    if not isinstance(raw_properties, dict):
+        raise ValueError("JSON schema must define a 'properties' dict at the top level.")
+
     # 5) Derive struct name
     if name is None:
         if "title" in resolved_schema:
@@ -368,6 +353,7 @@ def get_struct_from_schema(
         else:
             name = "DynamicStruct"
 
+    # Ensure the name is a valid Python identifier (coarse):
     name = re.sub(r"\W|^(?=\d)", "_", name)
 
     # 6) Basic type mapping
@@ -402,13 +388,8 @@ def get_struct_from_schema(
             raise TypeError(f"Property name must be a string, got {prop_name!r}")
 
         if not isinstance(prop_schema_any, dict):
-            """
-            Argument type is unknown
-            Argument corresponds to parameter "o" in function "__init__"PylancereportUnknownArgumentType
-            (variable) prop_schema_any: Unknown
-            """
             raise TypeError(
-                f"Each property schema must be a dict, got {type(cast(Any, prop_schema_any))!r} for '{prop_name}'"
+                f"Each property schema must be a dict, got {type(cast(object, prop_schema_any))!r} for '{prop_name}'"
             )
         prop_schema: dict[str, Any] = prop_schema_any
 
@@ -420,9 +401,12 @@ def get_struct_from_schema(
 
         field_type: Any
         if maybe_type is None:
+            # If there's no type in the property schema, just treat it as Any
             field_type = Any
+
         elif isinstance(maybe_type, str):
             if maybe_type == "array":
+                # array -> items
                 items_type_val: Any = None
                 if "items" in prop_schema:
                     items_schema = prop_schema["items"]
@@ -460,6 +444,7 @@ def get_struct_from_schema(
                     field_type = Any
 
         elif isinstance(maybe_type, list):
+            # handle union of possible types
             union_members: list[Any] = []
             for t_ in maybe_type:
                 if not isinstance(t_, str):
@@ -655,17 +640,15 @@ def jsonify(string: str) -> dict[str, Any]:
 
     """
 
-    logger = logging.getLogger(__name__)
-
     # Remove code block markers if present
     string = re.sub(r"^```(?:json)?\n", "", string, flags=re.IGNORECASE | re.MULTILINE)
     string = re.sub(r"\n```$", "", string, flags=re.MULTILINE)
 
     # Helper function to find substrings with balanced braces
     def find_json_substrings(s: str) -> list[str]:
-        substrings = []
+        substrings: list[str] = []
         stack: list[str] = []
-        start = None
+        start: Optional[int] = None
         for i, c in enumerate(s):
             if c == "{":
                 if not stack:
@@ -683,33 +666,33 @@ def jsonify(string: str) -> dict[str, Any]:
         return substrings
 
     # Find all potential JSON substrings
-    json_substrings = find_json_substrings(string)
+    json_substrings: list[str] = find_json_substrings(string)
 
     if not json_substrings:
         raise ValueError("No JSON object could be found in the string.")
 
     # Initialize variables for parsing attempts
-    parsed_obj: Optional[dict[str, Any]] = None
+    parsed_obj: dict[str, Any]
 
     # Define fix functions as inner functions
-    def _fix_unescaped_backslashes(string: str) -> str:
+    def _fix_unescaped_backslashes(input_string: str) -> str:
         """
         Fix unescaped backslashes by escaping them.
 
         Args:
-            string (str): The JSON string to fix.
+            input_string (str): The JSON string to fix.
 
         Returns:
             str: The fixed JSON string.
         """
-        return re.sub(r'(?<!\\)\\(?![\\"])', r"\\\\", string)
+        return re.sub(r'(?<!\\)\\(?![\\"])', r"\\\\", input_string)
 
-    def _escape_unescaped_newlines(string: str) -> str:
+    def _escape_unescaped_newlines(input_string: str) -> str:
         """
         Escape unescaped newline and carriage return characters within JSON strings.
 
         Args:
-            string (str): The JSON string to fix.
+            input_string (str): The JSON string to fix.
 
         Returns:
             str: The fixed JSON string.
@@ -726,16 +709,16 @@ def jsonify(string: str) -> dict[str, Any]:
             return f'"{content_inside_quotes}"'
 
         fixed_content = re.sub(
-            string_pattern, replace_newlines_in_string, string, flags=re.DOTALL
+            string_pattern, replace_newlines_in_string, input_string, flags=re.DOTALL
         )
         return fixed_content
 
-    def _insert_missing_commas(string: str) -> str:
+    def _insert_missing_commas(input_string: str) -> str:
         """
         Insert missing commas between JSON objects in arrays.
 
         Args:
-            string (str): The JSON string to fix.
+            input_string (str): The JSON string to fix.
 
         Returns:
             str: The fixed JSON string.
@@ -747,34 +730,34 @@ def jsonify(string: str) -> dict[str, Any]:
             (r"(\])(\s*\{)", r"\1,\2"),  # Between ] and {
             (r"(\})(\s*\[)", r"\1,\2"),  # Between } and [
         ]
-        fixed_content = string
+        fixed_content = input_string
         for pattern, replacement in patterns:
             fixed_content = re.sub(pattern, replacement, fixed_content)
         return fixed_content
 
-    def _remove_control_characters(string: str) -> str:
+    def _remove_control_characters(input_string: str) -> str:
         """
         Remove control characters that may interfere with JSON parsing.
 
         Args:
-            string (str): The JSON string to fix.
+            input_string (str): The JSON string to fix.
 
         Returns:
             str: The fixed JSON string.
         """
-        return "".join(c for c in string if c >= " " or c == "\n")
+        return "".join(c for c in input_string if c >= " " or c == "\n")
 
-    def _remove_invalid_characters(string: str) -> str:
+    def _remove_invalid_characters(input_string: str) -> str:
         """
         Remove any remaining invalid characters (non-printable ASCII characters).
 
         Args:
-            string (str): The JSON string to fix.
+            input_string (str): The JSON string to fix.
 
         Returns:
             str: The fixed JSON string.
         """
-        return re.sub(r"[^\x20-\x7E]+", "", string)
+        return re.sub(r"[^\x20-\x7E]+", "", input_string)
 
     # Define a list of fix functions
     fix_functions: list[Callable[[str], str]] = [
@@ -794,8 +777,7 @@ def jsonify(string: str) -> dict[str, Any]:
                 fixed_content: str = fix_func(json_content)
                 # Try parsing the JSON string
                 parsed_obj = msgspec.json.decode(fixed_content, type=dict)
-                if parsed_obj is not None:
-                    return parsed_obj
+                return parsed_obj
             except (msgspec.DecodeError, ValueError) as e:
                 logger.error(
                     f"Failed to parse JSON string after applying fix: {fix_func.__name__}"
@@ -834,27 +816,6 @@ def dict_to_struct[S: msgspec.Struct](d: dict[str, Any], struct: type[S]) -> S:
     return msgspec.json.decode(msgspec.json.encode(d), type=struct)
 
 
-def python_type_to_json_type(python_type: Any) -> JsonType:
-    """Convert Python type to JSON schema type."""
-    PYTHON_TO_JSON_TYPE = {
-        str: "string",
-        int: "integer",
-        float: "float",
-        bool: "bool",
-        list: "array",
-        dict: "object",
-    }
-
-    origin = get_origin(python_type) or python_type
-    if origin in PYTHON_TO_JSON_TYPE:
-        return cast(JsonType, PYTHON_TO_JSON_TYPE.get(origin, "object"))
-    elif isinstance(python_type, type) and issubclass(
-        python_type, (str, int, float, bool, list, dict)
-    ):
-        return cast(JsonType, PYTHON_TO_JSON_TYPE.get(python_type, "object"))
-    return "object"  # Default fallback
-
-
 def flatten_msgspec_schema(
     schema: dict[str, Any],
     remove_parameters: Optional[list[str]] = None,
@@ -862,8 +823,6 @@ def flatten_msgspec_schema(
 ) -> dict[str, Any]:
     """Flatten a msgspec-generated JSON schema by resolving all $ref references and removing $defs. Additionally, remove specified parameters from the final schema and, if openai_like=True, recursively enforce 'additionalProperties': false for all 'object' types. This produces a standalone JSON schema with no external references, suitable for APIs (such as certain LLM endpoints) that do not accept schemas containing $ref and $defs, and optionally suitable for OpenAI strict mode.
 
-    vbnet
-    Copy code
     Parameters
     ----------
     schema : dict
@@ -955,40 +914,65 @@ def flatten_msgspec_schema(
     # to be false in object definitions for strict usage with OpenAI.
 
     """
-    # Make a copy so as not to mutate the original
-    schema = deepcopy(schema)
-    defs = schema.pop("$defs", {})
+    # 1) Make a copy so as not to mutate the original
+    schema_copy: dict[str, Any] = deepcopy(schema)
+    defs: dict[str, Any] = {}
+    if "$defs" in schema_copy:
+        defs_val_any: Any = schema_copy.pop("$defs")
+        if isinstance(defs_val_any, dict):
+            defs = defs_val_any
+        else:
+            # If we wanted to be extra defensive:
+            raise TypeError(f"Expected $defs to be a dict, got {type(defs_val_any)!r}")
 
     def resolve_references(node: Any) -> Any:
-        """Recursively walk through the schema and resolve any $ref entries."""
+        """
+        Recursively walk through the schema and resolve any $ref entries.
+        """
         if isinstance(node, dict):
-            # Resolve $ref
-            if "$ref" in node:
-                ref_path = node["$ref"]
-                ref_name = ref_path.split("/")[-1]
+            node_dict: dict[str, Any] = node
+
+            if "$ref" in node_dict:
+                ref_path_any: Any = node_dict["$ref"]
+                if not isinstance(ref_path_any, str):
+                    raise TypeError(
+                        f"Expected '$ref' value to be a string, got {type(ref_path_any)!r}."
+                    )
+                ref_path: str = ref_path_any
+
+                # Now safe to call .split()
+                parts = ref_path.split("/")
+                if not parts:
+                    raise ValueError(f"Invalid $ref path: {ref_path!r}")
+
+                ref_name: str = parts[-1]
                 if ref_name not in defs:
                     raise ValueError(
                         f"Reference {ref_path} cannot be resolved - {ref_name} not in $defs."
                     )
                 # Substitute the definition
-                resolved_node = deepcopy(defs[ref_name])
+                resolved_node: Any = deepcopy(defs[ref_name])
                 return resolve_references(resolved_node)
             else:
                 # Remove unwanted parameters if specified
                 if remove_parameters:
                     for param in remove_parameters:
-                        if param in node:
-                            del node[param]
+                        if param in node_dict:
+                            del node_dict[param]
 
                 # Recursively resolve children
-                for k, v in list(node.items()):
-                    node[k] = resolve_references(v)
+                for k, v in list(node_dict.items()):
+                    node_dict[k] = resolve_references(v)
 
-                return node
+                return node_dict
 
         elif isinstance(node, list):
             # Resolve each item in the list
-            return [resolve_references(item) for item in node]
+            new_list: list[Any] = []
+            for item in node:
+                resolved_item = resolve_references(item)
+                new_list.append(resolved_item)
+            return new_list
 
         else:
             # Base case: return the node as is
@@ -1000,22 +984,28 @@ def flatten_msgspec_schema(
         object-type node in the schema.
         """
         if isinstance(n, dict):
-            if n.get("type") == "object":
-                n.setdefault("additionalProperties", False)
-            for child_val in n.values():
+            n_dict: dict[str, Any] = n
+            # Safely call .get()
+            maybe_type: Any = n_dict.get("type", None)
+            if maybe_type == "object":
+                # Now safe to call .setdefault() with known str key
+                n_dict.setdefault("additionalProperties", False)
+
+            for child_val in n_dict.values():
                 enforce_additional_properties_false(child_val)
         elif isinstance(n, list):
             for i in n:
                 enforce_additional_properties_false(i)
 
-    # 1. Resolve references
-    schema = resolve_references(schema)
+    # 2) Resolve references (remove all $ref) in the schema
+    final_schema: Any = resolve_references(schema_copy)
 
-    # 2. If openai_like, recursively enforce additionalProperties=false
+    # 3) If openai_like, recursively enforce additionalProperties=false
     if openai_like:
-        enforce_additional_properties_false(schema)
+        enforce_additional_properties_false(final_schema)
 
-    return schema
+    # final_schema should now be fully standalone: no $ref, no $defs
+    return final_schema
 
 
 def is_file_url(url: str) -> bool:
