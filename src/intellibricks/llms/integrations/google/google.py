@@ -367,7 +367,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
             ),
         )
 
-        completion: ChatCompletion[S] | ChatCompletion[RawResponse] = ChatCompletion(
+        completion = ChatCompletion(
             elapsed_time=timeit.default_timer() - now,
             choices=choices,
             usage=usage,
