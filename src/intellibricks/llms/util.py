@@ -56,13 +56,15 @@ def get_parsed_response[S](
             text = get_parts_llm_described_text(contents)
 
     encoder: msgspec.json.Encoder = msgspec.json.Encoder()
-    dict_decoder: msgspec.json.Decoder[dict[str, Any]] = msgspec.json.Decoder(type=dict[str, Any])
+    dict_decoder: msgspec.json.Decoder[dict[str, Any]] = msgspec.json.Decoder(
+        type=dict[str, Any]
+    )
     rm_decoder: msgspec.json.Decoder[S] = msgspec.json.Decoder(type=response_model)
 
     try:
         structured: dict[str, Any] = dict_decoder.decode(encoder.encode(text))
     except Exception:
-        structured = fix_broken_json(text)
+        structured = fix_broken_json(text, decoder=dict_decoder)
 
     model: S = rm_decoder.decode(encoder.encode(structured))
     return model

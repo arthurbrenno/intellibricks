@@ -9,7 +9,7 @@ from typing import (
     cast,
     overload,
     override,
-    Any
+    Any,
 )
 
 import msgspec

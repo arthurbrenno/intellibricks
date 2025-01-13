@@ -21,6 +21,7 @@ import msgspec
 from architecture.extensions import Maybe
 from architecture.logging import LoggerFactory
 from architecture.utils import run_sync
+from architecture.utils.functions import fire_and_forget
 from langfuse import Langfuse
 from langfuse.client import (
     StatefulGenerationClient,
@@ -50,7 +51,6 @@ from .schema import (
     ToolInputType,
 )
 from .types import AIModel
-# from architecture.utils.functions import fire_and_forget
 
 
 logger = LoggerFactory.create(__name__)
@@ -441,7 +441,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
         logger.debug("Initializing Langfuse trace (if available).")
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
-            lambda langfuse: langfuse.trace(**trace_params) # type: ignore
+            lambda langfuse: langfuse.trace(**trace_params)  # type: ignore
         )
 
         ai_model: AIModel = self.model or "google/genai/gemini-2.0-flash-exp"
@@ -453,7 +453,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         logger.debug("Creating Langfuse span (if trace is available).")
         maybe_span: Maybe[StatefulSpanClient] = Maybe(
             trace.map(
-                lambda trace: trace.span( # type: ignore
+                lambda trace: trace.span(  # type: ignore
                     id=f"sp-{completion_id}",
                     input=messages,
                     name="Response Generation",
@@ -462,7 +462,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         )
         logger.debug("Creating Langfuse generation (if span is available).")
         generation: Maybe[StatefulGenerationClient] = maybe_span.map(
-            lambda span: span.generation( # type: ignore
+            lambda span: span.generation(  # type: ignore
                 model=ai_model,
                 input=messages,
                 model_parameters={
@@ -501,44 +501,12 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 tools=tools,
                 timeout=timeout,
             )
+
             logger.debug("chat_async method call completed successfully.")
 
-            # TODO(arthur): Immediatly return. Implement a "fire_and_forget" mechanism to handle the rest of the logic.
-            # Thinking... Implement it or not????
-            logger.debug("Ending Langfuse generation.")
-            generation.end(
-                output=completion.message,
+            fire_and_forget(
+                self.__end_observability_logic, generation, maybe_span, completion
             )
-            logger.debug("Langfuse generation ended.")
-
-            logger.debug("Updating Langfuse generation usage.")
-            generation.update(
-                usage=ModelUsage(
-                    unit="TOKENS",
-                    input=completion.usage.prompt_tokens
-                    if isinstance(completion.usage.prompt_tokens, int)
-                    else None,
-                    output=completion.usage.completion_tokens
-                    if isinstance(completion.usage.completion_tokens, int)
-                    else None,
-                    total=completion.usage.total_tokens
-                    if isinstance(completion.usage.total_tokens, int)
-                    else None,
-                    input_cost=completion.usage.input_cost or 0.0,
-                    output_cost=completion.usage.output_cost or 0.0,
-                    total_cost=completion.usage.total_cost or 0.0,
-                )
-            )
-            logger.debug("Langfuse generation usage updated.")
-
-            logger.debug("Scoring Langfuse span as successful.")
-            maybe_span.score(
-                id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
-                name="Success",
-                value=1.0,
-                comment="Choices generated successfully!",
-            )
-            logger.debug("Langfuse span scored successfully.")
             logger.debug("Returning completion object.")
             return completion
 
@@ -560,20 +528,20 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             logger.debug("Langfuse span error handling completed.")
             raise e
 
-    async def __end_observability_logic( # type: ignore
+    async def __end_observability_logic(
         self,
         generation: StatefulGenerationClient,
         maybe_span: Maybe[StatefulSpanClient],
         completion: ChatCompletion[S],
     ) -> None:
         logger.debug("Ending Langfuse generation.")
-        generation.end( # type: ignore
+        generation.end(  # type: ignore
             output=completion.message,
         )
         logger.debug("Langfuse generation ended.")
 
         logger.debug("Updating Langfuse generation usage.")
-        generation.update( # type: ignore
+        generation.update(  # type: ignore
             usage=ModelUsage(
                 unit="TOKENS",
                 input=completion.usage.prompt_tokens

@@ -4,16 +4,7 @@ import os
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Union,
-    Optional,
-    cast,
-    get_args,
-    Mapping
-)
+from typing import Any, Callable, Literal, Union, Optional, cast, get_args, Mapping
 from urllib.parse import urlparse
 
 import msgspec
@@ -227,6 +218,7 @@ def str_replace(
                     s = s.replace(old, new)
     return s
 
+
 def get_struct_from_schema(
     json_schema: dict[str, Any],
     *,
@@ -271,7 +263,7 @@ def get_struct_from_schema(
         using `root_schema` as the top-level reference container.
         """
         if isinstance(node, dict):
-            node_dict = cast(dict[str, Any], node)   # <-- The crucial fix (type cast)
+            node_dict = cast(dict[str, Any], node)  # <-- The crucial fix (type cast)
             if "$ref" in node_dict:
                 ref_val: Any = node_dict["$ref"]
                 if not isinstance(ref_val, str):
@@ -325,7 +317,9 @@ def get_struct_from_schema(
     if "type" in resolved_schema:
         raw_type: Any = resolved_schema["type"]
         if not isinstance(raw_type, str):
-            raise TypeError(f"Top-level 'type' should be a string, got {type(raw_type)!r}")
+            raise TypeError(
+                f"Top-level 'type' should be a string, got {type(raw_type)!r}"
+            )
         top_type = raw_type
     else:
         # If no "type" key, let's treat it as None or error
@@ -337,10 +331,12 @@ def get_struct_from_schema(
     # 4) "properties" must be a dict
     if "properties" not in resolved_schema:
         raise ValueError("JSON schema must define a 'properties' key at the top level.")
-  
+
     raw_properties: dict[str, Any] = resolved_schema["properties"]
     if not isinstance(raw_properties, dict):
-        raise ValueError("JSON schema must define a 'properties' dict at the top level.")
+        raise ValueError(
+            "JSON schema must define a 'properties' dict at the top level."
+        )
 
     # 5) Derive struct name
     if name is None:
@@ -463,7 +459,9 @@ def get_struct_from_schema(
                                     sub_union2: list[Any] = []
                                     for st in arr_it_type:
                                         if isinstance(st, str):
-                                            sub_union2.append(basic_type_map.get(st, Any))
+                                            sub_union2.append(
+                                                basic_type_map.get(st, Any)
+                                            )
                                         else:
                                             sub_union2.append(Any)
                                     arr_item_type = Union[tuple(sub_union2)]
@@ -518,7 +516,10 @@ def get_struct_from_schema(
 
     return struct_type
 
-def fix_broken_json(string: str) -> dict[str, Any]:
+
+def fix_broken_json(
+    string: str, *, decoder: msgspec.json.Decoder[dict[str, Any]]
+) -> dict[str, Any]:
     """
     Parses a python object (JSON) into an instantiated Python dictionary, applying automatic corrections for common formatting issues.
 
@@ -776,7 +777,7 @@ def fix_broken_json(string: str) -> dict[str, Any]:
                 # Apply the fix function
                 fixed_content: str = fix_func(json_content)
                 # Try parsing the JSON string
-                parsed_obj = msgspec.json.decode(fixed_content, type=dict)
+                parsed_obj = decoder.decode(fixed_content)
                 return parsed_obj
             except (msgspec.DecodeError, ValueError) as e:
                 logger.error(

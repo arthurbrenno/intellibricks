@@ -401,7 +401,6 @@ class SynapseCascade:
 
     @classmethod
     def of(cls, *synapses: Synapse) -> SynapseCascade: ...
-
     @overload
     def complete(
         self,

@@ -417,8 +417,6 @@ class CacheConfig(msgspec.Struct, frozen=True, kw_only=True):
     """
 
 
-
-
 """
 ##     ## ########  ##        ######
 ##     ## ##     ## ##       ##    ##
@@ -543,7 +541,7 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     ) -> Part:
         match openai_part["type"]:
             case "text":
-                    return TextPart(text=openai_part["text"])
+                return TextPart(text=openai_part["text"])
             case "image_url":
                 url_or_base_64 = openai_part["image_url"]["url"]
                 if is_url(url_or_base_64):
@@ -1679,10 +1677,7 @@ class UserMessage(Message, frozen=True, tag="user"):
 
         return ChatCompletionUserMessageParam(
             role="user",
-            content=[
-                part.to_openai_part()
-                for part in self.contents
-            ],
+            content=[part.to_openai_part() for part in self.contents],
             name=cast(str, self.name),
         )
 
@@ -2991,7 +2986,9 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
         )
 
     @staticmethod
-    def _extract_param_description(func: Callable[..., Any], param_name: str) -> Optional[str]:
+    def _extract_param_description(
+        func: Callable[..., Any], param_name: str
+    ) -> Optional[str]:
         """
         Extract parameter description from the function's docstring.
 

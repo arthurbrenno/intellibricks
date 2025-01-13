@@ -9,7 +9,7 @@ from typing import (
     cast,
     overload,
     override,
-    Any
+    Any,
 )
 
 import msgspec
@@ -180,7 +180,8 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
                         called_function=CalledFunction(
                             function=functions[cerebras_tool_call.function.name],
                             arguments=msgspec.json.decode(
-                                cerebras_tool_call.function.arguments, type=dict[str, Any]
+                                cerebras_tool_call.function.arguments,
+                                type=dict[str, Any],
                             ),
                         ),
                     )
