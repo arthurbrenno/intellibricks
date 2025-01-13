@@ -13,7 +13,7 @@ langfuse = Langfuse(
     host="http://localhost:3000",
 )
 
-synapse = Synapse.of("cerebras/api/llama3.1-70b")
+synapse = Synapse.of("cerebras/api/llama3.1-70b", langfuse=langfuse)
 
-completion = synapse.complete("Hello, how are you?")
+completion = synapse.complete("Hello, how are you?", trace_params={"name": "test completion"})
 print(completion)

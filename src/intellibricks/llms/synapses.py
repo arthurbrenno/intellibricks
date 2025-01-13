@@ -429,6 +429,13 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             "name": "chat_completion",
             "user_id": "not_provided",
         }
+        
+        if trace_params.get("user_id") is None:
+            trace_params["user_id"] = "not_provided"
+        
+        if trace_params.get("name") is None:
+            trace_params["name"] = "chat_completion"
+        
         cache_config = cache_config or CacheConfig()
 
         trace_params["input"] = messages
