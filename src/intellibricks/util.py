@@ -336,51 +336,38 @@ def get_struct_from_schema(
             f"After reference resolution, the top-level schema is not a dict. Got: {type(resolved_schema)!r}"
         )
 
-    """
-    Type of "get" is partially unknown
-    Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
-    (method) def get(
-        key: Unknown,
-        /
-    ) -> (Unknown | None)
-    Return the value for key if key is in the dictionary, else default.
-    """
     # 3) top-level "type" must be "object"
-    top_type = resolved_schema.get("type")
+    if "type" in resolved_schema:
+        raw_type = resolved_schema["type"]
+        if not isinstance(raw_type, str):
+            raise TypeError(f"Top-level 'type' should be a string, got {type(raw_type)!r}")
+        top_type = raw_type
+    else:
+        # If no "type" key, let's treat it as None or error
+        top_type = None
+
     if top_type != "object":
         raise ValueError("JSON schema must define a top-level 'object' type.")
 
-    """
-    Type of "get" is partially unknown
-    Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
-    (method) def get(
-        key: Unknown,
-        default: Unknown,
-        /
-    ) -> Unknown
-    Return the value for key if key is in the dictionary, else default.
-    """
     # 4) "properties" must be a dict
-    raw_properties = resolved_schema.get("properties", None)
-    if not isinstance(raw_properties, dict):
-        raise ValueError("JSON schema must define a 'properties' object at the top level.")
-
-    """
-    Type of "get" is partially unknown
-    Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
-    (method) def get(
-        key: Unknown,
-        /
-    ) -> (Unknown | None)
-    Return the value for key if key is in the dictionary, else default.
-    """
+    if "properties" in resolved_schema:
+        raw_properties = resolved_schema["properties"]
+        if not isinstance(raw_properties, dict):
+            raise ValueError("JSON schema must define a 'properties' dict at the top level.")
+    else:
+        raise ValueError("JSON schema must define a 'properties' key at the top level.")
+    
     # 5) Derive struct name
     if name is None:
-        schema_title = resolved_schema.get("title")
-        if isinstance(schema_title, str) and schema_title:
-            name = schema_title
+        if "title" in resolved_schema:
+            schema_title = resolved_schema["title"]
+            if isinstance(schema_title, str) and schema_title:
+                name = schema_title
+            else:
+                name = "DynamicStruct"
         else:
             name = "DynamicStruct"
+
     name = re.sub(r"\W|^(?=\d)", "_", name)
 
     # 6) Basic type mapping
@@ -392,19 +379,14 @@ def get_struct_from_schema(
         "null": type(None),
     }
 
-    """
-    Type of "get" is partially unknown
-    Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
-    (method) def get(
-        key: Unknown,
-        default: Unknown,
-        /
-    ) -> Unknown
-    """
     # 7) Gather required fields
-    required_list = resolved_schema.get("required", [])
-    if not isinstance(required_list, list):
-        raise TypeError("'required' must be a list if present.")
+    if "required" in resolved_schema:
+        r_val = resolved_schema["required"]
+        if not isinstance(r_val, list):
+            raise TypeError("'required' must be a list if present.")
+        required_list = r_val
+    else:
+        required_list = []
 
     required_fields: list[str] = []
     for elem in required_list:
@@ -430,41 +412,46 @@ def get_struct_from_schema(
             )
         prop_schema: dict[str, Any] = prop_schema_any
 
-        maybe_type = prop_schema.get("type", None)
-        field_type: Any
+        # get 'type' from prop_schema
+        if "type" in prop_schema:
+            maybe_type = prop_schema["type"]
+        else:
+            maybe_type = None
 
-        # If no 'type', default to Any
+        field_type: Any
         if maybe_type is None:
             field_type = Any
-
         elif isinstance(maybe_type, str):
             if maybe_type == "array":
-                items_schema = prop_schema.get("items")
-                item_type: Any = Any
-                if isinstance(items_schema, dict):
-                    """
-                    Type of "get" is partially unknown
-                    Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
-                    (variable) items_schema: dict[Unknown, Unknown]
-                    """
-                    items_type_val = items_schema.get("type", None)
-                    if isinstance(items_type_val, str):
-                        item_type = basic_type_map.get(items_type_val, Any)
-                    elif isinstance(items_type_val, list):
-                        # e.g. ["null", "string"]
-                        sub_union: list[Any] = []
-                        for sub_t in items_type_val:
-                            if isinstance(sub_t, str):
-                                sub_union.append(basic_type_map.get(sub_t, Any))
+                items_type_val: Any = None
+                if "items" in prop_schema:
+                    items_schema = prop_schema["items"]
+                    if isinstance(items_schema, dict):
+                        if "type" in items_schema:
+                            it_val = items_schema["type"]
+                            if isinstance(it_val, str):
+                                items_type_val = basic_type_map.get(it_val, Any)
+                            elif isinstance(it_val, list):
+                                sub_union: list[Any] = []
+                                for sub_t in it_val:
+                                    if isinstance(sub_t, str):
+                                        sub_union.append(basic_type_map.get(sub_t, Any))
+                                    else:
+                                        sub_union.append(Any)
+                                if len(sub_union) == 1:
+                                    items_type_val = sub_union[0]
+                                else:
+                                    items_type_val = Union[tuple(sub_union)]
                             else:
-                                sub_union.append(Any)
-                        if len(sub_union) == 1:
-                            item_type = sub_union[0]
+                                items_type_val = Any
                         else:
-                            item_type = Union[tuple(sub_union)]
-                field_type = list[item_type]
+                            items_type_val = Any
+                    else:
+                        items_type_val = Any
+                else:
+                    items_type_val = Any
+                field_type = list[items_type_val]
             else:
-                # maybe a known basic or object
                 if maybe_type in basic_type_map:
                     field_type = basic_type_map[maybe_type]
                 elif maybe_type == "object":
@@ -479,29 +466,22 @@ def get_struct_from_schema(
                     union_members.append(Any)
                     continue
                 if t_ == "array":
-                    arr_items = prop_schema.get("items")
                     arr_item_type: Any = Any
-                    if isinstance(arr_items, dict):
-                        """
-                        Type of "get" is partially unknown
-                        Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
-                        (method) def get(
-                            key: Unknown,
-                            /
-                        ) -> (Unknown | None)
-                        Return the value for key if key is in the dictionary, else default.
-                        """
-                        arr_it_type = arr_items.get("type")
-                        if isinstance(arr_it_type, str):
-                            arr_item_type = basic_type_map.get(arr_it_type, Any)
-                        elif isinstance(arr_it_type, list):
-                            sub_union2: list[Any] = []
-                            for st in arr_it_type:
-                                if isinstance(st, str):
-                                    sub_union2.append(basic_type_map.get(st, Any))
-                                else:
-                                    sub_union2.append(Any)
-                            arr_item_type = Union[tuple(sub_union2)]
+                    if "items" in prop_schema:
+                        arr_items = prop_schema["items"]
+                        if isinstance(arr_items, dict):
+                            if "type" in arr_items:
+                                arr_it_type = arr_items["type"]
+                                if isinstance(arr_it_type, str):
+                                    arr_item_type = basic_type_map.get(arr_it_type, Any)
+                                elif isinstance(arr_it_type, list):
+                                    sub_union2: list[Any] = []
+                                    for st in arr_it_type:
+                                        if isinstance(st, str):
+                                            sub_union2.append(basic_type_map.get(st, Any))
+                                        else:
+                                            sub_union2.append(Any)
+                                    arr_item_type = Union[tuple(sub_union2)]
                     union_members.append(list[arr_item_type])
                 elif t_ in basic_type_map:
                     union_members.append(basic_type_map[t_])
@@ -514,7 +494,6 @@ def get_struct_from_schema(
                 field_type = union_members[0]
             else:
                 field_type = Union[tuple(union_members)]
-
         else:
             field_type = Any
 
@@ -522,7 +501,10 @@ def get_struct_from_schema(
         if prop_name in required_fields:
             default_val: Any = msgspec.NODEFAULT
         else:
-            default_val = prop_schema.get("default", msgspec.NODEFAULT)
+            if "default" in prop_schema:
+                default_val = prop_schema["default"]
+            else:
+                default_val = msgspec.NODEFAULT
 
         fields.append((prop_name, field_type, default_val))
 
