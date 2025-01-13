@@ -518,7 +518,7 @@ def get_struct_from_schema(
 
     return struct_type
 
-def jsonify(string: str) -> dict[str, Any]:
+def fix_broken_json(string: str) -> dict[str, Any]:
     """
     Parses a python object (JSON) into an instantiated Python dictionary, applying automatic corrections for common formatting issues.
 
@@ -544,25 +544,25 @@ def jsonify(string: str) -> dict[str, Any]:
     Extracting JSON from text with embedded JSON:
 
         >>> json_str = 'Sure! Here is your formatted json:\\n\\n```json\\n{"name": "Alice", "age": 30}\\n```'
-        >>> jsonify(json_str)
+        >>> fix_broken_json(json_str)
         {'name': 'Alice', 'age': 30}
 
         >>> json_str = '{ "name": "Bob", "age": 25 }'
-        >>> jsonify(json_str)
+        >>> fix_broken_json(json_str)
         {'name': 'Bob', 'age': 25}
 
         >>> json_str = 'Here is the json\\n\\n{ "name": "Charlie", "age": 28 }'
-        >>> jsonify(json_str)
+        >>> fix_broken_json(json_str)
         {'name': 'Charlie', 'age': 28}
 
         >>> json_str = '{ "name": "David", "age": 35 }\\n\\nI provided the json above'
-        >>> jsonify(json_str)
+        >>> fix_broken_json(json_str)
         {'name': 'David', 'age': 35}
 
     Basic usage:
 
         >>> json_str = '{"name": "Alice", "age": 30}'
-        >>> jsonify(json_str)
+        >>> fix_broken_json(json_str)
         {'name': 'Alice', 'age': 30}
 
     Handling code block markers:
@@ -575,7 +575,7 @@ def jsonify(string: str) -> dict[str, Any]:
         ... }
         ... ```
         ... '''
-        >>> jsonify(json_str)
+        >>> fix_broken_json(json_str)
         {'name': 'Bob', 'age': 25}
 
     Handling unescaped backslashes:

@@ -41,7 +41,6 @@ from architecture.types import NOT_GIVEN, NotGiven
 from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms.util import (
-    HTMLToMarkdownParser,
     get_parts_llm_described_text,
     get_parts_raw_text,
 )
@@ -743,10 +742,7 @@ class WebsitePart(Part, frozen=True, tag="website"):
         response = requests.get(self.url, timeout=timeout)
         response.raise_for_status()
         html_text: str = response.text
-
-        parser = HTMLToMarkdownParser()
-        parser.feed(html_text)
-        return parser.get_markdown()
+        return f"TODO: {html_text}"
 
     @override
     def to_llm_described_text(self) -> str:

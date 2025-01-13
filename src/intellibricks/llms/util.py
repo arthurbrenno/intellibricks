@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import json
-from html.parser import HTMLParser
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 import msgspec
 from architecture.logging import LoggerFactory
 
-from intellibricks.util import flatten_msgspec_schema, jsonify
+from intellibricks.util import flatten_msgspec_schema, fix_broken_json
 
 if TYPE_CHECKING:
     from intellibricks.llms.constants import Language
@@ -22,108 +21,6 @@ if TYPE_CHECKING:
 
 
 logger = LoggerFactory.create(__name__)
-
-
-class HTMLToMarkdownParser(HTMLParser):
-    """
-    A simple HTML-to-Markdown converter using only the standard library.
-    This parser is intentionally minimal. You can expand it as needed.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.md_pieces = []
-        self.in_link = False
-        self.link_href = None
-        self.list_depth = 0
-
-    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
-        # Convert attrs to a dict for easy access
-        attrs_dict = dict(attrs)
-
-        # Bold / strong
-        if tag in ("b", "strong"):
-            self.md_pieces.append("**")
-
-        # Italic / emphasis
-        elif tag in ("i", "em"):
-            self.md_pieces.append("*")
-
-        # Headings: h1 -> "# ", h2 -> "## ", etc.
-        elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
-            level = int(tag[1])  # e.g. "h2" -> 2
-            self.md_pieces.append("\n" + "#" * level + " ")
-
-        # Paragraph
-        elif tag == "p":
-            # Separate paragraphs with blank lines in Markdown
-            self.md_pieces.append("\n\n")
-
-        # Line breaks
-        elif tag == "br":
-            self.md_pieces.append("\n")
-
-        # Links
-        elif tag == "a":
-            self.in_link = True
-            self.link_href = attrs_dict.get("href", "#")
-            self.md_pieces.append("[")
-
-        # Unordered list
-        elif tag in ("ul", "ol"):
-            self.list_depth += 1
-
-        # List items
-        elif tag == "li":
-            # Indent by list depth
-            indent = "  " * (self.list_depth - 1)
-            self.md_pieces.append("\n" + indent + "* ")
-
-        # Images
-        elif tag == "img":
-            src = attrs_dict.get("src", "")
-            alt = attrs_dict.get("alt", "")
-            self.md_pieces.append(f"![{alt}]({src})")
-
-    def handle_endtag(self, tag):
-        # Bold / strong
-        if tag in ("b", "strong"):
-            self.md_pieces.append("**")
-
-        # Italic / emphasis
-        elif tag in ("i", "em"):
-            self.md_pieces.append("*")
-
-        # Headings
-        elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
-            self.md_pieces.append("\n")
-
-        # Paragraph
-        elif tag == "p":
-            self.md_pieces.append("\n")
-
-        # Links
-        elif tag == "a":
-            if self.in_link and self.link_href is not None:
-                self.md_pieces.append(f"]({self.link_href})")
-            self.in_link = False
-            self.link_href = None
-
-        # Unordered/ordered list
-        elif tag in ("ul", "ol"):
-            self.list_depth -= 1
-
-    def handle_data(self, data: str):
-        # If we're inside a link, the data is the link text
-        # Otherwise, it's just normal text
-        self.md_pieces.append(data)
-
-    def get_markdown(self) -> str:
-        """
-        Return the concatenated Markdown output.
-        You can post-process it or strip it as needed.
-        """
-        return "".join(self.md_pieces).strip()
 
 
 def find_text_part(parts: Sequence[Part]) -> TextPart:
@@ -151,14 +48,23 @@ def get_parsed_response[S](
     contents: Sequence[PartType] | str,
     response_model: type[S],
 ) -> S:
+    """Gets the parsed response from the contents. of the message."""
     match contents:
         case str():
             text = contents
         case _:
             text = get_parts_llm_described_text(contents)
 
-    structured: dict[str, Any] = jsonify(text)
-    model: S = msgspec.json.decode(msgspec.json.encode(structured), type=response_model)
+    encoder: msgspec.json.Encoder = msgspec.json.Encoder()
+    dict_decoder: msgspec.json.Decoder[dict[str, Any]] = msgspec.json.Decoder(type=dict[str, Any])
+    rm_decoder: msgspec.json.Decoder[S] = msgspec.json.Decoder(type=response_model)
+
+    try:
+        structured: dict[str, Any] = dict_decoder.decode(encoder.encode(text))
+    except Exception:
+        structured = fix_broken_json(text)
+
+    model: S = rm_decoder.decode(encoder.encode(structured))
     return model
 
 
