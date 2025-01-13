@@ -1,10 +1,11 @@
 import copy
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, override
 
-from architecture.utils.decorators import ensure_module_installed
 import msgspec
+from architecture.utils.decorators import ensure_module_installed
 
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     AssistantMessage,
@@ -17,8 +18,8 @@ from intellibricks.llms.schema import (
     RawResponse,
     ToolCall,
     ToolCallSequence,
-    Usage,
     ToolInputType,
+    Usage,
 )
 from intellibricks.llms.types import CerebrasModelType
 from intellibricks.llms.util import (
@@ -26,7 +27,6 @@ from intellibricks.llms.util import (
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
-
 
 T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
 CerebrasModel: TypeAlias = Literal["llama3.1-8b", "llama3.1-70b", "llama-3.3-70b"]
@@ -41,7 +41,7 @@ MODEL_PRICING: dict[
 """Model pricing per million tokens"""
 
 
-class CerebrasLanguageModel(msgspec.Struct, frozen=True):
+class CerebrasLanguageModel(LanguageModel, frozen=True):
     """Cerebras is the WORLD's fastest"""
 
     model_name: CerebrasModel = msgspec.field(default_factory=lambda: "llama3.1-8b")
@@ -50,6 +50,7 @@ class CerebrasLanguageModel(msgspec.Struct, frozen=True):
     parallel_tool_calls: bool = True
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
+    @override
     async def chat_async(
         self,
         messages: Sequence[Message],
@@ -231,7 +232,7 @@ class CerebrasLanguageModel(msgspec.Struct, frozen=True):
 # )
 # from intellibricks.util import flatten_msgspec_schema
 
-# from ...base import SupportsAsyncChat
+# from ...base import LanguageModel
 
 # T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
 # CerebrasModel: TypeAlias = Literal["llama3.1-8b", "llama3.1-70b", "llama-3.3-70b"]
@@ -247,7 +248,7 @@ class CerebrasLanguageModel(msgspec.Struct, frozen=True):
 
 
 # @dataclass(frozen=True)
-# class CerebrasLanguageModel(SupportsAsyncChat):
+# class CerebrasLanguageModel(LanguageModel):
 #     """Cerebras is the WORLD's fastest"""
 
 #     model_name: CerebrasModel = field(default_factory=lambda: "llama3.1-8b")
@@ -316,19 +317,6 @@ class CerebrasLanguageModel(msgspec.Struct, frozen=True):
 #                 )
 #                 if response_model
 #                 else None,
-#                 temperature=temperature,
-#                 tools=[
-#                     ToolInputTyped(
-#                         function=Function.from_callable(tool).to_cerebras_function(),
-#                         type="tool",
-#                     )
-#                     for tool in tools
-#                 ]
-#                 if tools
-#                 else None,
-#                 parallel_tool_calls=True,
-#             ),
-#         )
 
 #         # Construct choices
 #         choices: list[MessageChoice[T]] = []

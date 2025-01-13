@@ -1,10 +1,11 @@
 import copy
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     AssistantMessage,
@@ -65,12 +66,13 @@ MODEL_PRICING: dict[GroqModel, dict[Literal["input_cost", "output_cost"], float]
 }
 
 
-class GroqLanguageModel(msgspec.Struct, frozen=True):
+class GroqLanguageModel(LanguageModel, frozen=True):
     model_name: GroqModel
     api_key: Optional[str] = None
     max_retries: int = 2
 
     @ensure_module_installed("groq", "groq")
+    @override
     async def chat_async(
         self,
         messages: Sequence[Message],

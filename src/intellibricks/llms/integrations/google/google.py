@@ -1,6 +1,6 @@
 import asyncio
 import timeit
-from typing import Any, Literal, Optional, Sequence, TypeVar, cast
+from typing import Any, Literal, Optional, Sequence, cast, override
 import uuid
 
 from architecture.logging import LoggerFactory
@@ -8,6 +8,7 @@ import msgspec
 from architecture.utils.decorators import ensure_module_installed
 
 from google.genai.types import GenerateContentResponseUsageMetadata
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.schema import (
     AssistantMessage,
     ChatCompletion,
@@ -32,7 +33,7 @@ from intellibricks.llms.util import (
 from intellibricks.util import flatten_msgspec_schema
 
 logger = LoggerFactory.create(__name__)
-T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
+
 
 MODEL_PRICING = {
     # Gemini 1.5 Flash and its aliases
@@ -108,7 +109,7 @@ MODEL_PRICING = {
 }
 
 
-class GoogleLanguageModel(msgspec.Struct, frozen=True):
+class GoogleLanguageModel(LanguageModel, frozen=True):
     model_name: Literal[
         "gemini-2.0-flash-exp",
         "gemini-1.5-flash",
@@ -129,11 +130,12 @@ class GoogleLanguageModel(msgspec.Struct, frozen=True):
     location: Optional[str] = None
 
     @ensure_module_installed("google.genai", "google-genai")
-    async def chat_async(
+    @override
+    async def chat_async[S: msgspec.Struct = RawResponse](
         self,
         messages: Sequence[Message],
         *,
-        response_model: Optional[type[T]] = None,
+        response_model: Optional[type[S]] = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
@@ -142,7 +144,7 @@ class GoogleLanguageModel(msgspec.Struct, frozen=True):
         stop_sequences: Optional[list[str]] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         from google import genai
         from google.genai import types
 
@@ -222,7 +224,7 @@ class GoogleLanguageModel(msgspec.Struct, frozen=True):
             )
 
         # Generate the choices based on the candidates
-        choices: list[MessageChoice[T]] = []
+        choices: list[MessageChoice[S]] = []
         for index, candidate in enumerate(candidates):
             content: Optional[types.Content] = candidate.content
             if content is None:
@@ -274,7 +276,7 @@ class GoogleLanguageModel(msgspec.Struct, frozen=True):
                         parsed=get_parsed_response(candidate_parts, response_model)
                         if response_model
                         else cast(
-                            T,
+                            S,
                             RawResponse(),
                         ),
                         tool_calls=ToolCallSequence(tool_calls),

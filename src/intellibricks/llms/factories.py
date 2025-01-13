@@ -3,7 +3,7 @@ from typing import Any, Optional, cast
 from architecture.logging import LoggerFactory
 from architecture.utils.creators import DynamicInstanceCreator
 
-from intellibricks.llms.base.contracts import SupportsAsyncChat
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.integrations.cerebras.cerebras import CerebrasLanguageModel
 from intellibricks.llms.integrations.deepinfra import DeepInfraLanguageModel
 from intellibricks.llms.integrations.google import GoogleLanguageModel
@@ -14,14 +14,14 @@ from intellibricks.llms.types import AIModel
 logger = LoggerFactory.create(__name__)
 
 
-class SupportsAsyncChatFactory:
+class LanguageModelFactory:
     @classmethod
     def create(
         cls, model: AIModel, params: Optional[dict[str, Any]] = None
-    ) -> SupportsAsyncChat:
+    ) -> LanguageModel:
         logger.info(f"Creating model: {model}")
 
-        model_to_model_class: dict[AIModel, Any] = {
+        model_to_model_class: dict[AIModel, type[LanguageModel]] = {
             "google/genai/gemini-2.0-flash-exp": GoogleLanguageModel,
             "google/genai/gemini-1.5-flash": GoogleLanguageModel,
             "google/genai/gemini-1.5-flash-8b": GoogleLanguageModel,
@@ -164,7 +164,7 @@ class SupportsAsyncChatFactory:
             "cerebras/api/llama-3.3-70b": CerebrasLanguageModel,
         }
 
-        async_chat_model_cls: type[SupportsAsyncChat] = model_to_model_class[model]
+        async_chat_model_cls: type[LanguageModel] = model_to_model_class[model]
 
         model_extra_params: dict[AIModel, dict[str, Any]] = {
             "google/genai/gemini-2.0-flash-exp": {"vertexai": False},
@@ -195,6 +195,6 @@ class SupportsAsyncChatFactory:
         params.update(model_extra_params.get(model, {}))
 
         instance = DynamicInstanceCreator(
-            cls=cast(type[SupportsAsyncChat], async_chat_model_cls)
+            cls=cast(type[LanguageModel], async_chat_model_cls)
         ).create_instance(**params)
         return instance

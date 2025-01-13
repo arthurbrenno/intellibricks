@@ -3,10 +3,7 @@ from __future__ import annotations
 # NOTE: use case of __future__ annotations
 from typing import (
     Optional,
-    Protocol,
     Sequence,
-    TypeVar,
-    runtime_checkable,
 )
 from architecture.utils import run_sync
 import msgspec
@@ -23,12 +20,9 @@ from intellibricks.llms.schema import (
     Message,
 )
 
-S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
-
-@runtime_checkable
-class SupportsAsyncChat(Protocol):
-    async def chat_async(
+class LanguageModel(msgspec.Struct, frozen=True):
+    async def chat_async[S: msgspec.Struct = RawResponse](
         self,
         messages: Sequence[Message],
         *,
@@ -41,9 +35,10 @@ class SupportsAsyncChat(Protocol):
         stop_sequences: Optional[Sequence[str]] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]: ...
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        raise NotImplementedError
 
-    def chat(
+    def chat[S: msgspec.Struct = RawResponse](
         self,
         messages: Sequence[Message],
         *,
@@ -71,7 +66,7 @@ class SupportsAsyncChat(Protocol):
             timeout=timeout,
         )
 
-    def complete(
+    def complete[S: msgspec.Struct = RawResponse](
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
         *,

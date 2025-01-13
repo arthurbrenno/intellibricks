@@ -1,28 +1,25 @@
 from __future__ import annotations
 
 from typing import (
-    TYPE_CHECKING,
     Optional,
-    Protocol,
     Sequence,
-    TypeVar,
     overload,
-    runtime_checkable,
 )
 
 import msgspec
 
-from intellibricks.llms.schema import PartType, Prompt, RawResponse
+from intellibricks.llms.schema import (
+    PartType,
+    Prompt,
+    RawResponse,
+    Message,
+    ChatCompletion,
+    ToolInputType,
+)
 
-if TYPE_CHECKING:
-    from intellibricks.llms.schema import ChatCompletion, Message, ToolInputType
-
-S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
-
-@runtime_checkable
-class SupportsAsyncChat(Protocol):
+class LanguageModel(msgspec.Struct, frozen=True):
     @overload
-    async def chat_async(
+    async def chat_async[S: msgspec.Struct = RawResponse](
         self,
         messages: Sequence[Message],
         *,
@@ -38,7 +35,7 @@ class SupportsAsyncChat(Protocol):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
     @overload
-    async def chat_async(
+    async def chat_async[S: msgspec.Struct = RawResponse](
         self,
         messages: Sequence[Message],
         *,
@@ -54,7 +51,7 @@ class SupportsAsyncChat(Protocol):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
-    def chat(
+    def chat[S: msgspec.Struct = RawResponse](
         self,
         messages: Sequence[Message],
         *,
@@ -70,7 +67,7 @@ class SupportsAsyncChat(Protocol):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
     @overload
-    def chat(
+    def chat[S: msgspec.Struct = RawResponse](
         self,
         messages: Sequence[Message],
         *,
@@ -86,7 +83,7 @@ class SupportsAsyncChat(Protocol):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
-    def complete(
+    def complete[S: msgspec.Struct = RawResponse](
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
         *,
@@ -103,7 +100,7 @@ class SupportsAsyncChat(Protocol):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
     @overload
-    def complete(
+    def complete[S: msgspec.Struct = RawResponse](
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
         *,

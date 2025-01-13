@@ -29,8 +29,8 @@ from langfuse.client import (
 )
 from langfuse.model import ModelUsage
 
-from intellibricks.llms.base.contracts import SupportsAsyncChat
-from intellibricks.llms.factories import SupportsAsyncChatFactory
+from intellibricks.llms.base.contracts import LanguageModel
+from intellibricks.llms.factories import LanguageModelFactory
 from intellibricks.llms.general_web_search import WebSearchable
 
 from .constants import (
@@ -458,7 +458,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             )
         )
 
-        chat_model: SupportsAsyncChat = SupportsAsyncChatFactory.create(
+        chat_model: LanguageModel = LanguageModelFactory.create(
             model=ai_model,
             params={
                 "model_name": ai_model.split("/")[2],

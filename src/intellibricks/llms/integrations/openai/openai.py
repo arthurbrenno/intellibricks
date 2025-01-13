@@ -1,5 +1,5 @@
 import timeit
-from typing import Literal, Optional, Sequence, TypeVar, cast
+from typing import Literal, Optional, Sequence, TypeVar, cast, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
@@ -17,6 +17,7 @@ from openai.types.shared_params.response_format_json_schema import (
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
 )
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     AssistantMessage,
@@ -106,12 +107,13 @@ MODEL_PRICING: dict[ChatModel, dict[Literal["input_cost", "output_cost"], float]
 }
 
 
-class OpenAILanguageModel(msgspec.Struct, frozen=True):
+class OpenAILanguageModel(LanguageModel, frozen=True):
     model_name: ChatModel
     api_key: Optional[str] = None
     max_retries: int = 2
 
     @ensure_module_installed("openai", "openai")
+    @override
     async def chat_async(
         self,
         messages: Sequence[Message],

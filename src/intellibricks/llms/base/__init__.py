@@ -1,3 +1,3 @@
-from .contracts import SupportsAsyncChat
+from .contracts import LanguageModel
 
-__all__: list[str] = ["SupportsAsyncChat"]
+__all__: list[str] = ["LanguageModel"]

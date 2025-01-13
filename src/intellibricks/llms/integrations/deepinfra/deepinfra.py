@@ -1,10 +1,11 @@
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast
+from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 from langfuse.client import os
 
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     AssistantMessage,
@@ -204,11 +205,12 @@ MODEL_PRICING: dict[ChatModel, dict[Literal["input_cost", "output_cost"], float]
 }
 
 
-class DeepInfraLanguageModel(msgspec.Struct, frozen=True):
+class DeepInfraLanguageModel(LanguageModel, frozen=True):
     model_name: ChatModel
     api_key: Optional[str] = None
 
     @ensure_module_installed("openai", "openai")
+    @override
     async def chat_async(
         self,
         messages: Sequence[Message],
