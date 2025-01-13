@@ -376,5 +376,5 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                 f"google/{'vertexai' if self.vertexai else 'genai'}/{self.model_name}",
             ),
         )
-        
+
         return completion
