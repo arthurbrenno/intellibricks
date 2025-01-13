@@ -1,6 +1,15 @@
 import copy
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, overload, override
+from typing import (
+    Literal,
+    Optional,
+    Sequence,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+    override,
+)
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed

@@ -532,12 +532,13 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 comment="Choices generated successfully!",
             )
             logger.debug("Langfuse span scored successfully.")
-
             logger.debug("Returning completion object.")
             return completion
 
         except Exception as e:
-            logger.error(f"An error occurred during chat completion: {e}", exc_info=True)
+            logger.error(
+                f"An error occurred during chat completion: {e}", exc_info=True
+            )
             if maybe_span:
                 logger.debug("Ending Langfuse span due to error.")
                 maybe_span.end(output={})
@@ -552,6 +553,47 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 )
                 logger.debug("Langfuse span error handling completed.")
             raise e
+
+    async def __end_observability_logic(
+        self,
+        generation: StatefulGenerationClient,
+        maybe_span: Maybe[StatefulSpanClient],
+        completion: ChatCompletion[S],
+    ) -> None:
+        logger.debug("Ending Langfuse generation.")
+        generation.end(
+            output=completion.message,
+        )
+        logger.debug("Langfuse generation ended.")
+
+        logger.debug("Updating Langfuse generation usage.")
+        generation.update(
+            usage=ModelUsage(
+                unit="TOKENS",
+                input=completion.usage.prompt_tokens
+                if isinstance(completion.usage.prompt_tokens, int)
+                else None,
+                output=completion.usage.completion_tokens
+                if isinstance(completion.usage.completion_tokens, int)
+                else None,
+                total=completion.usage.total_tokens
+                if isinstance(completion.usage.total_tokens, int)
+                else None,
+                input_cost=completion.usage.input_cost or 0.0,
+                output_cost=completion.usage.output_cost or 0.0,
+                total_cost=completion.usage.total_cost or 0.0,
+            )
+        )
+        logger.debug("Langfuse generation usage updated.")
+
+        logger.debug("Scoring Langfuse span as successful.")
+        maybe_span.score(
+            id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
+            name="Success",
+            value=1.0,
+            comment="Choices generated successfully!",
+        )
+        logger.debug("Langfuse span scored successfully.")
 
 
 class SynapticFallbackChain(msgspec.Struct, frozen=True):

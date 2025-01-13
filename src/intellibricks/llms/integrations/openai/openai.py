@@ -142,7 +142,7 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
-    
+
     @ensure_module_installed("openai", "openai")
     @override
     async def chat_async(

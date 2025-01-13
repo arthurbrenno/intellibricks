@@ -1,6 +1,15 @@
 import copy
 import timeit
-from typing import Literal, Optional, Sequence, TypeAlias, TypeVar, cast, overload, override
+from typing import (
+    Literal,
+    Optional,
+    Sequence,
+    TypeAlias,
+    TypeVar,
+    cast,
+    overload,
+    override,
+)
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
@@ -101,7 +110,7 @@ class GroqLanguageModel(LanguageModel, frozen=True):
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]: ...
-    
+
     @ensure_module_installed("groq", "groq")
     @override
     async def chat_async(

@@ -24,6 +24,7 @@ from intellibricks.llms.schema import (
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
+
 class LanguageModel(msgspec.Struct, frozen=True):
     @overload
     async def chat_async(

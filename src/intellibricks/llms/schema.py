@@ -1260,11 +1260,12 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
             raise ValueError("Audio data (bytes) is required.")
 
         return ChatCompletionContentPartInputAudioParam(
-                input_audio=InputAudio(
-                    data=base64.b64encode(self.data).decode("utf-8"),
-                    format=cast(Literal["mp3"], self.mime_type.split("/")[1]),
-                ),
-                type="input_audio")
+            input_audio=InputAudio(
+                data=base64.b64encode(self.data).decode("utf-8"),
+                format=cast(Literal["mp3"], self.mime_type.split("/")[1]),
+            ),
+            type="input_audio",
+        )
 
     @ensure_module_installed("groq", "groq")
     @override
