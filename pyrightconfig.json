@@ -2,5 +2,14 @@
     "include": [
         "src"
     ],
-    "reportMissingImports": "none"
+    "exclude": [],
+    "reportMissingTypeStubs": false,
+    "pythonVersion": "3.13",
+    "venvPath": ".venv",
+    "typeCheckingMode": "strict",
+    "reportUnusedImport": true,
+    "reportAttributeAccessIssue": false,
+    "reportUnusedVariable": true,
+    "reportUnknownVariableType": false,
+    "reportUnnecessaryTypeIgnoreComment": true
 }
