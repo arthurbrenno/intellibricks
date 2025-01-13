@@ -1,21 +1,20 @@
 import copy
 import timeit
-from dataclasses import dataclass, field
 from typing import (
-    Any,
-    Callable,
     Literal,
     Optional,
     Sequence,
     TypeAlias,
     TypeVar,
     cast,
+    overload,
     override,
 )
 
-from architecture.utils.decorators import ensure_module_installed
 import msgspec
+from architecture.utils.decorators import ensure_module_installed
 
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     GeneratedAssistantMessage,
@@ -28,18 +27,17 @@ from intellibricks.llms.schema import (
     RawResponse,
     ToolCall,
     ToolCallSequence,
+    ToolInputType,
     Usage,
 )
 from intellibricks.llms.types import CerebrasModelType
 from intellibricks.llms.util import (
-    get_function_name,
+    _create_function_mapping_by_tools,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
 
-from ...base import SupportsAsyncChat
-
-T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 CerebrasModel: TypeAlias = Literal["llama3.1-8b", "llama3.1-70b", "llama-3.3-70b"]
 
 MODEL_PRICING: dict[
@@ -52,14 +50,44 @@ MODEL_PRICING: dict[
 """Model pricing per million tokens"""
 
 
-@dataclass(frozen=True)
-class CerebrasLanguageModel(SupportsAsyncChat):
+class CerebrasLanguageModel(LanguageModel, frozen=True):
     """Cerebras is the WORLD's fastest"""
 
-    model_name: CerebrasModel = field(default_factory=lambda: "llama3.1-8b")
+    model_name: CerebrasModel = msgspec.field(default_factory=lambda: "llama3.1-8b")
     api_key: Optional[str] = None
     max_retries: int = 2
     parallel_tool_calls: bool = True
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
     @override
@@ -67,17 +95,16 @@ class CerebrasLanguageModel(SupportsAsyncChat):
         self,
         messages: Sequence[Message],
         *,
-        response_model: Optional[type[T]] = None,
+        response_model: Optional[type[S]] = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         from cerebras.cloud.sdk import AsyncCerebras
         from cerebras.cloud.sdk.types.chat.chat_completion import (
             ChatCompletionResponse as CerebrasChatCompletion,
@@ -122,6 +149,8 @@ class CerebrasLanguageModel(SupportsAsyncChat):
                         function=Function.from_callable(tool).to_cerebras_function(),
                         type="tool",
                     )
+                    if callable(tool)
+                    else tool.to_cerebras_tool()
                     for tool in tools
                 ]
                 if tools
@@ -131,15 +160,14 @@ class CerebrasLanguageModel(SupportsAsyncChat):
         )
 
         # Construct choices
-        choices: list[MessageChoice[T]] = []
+        choices: list[MessageChoice[S]] = []
         for choice in cerebras_completion.choices:
             message: ChatCompletionResponseChoiceMessage = choice.message
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = {
-                get_function_name(function): Function.from_callable(function)
-                for function in tools or []
-            }
+            functions: dict[str, Function] = _create_function_mapping_by_tools(
+                tools or []
+            )
 
             cerebras_tool_calls: Sequence[
                 ChatCompletionResponseChoiceMessageToolCall
@@ -166,7 +194,7 @@ class CerebrasLanguageModel(SupportsAsyncChat):
                             message.content or "", response_model=response_model
                         )
                         if response_model
-                        else cast(T, RawResponse()),
+                        else cast(S, RawResponse()),
                         tool_calls=ToolCallSequence(tool_calls),
                     ),
                     logprobs=None,
@@ -238,12 +266,12 @@ class CerebrasLanguageModel(SupportsAsyncChat):
 # )
 # from intellibricks.llms.types import CerebrasModelType
 # from intellibricks.llms.util import (
-#     get_function_name,
+#     _get_function_name,
 #     get_parsed_response,
 # )
 # from intellibricks.util import flatten_msgspec_schema
 
-# from ...base import SupportsAsyncChat
+# from ...base import LanguageModel
 
 # T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
 # CerebrasModel: TypeAlias = Literal["llama3.1-8b", "llama3.1-70b", "llama-3.3-70b"]
@@ -259,7 +287,7 @@ class CerebrasLanguageModel(SupportsAsyncChat):
 
 
 # @dataclass(frozen=True)
-# class CerebrasLanguageModel(SupportsAsyncChat):
+# class CerebrasLanguageModel(LanguageModel):
 #     """Cerebras is the WORLD's fastest"""
 
 #     model_name: CerebrasModel = field(default_factory=lambda: "llama3.1-8b")
@@ -277,11 +305,10 @@ class CerebrasLanguageModel(SupportsAsyncChat):
 #         n: Optional[int] = None,
 #         temperature: Optional[float] = None,
 #         max_completion_tokens: Optional[int] = None,
-#         max_retries: Optional[int] = None,
 #         top_p: Optional[float] = None,
 #         top_k: Optional[int] = None,
 #         stop_sequences: Optional[Sequence[str]] = None,
-#         tools: Optional[Sequence[Callable[..., Any]]] = None,
+#         tools: Optional[Sequence[ToolInputType]] = None,
 #         timeout: Optional[float] = None,
 #     ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
 #         from cerebras.cloud.sdk import AsyncCerebras
@@ -296,7 +323,7 @@ class CerebrasLanguageModel(SupportsAsyncChat):
 #         from cerebras.cloud.sdk.types.chat.completion_create_params import (
 #             ResponseFormatResponseFormatJsonSchemaTyped,
 #             ResponseFormatResponseFormatJsonSchemaJsonSchemaTyped,
-#             ToolTyped,
+#             ToolInputTyped,
 #         )
 
 #         now = timeit.default_timer()
@@ -328,19 +355,6 @@ class CerebrasLanguageModel(SupportsAsyncChat):
 #                 )
 #                 if response_model
 #                 else None,
-#                 temperature=temperature,
-#                 tools=[
-#                     ToolTyped(
-#                         function=Function.from_callable(tool).to_cerebras_function(),
-#                         type="tool",
-#                     )
-#                     for tool in tools
-#                 ]
-#                 if tools
-#                 else None,
-#                 parallel_tool_calls=True,
-#             ),
-#         )
 
 #         # Construct choices
 #         choices: list[MessageChoice[T]] = []
@@ -349,7 +363,7 @@ class CerebrasLanguageModel(SupportsAsyncChat):
 
 #             tool_calls: list[ToolCall] = []
 #             functions: dict[str, Function] = {
-#                 get_function_name(function): Function.from_callable(function)
+#                 _get_function_name(function): Function.from_callable(function)
 #                 for function in tools or []
 #             }
 

@@ -24,6 +24,7 @@ install()  # Better traceback formatting with Rich
 # Force Python's default SIGINT handler so Ctrl+C isn't swallowed
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+
 def parse_version(version: str) -> list[int]:
     """Parse a string version like 'v0.1.2' into a list of ints [0,1,2]."""
     return list(map(int, version.lstrip("v").split(".")))
@@ -138,7 +139,9 @@ def main():
         gh_cli = shutil.which("gh")
         if not gh_cli:
             progress.stop()
-            console.print("[error]GitHub CLI ('gh') is required to run this script.[/error]")
+            console.print(
+                "[error]GitHub CLI ('gh') is required to run this script.[/error]"
+            )
             raise ValueError("GitHub CLI ('gh') is required to run this script.")
 
         # Fetch latest release tag
@@ -231,7 +234,10 @@ def main():
 
             if not confirm_result:
                 console.print(
-                    Panel("[warning]Release process terminated.[/warning]", style="warning")
+                    Panel(
+                        "[warning]Release process terminated.[/warning]",
+                        style="warning",
+                    )
                 )
                 return
 
@@ -295,7 +301,9 @@ def main():
     pyproject["project"]["version"] = new_version
     with open("pyproject.toml", "w") as f:
         f.write(tomlkit.dumps(pyproject))
-    console.print(f"[success]Updated 'pyproject.toml' with new version {new_version}.[/success]")
+    console.print(
+        f"[success]Updated 'pyproject.toml' with new version {new_version}.[/success]"
+    )
 
     # Ensure CHANGELOG.md exists
     changelog_path = "CHANGELOG.md"

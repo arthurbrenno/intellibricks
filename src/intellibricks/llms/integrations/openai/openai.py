@@ -1,11 +1,9 @@
 import timeit
-from dataclasses import dataclass
-from typing import Any, Callable, Literal, Optional, Sequence, TypeVar, cast
+from typing import Literal, Optional, Sequence, TypeVar, cast, overload, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 from langfuse.client import os
-from typing_extensions import override
 from openai import NOT_GIVEN, AsyncOpenAI
 from openai.types.chat.chat_completion import (
     ChatCompletion as OpenAIChatCompletion,
@@ -19,7 +17,7 @@ from openai.types.shared_params.response_format_json_schema import (
 from openai.types.chat.chat_completion_message_tool_call import (
     ChatCompletionMessageToolCall,
 )
-from intellibricks.llms.base.contracts import SupportsAsyncChat
+from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     GeneratedAssistantMessage,
@@ -35,13 +33,17 @@ from intellibricks.llms.schema import (
     ToolCall,
     ToolCallSequence,
     Usage,
+    ToolInputType,
 )
 from intellibricks.llms.types import OpenAIModelType
-from intellibricks.llms.util import get_function_name, get_parsed_response
+from intellibricks.llms.util import (
+    _create_function_mapping_by_tools,
+    get_parsed_response,
+)
 from intellibricks.util import flatten_msgspec_schema
 from openai.types.chat_model import ChatModel
 
-T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
+S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 MODEL_PRICING: dict[ChatModel, dict[Literal["input_cost", "output_cost"], float]] = {
     "o1": {"input_cost": 15.00, "output_cost": 60.00},
@@ -105,10 +107,41 @@ MODEL_PRICING: dict[ChatModel, dict[Literal["input_cost", "output_cost"], float]
 }
 
 
-@dataclass(frozen=True)
-class OpenAILanguageModel(SupportsAsyncChat):
+class OpenAILanguageModel(LanguageModel, frozen=True):
     model_name: ChatModel
     api_key: Optional[str] = None
+    max_retries: int = 2
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]: ...
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_completion_tokens: Optional[int] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]: ...
 
     @ensure_module_installed("openai", "openai")
     @override
@@ -116,21 +149,20 @@ class OpenAILanguageModel(SupportsAsyncChat):
         self,
         messages: Sequence[Message],
         *,
-        response_model: Optional[type[T]] = None,
+        response_model: Optional[type[S]] = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
         max_completion_tokens: Optional[int] = None,
-        max_retries: Optional[int] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         stop_sequences: Optional[Sequence[str]] = None,
-        tools: Optional[Sequence[Callable[..., Any]]] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[T] | ChatCompletion[RawResponse]:
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         now = timeit.default_timer()
         client = AsyncOpenAI(
             api_key=self.api_key or os.environ.get("OPENAI_API_KEY", None),
-            max_retries=max_retries or 2,
+            max_retries=self.max_retries,
         )
 
         openai_completion: OpenAIChatCompletion = await client.chat.completions.create(
@@ -156,10 +188,12 @@ class OpenAILanguageModel(SupportsAsyncChat):
             temperature=temperature,
             tools=[
                 ChatCompletionToolParam(
-                    function=Function.from_callable(call).to_openai_function(),
+                    function=Function.from_callable(tool).to_openai_function(),
                     type="function",
                 )
-                for call in tools
+                if callable(tool)
+                else tool.to_openai_tool()
+                for tool in tools
             ]
             if tools
             else NOT_GIVEN,
@@ -168,7 +202,7 @@ class OpenAILanguageModel(SupportsAsyncChat):
         )
 
         # Construct Choices
-        choices: list[MessageChoice[T]] = []
+        choices: list[MessageChoice[S]] = []
         for choice in openai_completion.choices:
             message = choice.message
 
@@ -177,10 +211,9 @@ class OpenAILanguageModel(SupportsAsyncChat):
             )
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = {
-                get_function_name(function): Function.from_callable(function)
-                for function in tools or []
-            }
+            functions: dict[str, Function] = _create_function_mapping_by_tools(
+                tools or []
+            )
 
             for openai_tool_call in openai_tool_calls:
                 tool_calls.append(
@@ -204,7 +237,7 @@ class OpenAILanguageModel(SupportsAsyncChat):
                             message.content or "", response_model=response_model
                         )
                         if response_model
-                        else cast(T, RawResponse()),
+                        else cast(S, RawResponse()),
                         tool_calls=ToolCallSequence(tool_calls),
                     ),
                     logprobs=None,

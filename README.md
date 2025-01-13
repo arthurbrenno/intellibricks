@@ -409,7 +409,6 @@ This section provides a comprehensive overview of the core classes defined in th
 *   **`CompletionTokensDetails`**: Represents tokens generated in the completion, such as `audio_tokens` and `reasoning_tokens`.
 *   **`Usage`**: Represents usage statistics for a completion, including prompt tokens, completion tokens, and costs.
 *   **`ChatCompletion`**: Represents a full response from an LLM, containing message choices, usage statistics, model information, and elapsed time.
-*    **`ToolLike`**: A Protocol for defining a class that can be converted to a Tool for several different APIs.
 
 ### Relationships
 

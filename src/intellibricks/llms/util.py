@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from html.parser import HTMLParser
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 import msgspec
 from architecture.logging import LoggerFactory
@@ -10,12 +10,17 @@ from architecture.logging import LoggerFactory
 from intellibricks.util import flatten_msgspec_schema, jsonify
 
 if TYPE_CHECKING:
-    from intellibricks.llms.schema import PartType
     from intellibricks.llms.constants import Language
-    from intellibricks.llms.schema import Message, Part, TextPart
+    from intellibricks.llms.schema import (
+        Function,
+        Message,
+        Part,
+        PartType,
+        TextPart,
+        ToolInputType,
+    )
 
 
-S = TypeVar("S")
 logger = LoggerFactory.create(__name__)
 
 
@@ -142,7 +147,7 @@ def get_parts_raw_text(parts: Sequence[PartType]) -> str:
     return "".join([str(part) for part in parts])
 
 
-def get_parsed_response(
+def get_parsed_response[S](
     contents: Sequence[PartType] | str,
     response_model: type[S],
 ) -> S:
@@ -180,7 +185,7 @@ def get_structured_prompt_instructions_by_language(
             return f"Retorne apenas um json válido que esteja de acordo com o seguinte esquema:\n{schema_str}"
 
 
-def get_new_messages_with_response_format_instructions(
+def get_new_messages_with_response_format_instructions[S](
     *,
     messages: Sequence[Message],
     response_model: type[S],
@@ -216,7 +221,7 @@ def get_new_messages_with_response_format_instructions(
     return [new_system_msg, *messages]
 
 
-def get_function_name(func: Callable[..., Any]) -> str:
+def _get_function_name(func: Callable[..., Any]) -> str:
     """
     Returns the name of a callable as a string.
     If the callable doesn't have a __name__ attribute (e.g., lambdas),
@@ -229,3 +234,21 @@ def get_function_name(func: Callable[..., Any]) -> str:
         str: The name of the callable, or 'anonymous_function' if unnamed.
     """
     return getattr(func, "__name__", "anonymous_function")
+
+
+def _create_function_mapping_by_tools(tools: Sequence[ToolInputType]):
+    """
+    Maps the function name to it's function object.
+    Useful in all Integration modules in this lib
+    and should only be used internally.
+    """
+    functions: dict[str, Function] = {
+        _get_function_name(
+            function if callable(function) else function.to_callable()
+        ): Function.from_callable(function)
+        if callable(function)
+        else Function.from_callable(function.to_callable())
+        for function in tools or []
+    }
+
+    return functions
