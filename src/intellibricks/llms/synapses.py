@@ -50,6 +50,8 @@ from .schema import (
     ToolInputType,
 )
 from .types import AIModel
+from architecture.utils.functions import fire_and_forget
+
 
 logger = LoggerFactory.create(__name__)
 
