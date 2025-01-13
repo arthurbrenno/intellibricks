@@ -498,6 +498,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             logger.debug("chat_async method call completed successfully.")
 
             # TODO(arthur): Immediatly return. Implement a "fire_and_forget" mechanism to handle the rest of the logic.
+            # Thinking... Implement it or not????
             logger.debug("Ending Langfuse generation.")
             generation.end(
                 output=completion.message,
