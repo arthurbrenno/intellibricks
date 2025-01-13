@@ -277,7 +277,7 @@ def get_struct_from_schema(
         """
         if isinstance(node, dict):
             if "$ref" in node:
-                ref_val = node["$ref"]
+                ref_val: Any = node["$ref"]
                 if not isinstance(ref_val, str):
                     """
                     Argument type is unknown
