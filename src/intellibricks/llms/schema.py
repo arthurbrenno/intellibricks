@@ -42,7 +42,6 @@ import msgspec
 from architecture.logging import LoggerFactory
 from architecture.types import NOT_GIVEN, NotGiven
 from architecture.utils.decorators import ensure_module_installed
-from bs4 import BeautifulSoup, NavigableString
 
 from intellibricks.llms.util import (
     HTMLToMarkdownParser,
@@ -53,7 +52,6 @@ from intellibricks.util import (
     get_file_extension,
     is_file_url,
     is_url,
-    jsonify,
     python_type_to_json_type,
 )
 
@@ -424,167 +422,6 @@ class CacheConfig(msgspec.Struct, frozen=True, kw_only=True):
     """
 
 
-class XMLTag(msgspec.Struct, frozen=True):
-    tag_name: str
-    content: Optional[str] = msgspec.field(default=None)
-    attributes: dict[str, Optional[str]] = msgspec.field(default_factory=dict)
-
-    @classmethod
-    def from_string(
-        cls,
-        string: str,
-        *,
-        tag_name: Optional[str] = None,
-        attributes: Optional[dict[str, Optional[str]]] = None,
-    ) -> XMLTag:
-        """
-        Create a XMLTag instance from a string containing a tag.
-
-        This method searches for a tag in the given string and creates a XMLTag instance
-        if a matching tag is found. It can optionally filter by tag name or attributes.
-
-        Args:
-            string (str): The input string containing the tag.
-            tag_name (Optional[str], optional): If provided, only match tags with this name.
-            attributes (Optional[dict[str, str]], optional): If provided, only match tags with these attributes.
-
-        Returns:
-            Optional[XMLTag]: A XMLTag instance if a matching tag is found, None otherwise.
-        """
-        # logger.debug(f"Parsing tag from string: {string}")
-        # logger.debug(f"XMLTag name: {tag_name}, Attributes: {attributes}")
-
-        # Remove leading and trailing code block markers if present
-        string = string.strip()
-        if string.startswith("```"):
-            # Remove the first line (e.g., ```xml)
-            first_newline = string.find("\n")
-            if first_newline != -1:
-                string = string[first_newline + 1 :]
-            # Remove the last triple backticks
-            if string.endswith("```"):
-                string = string[:-3]
-
-        # Initialize code block placeholders
-        code_blocks = {}
-
-        # Function to replace code blocks with placeholders
-        def replace_code_blocks(match: re.Match[str]) -> str:
-            code_block = match.group(0)
-            placeholder = f"__CODE_BLOCK_{uuid.uuid4()}__"
-            code_blocks[placeholder] = code_block
-            return placeholder
-
-        # Replace fenced code blocks (triple backticks)
-        string_with_placeholders = re.sub(
-            r"```[\s\S]*?```", replace_code_blocks, string
-        )
-        # Replace inline code blocks (single backticks)
-        string_with_placeholders = re.sub(
-            r"`[^`]*`", replace_code_blocks, string_with_placeholders
-        )
-
-        # Parse the string with BeautifulSoup
-        soup = BeautifulSoup(string_with_placeholders, "html.parser")
-
-        # Find the tag
-        if tag_name:
-            if attributes:
-                elem = soup.find(tag_name, attrs=attributes)
-            else:
-                elem = soup.find(tag_name)
-        else:
-            elem = soup.find()
-
-        if isinstance(elem, NavigableString):
-            raise ValueError("Element cannot be instance of NavigableString")
-
-        if elem is not None:
-            elem_attributes: dict[str, Optional[str]] = dict(elem.attrs)
-            # Get the inner HTML content of the tag
-            content = "".join(str(child) for child in elem.contents).strip()
-
-            # Replace placeholders with original code blocks in content
-            for placeholder, code_block in code_blocks.items():
-                content = content.replace(placeholder, code_block)
-
-            return cls(
-                tag_name=elem.name or "",
-                content=content,
-                attributes=elem_attributes,
-            )
-
-        raise RuntimeError("XMLTag not found in the string.")
-
-    def as_object(self) -> dict[str, Any]:
-        """
-        Extracts the content of the tag as a Python dictionary by parsing the JSON content.
-
-        This method is extremely robust and can handle various nuances in the JSON content, such as:
-        - JSON content wrapped in code blocks with backticks (e.g., ```json ... ```)
-        - JSON content starting with '{'
-        - JSON content with unescaped newlines within strings
-        - JSON content with inner backticks in some values
-        - Complex and nested JSON structures
-
-        Returns:
-            dict[str, Any]: The parsed JSON content as a Python dictionary.
-
-        Raises:
-            ValueError: If no valid JSON content is found in the tag or if the JSON content is not a dictionary.
-
-        Examples:
-            >>> tag = XMLTag(content='```json\\n{\\n  "key": "value"\\n}\\n```')
-            >>> tag.as_object()
-            {'key': 'value'}
-
-            >>> tag = XMLTag(content='Some text before { "key": "value" } some text after')
-            >>> tag.as_object()
-            {'key': 'value'}
-
-            >>> tag = XMLTag(content='{"key": "value with backticks ``` inside"}')
-            >>> tag.as_object()
-            {'key': 'value with backticks ``` inside'}
-
-            >>> tag = XMLTag(content='[1, 2, 3]')
-            Traceback (most recent call last):
-                ...
-            ValueError: JSON content is not a dictionary.
-
-            >>> tag = XMLTag(content=None)
-            Traceback (most recent call last):
-                ...
-            ValueError: XMLTag content is None.
-        """
-        if self.content is None:
-            raise ValueError("XMLTag content is None.")
-
-        content: str = self.content.strip()
-
-        try:
-            parsed_obj: dict[str, Any] = jsonify(content)
-            return parsed_obj
-        except ValueError:
-            raise ValueError("No valid JSON content found in the tag.")
-
-    @staticmethod
-    def _parse_attributes(attributes_string: str) -> dict[str, str]:
-        """Parse the attributes string into a dictionary."""
-        matches = re.findall(r'(\w+)="([^"]*)"', attributes_string)
-        return {key: value for key, value in matches}
-
-    def as_string(self) -> str:
-        return str(self)
-
-    def __str__(self) -> str:
-        return self.content if self.content is not None else ""
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "tag_name": self.tag_name,
-            "content": self.content,
-            "attributes": self.attributes,
-        }
 
 
 """
@@ -709,23 +546,11 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     def from_openai_part(
         cls, openai_part: OpenAIChatCompletionContentPartParam
     ) -> Part:
-        from openai.types.chat.chat_completion_content_part_image_param import (
-            ChatCompletionContentPartImageParam,
-        )
-        from openai.types.chat.chat_completion_content_part_input_audio_param import (
-            ChatCompletionContentPartInputAudioParam,
-        )
-        from openai.types.chat.chat_completion_content_part_text_param import (
-            ChatCompletionContentPartTextParam,
-        )
-
         match openai_part["type"]:
             case "text":
-                text_part = cast(ChatCompletionContentPartTextParam, openai_part)
-                return TextPart(text=text_part["text"])
+                return TextPart(text=openai_part["text"])
             case "image_url":
-                image_part = cast(ChatCompletionContentPartImageParam, openai_part)
-                url_or_base_64 = image_part["image_url"]["url"]
+                url_or_base_64 = openai_part["image_url"]["url"]
                 if is_url(url_or_base_64):
                     return ImageFilePart(
                         url=url_or_base_64, mime_type=MimeType("image/jpeg")
@@ -736,10 +561,9 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                     mime_type=MimeType("image/jpeg"),
                 )
             case "input_audio":
-                audio_part = cast(ChatCompletionContentPartInputAudioParam, openai_part)
                 return AudioFilePart(
-                    data=base64.b64decode(audio_part["input_audio"]["data"]),
-                    mime_type=MimeType(f"audio/{audio_part['input_audio']['format']}"),
+                    data=base64.b64decode(openai_part["input_audio"]["data"]),
+                    mime_type=MimeType(f"audio/{openai_part['input_audio']['format']}"),
                 )
 
     @classmethod
@@ -1571,7 +1395,7 @@ class Prompt(msgspec.Struct, frozen=True):
         # Regular expression to find all placeholders like {{key}}
         pattern = re.compile(r"\{\{(\w+)\}\}")
 
-        def replace_match(match: re.Match) -> str:
+        def replace_match(match: re.Match[str]) -> str:
             key = match.group(1)
             if key in replacements:
                 return str(replacements[key])
@@ -1857,9 +1681,6 @@ class UserMessage(Message, frozen=True, tag="user"):
     def to_openai_format(
         self,
     ) -> ChatCompletionMessageParam:
-        from openai.types.chat.chat_completion_content_part_param import (
-            ChatCompletionContentPartParam,
-        )
         from openai.types.chat.chat_completion_user_message_param import (
             ChatCompletionUserMessageParam,
         )
@@ -1867,7 +1688,7 @@ class UserMessage(Message, frozen=True, tag="user"):
         return ChatCompletionUserMessageParam(
             role="user",
             content=[
-                cast(ChatCompletionContentPartParam, part.to_openai_part())
+                part.to_openai_part()
                 for part in self.contents
             ],
             name=cast(str, self.name),

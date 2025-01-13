@@ -1,5 +1,5 @@
 import timeit
-from typing import Literal, Optional, Sequence, TypeVar, cast, overload, override
+from typing import Literal, Optional, Sequence, TypeVar, cast, overload, override, Any
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
@@ -37,7 +37,7 @@ from intellibricks.llms.schema import (
 )
 from intellibricks.llms.types import OpenAIModelType
 from intellibricks.llms.util import (
-    _create_function_mapping_by_tools,
+    create_function_mapping_by_tools,
     get_parsed_response,
 )
 from intellibricks.util import flatten_msgspec_schema
@@ -211,7 +211,7 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
             )
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = _create_function_mapping_by_tools(
+            functions: dict[str, Function] = create_function_mapping_by_tools(
                 tools or []
             )
 
@@ -222,7 +222,7 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
                         called_function=CalledFunction(
                             function=functions[openai_tool_call.function.name],
                             arguments=msgspec.json.decode(
-                                openai_tool_call.function.arguments, type=dict
+                                openai_tool_call.function.arguments, type=dict[str, Any]
                             ),
                         ),
                     )

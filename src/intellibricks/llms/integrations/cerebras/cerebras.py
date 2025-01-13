@@ -9,6 +9,7 @@ from typing import (
     cast,
     overload,
     override,
+    Any
 )
 
 import msgspec
@@ -32,7 +33,7 @@ from intellibricks.llms.schema import (
 )
 from intellibricks.llms.types import CerebrasModelType
 from intellibricks.llms.util import (
-    _create_function_mapping_by_tools,
+    create_function_mapping_by_tools,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
@@ -165,7 +166,7 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
             message: ChatCompletionResponseChoiceMessage = choice.message
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = _create_function_mapping_by_tools(
+            functions: dict[str, Function] = create_function_mapping_by_tools(
                 tools or []
             )
 
@@ -179,7 +180,7 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
                         called_function=CalledFunction(
                             function=functions[cerebras_tool_call.function.name],
                             arguments=msgspec.json.decode(
-                                cerebras_tool_call.function.arguments, type=dict
+                                cerebras_tool_call.function.arguments, type=dict[str, Any]
                             ),
                         ),
                     )

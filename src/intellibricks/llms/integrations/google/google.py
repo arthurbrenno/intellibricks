@@ -27,7 +27,7 @@ from intellibricks.llms.schema import (
 )
 from intellibricks.llms.types import GoogleModelType
 from intellibricks.llms.util import (
-    _create_function_mapping_by_tools,
+    create_function_mapping_by_tools,
     get_parsed_response,
 )
 from intellibricks.util import flatten_msgspec_schema
@@ -288,7 +288,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
             ]
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = _create_function_mapping_by_tools(
+            functions: dict[str, Function] = create_function_mapping_by_tools(
                 tools or []
             )
 

@@ -9,6 +9,7 @@ from typing import (
     cast,
     overload,
     override,
+    Any
 )
 
 import msgspec
@@ -32,7 +33,7 @@ from intellibricks.llms.schema import (
 )
 from intellibricks.llms.types import GroqModelType
 from intellibricks.llms.util import (
-    _create_function_mapping_by_tools,
+    create_function_mapping_by_tools,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
@@ -186,7 +187,7 @@ class GroqLanguageModel(LanguageModel, frozen=True):
             )
 
             tool_calls: list[ToolCall] = []
-            functions: dict[str, Function] = _create_function_mapping_by_tools(
+            functions: dict[str, Function] = create_function_mapping_by_tools(
                 tools or []
             )
 
@@ -197,7 +198,7 @@ class GroqLanguageModel(LanguageModel, frozen=True):
                         called_function=CalledFunction(
                             function=functions[groq_tool_call.function.name],
                             arguments=msgspec.json.decode(
-                                groq_tool_call.function.arguments, type=dict
+                                groq_tool_call.function.arguments, type=dict[str, Any]
                             ),
                         ),
                     )

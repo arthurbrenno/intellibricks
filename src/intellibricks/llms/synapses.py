@@ -50,7 +50,7 @@ from .schema import (
     ToolInputType,
 )
 from .types import AIModel
-from architecture.utils.functions import fire_and_forget
+# from architecture.utils.functions import fire_and_forget
 
 
 logger = LoggerFactory.create(__name__)
@@ -441,7 +441,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
         logger.debug("Initializing Langfuse trace (if available).")
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
-            lambda langfuse: langfuse.trace(**trace_params)
+            lambda langfuse: langfuse.trace(**trace_params) # type: ignore
         )
 
         ai_model: AIModel = self.model or "google/genai/gemini-2.0-flash-exp"
@@ -453,7 +453,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         logger.debug("Creating Langfuse span (if trace is available).")
         maybe_span: Maybe[StatefulSpanClient] = Maybe(
             trace.map(
-                lambda trace: trace.span(
+                lambda trace: trace.span( # type: ignore
                     id=f"sp-{completion_id}",
                     input=messages,
                     name="Response Generation",
@@ -462,7 +462,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         )
         logger.debug("Creating Langfuse generation (if span is available).")
         generation: Maybe[StatefulGenerationClient] = maybe_span.map(
-            lambda span: span.generation(
+            lambda span: span.generation( # type: ignore
                 model=ai_model,
                 input=messages,
                 model_parameters={
@@ -560,20 +560,20 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             logger.debug("Langfuse span error handling completed.")
             raise e
 
-    async def __end_observability_logic(
+    async def __end_observability_logic( # type: ignore
         self,
         generation: StatefulGenerationClient,
         maybe_span: Maybe[StatefulSpanClient],
         completion: ChatCompletion[S],
     ) -> None:
         logger.debug("Ending Langfuse generation.")
-        generation.end(
+        generation.end( # type: ignore
             output=completion.message,
         )
         logger.debug("Langfuse generation ended.")
 
         logger.debug("Updating Langfuse generation usage.")
-        generation.update(
+        generation.update( # type: ignore
             usage=ModelUsage(
                 unit="TOKENS",
                 input=completion.usage.prompt_tokens

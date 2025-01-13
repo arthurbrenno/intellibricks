@@ -236,7 +236,7 @@ def _get_function_name(func: Callable[..., Any]) -> str:
     return getattr(func, "__name__", "anonymous_function")
 
 
-def _create_function_mapping_by_tools(tools: Sequence[ToolInputType]):
+def create_function_mapping_by_tools(tools: Sequence[ToolInputType]):
     """
     Maps the function name to it's function object.
     Useful in all Integration modules in this lib
