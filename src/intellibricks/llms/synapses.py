@@ -417,6 +417,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        logger.debug("Entering __achat method.")
+
         trace_params = trace_params or {
             "name": "chat_completion",
             "user_id": "not_provided",
@@ -424,19 +426,25 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config = cache_config or CacheConfig()
 
         trace_params["input"] = messages
+        logger.debug(f"Trace parameters: {trace_params}")
+        logger.debug(f"Cache configuration: {cache_config}")
 
+        logger.debug("Generating completion ID.")
         completion_id: uuid.UUID = uuid.uuid4()
+        logger.debug(f"Generated completion ID: {completion_id}")
 
+        logger.debug("Initializing Langfuse trace (if available).")
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
             lambda langfuse: langfuse.trace(**trace_params)
         )
 
         ai_model: AIModel = self.model or "google/genai/gemini-2.0-flash-exp"
+        logger.debug(f"Using AI model: {ai_model}")
 
-        max_retries = max_retries or 1
+        max_retries = max_retries or 2
+        logger.debug(f"Maximum retries set to: {max_retries}")
 
-        logger.debug("Starting chat completion.")
-
+        logger.debug("Creating Langfuse span (if trace is available).")
         maybe_span: Maybe[StatefulSpanClient] = Maybe(
             trace.map(
                 lambda trace: trace.span(
@@ -446,7 +454,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 )
             ).unwrap()
         )
-
+        logger.debug("Creating Langfuse generation (if span is available).")
         generation: Maybe[StatefulGenerationClient] = maybe_span.map(
             lambda span: span.generation(
                 model=ai_model,
@@ -458,6 +466,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             )
         )
 
+        logger.debug("Creating Language Model instance.")
         chat_model: LanguageModel = LanguageModelFactory.create(
             model=ai_model,
             params={
@@ -470,8 +479,10 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 "location": self.cloud_location,
             },
         )
+        logger.debug(f"Language Model instance created.")
 
         try:
+            logger.debug("Calling chat_async method of the Language Model.")
             completion = await chat_model.chat_async(
                 messages=messages,
                 response_model=response_model,
@@ -484,11 +495,16 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 tools=tools,
                 timeout=timeout,
             )
+            logger.debug("chat_async method call completed successfully.")
 
+            # TODO(arthur): Immediatly return. Implement a "fire_and_forget" mechanism to handle the rest of the logic.
+            logger.debug("Ending Langfuse generation.")
             generation.end(
                 output=completion.message,
             )
+            logger.debug("Langfuse generation ended.")
 
+            logger.debug("Updating Langfuse generation usage.")
             generation.update(
                 usage=ModelUsage(
                     unit="TOKENS",
@@ -506,25 +522,35 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                     total_cost=completion.usage.total_cost or 0.0,
                 )
             )
+            logger.debug("Langfuse generation usage updated.")
 
+            logger.debug("Scoring Langfuse span as successful.")
             maybe_span.score(
                 id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
                 name="Success",
                 value=1.0,
                 comment="Choices generated successfully!",
             )
+            logger.debug("Langfuse span scored successfully.")
 
+            logger.debug("Returning completion object.")
             return completion
 
         except Exception as e:
-            maybe_span.end(output={})
-            maybe_span.update(status_message="Error in completion", level="ERROR")
-            maybe_span.score(
-                id=f"sc-{maybe_span.unwrap()}",
-                name="Sucess",
-                value=0.0,
-                comment=f"Error while generating choices: {e}",
-            )
+            logger.error(f"An error occurred during chat completion: {e}", exc_info=True)
+            if maybe_span:
+                logger.debug("Ending Langfuse span due to error.")
+                maybe_span.end(output={})
+                logger.debug("Updating Langfuse span status due to error.")
+                maybe_span.update(status_message="Error in completion", level="ERROR")
+                logger.debug("Scoring Langfuse span as failure due to error.")
+                maybe_span.score(
+                    id=f"sc-{maybe_span.unwrap()}",
+                    name="Sucess",
+                    value=0.0,
+                    comment=f"Error while generating choices: {e}",
+                )
+                logger.debug("Langfuse span error handling completed.")
             raise e
 
 
