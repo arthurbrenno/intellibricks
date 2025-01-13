@@ -20,6 +20,7 @@ from intellibricks.llms.schema import (
     ToolInputType,
     ChatCompletion,
     Message,
+    TranscriptionOutput,
 )
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
@@ -229,3 +230,15 @@ class LanguageModel(msgspec.Struct, frozen=True):
             tools=tools,
             timeout=timeout,
         )
+
+
+class TranscriptionsModel(msgspec.Struct, frozen=True):
+    
+    def transcribe(
+        self,
+        audio: bytes,
+    ) -> TranscriptionOutput:
+        return run_sync(self.transcribe_async, audio)
+    
+    async def transcribe_async(self, audio: bytes) -> TranscriptionOutput:
+        raise NotImplementedError

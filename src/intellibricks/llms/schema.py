@@ -3046,3 +3046,23 @@ class CalledFunction[R = Any](msgspec.Struct, frozen=True, kw_only=True):
 
         # Call the function with the provided arguments
         return self.function.callable(**self.arguments)
+
+
+class TranscriptionOutput(msgspec.Struct, frozen=True):
+    """The output of a transcriptions result call."""
+
+    elapsed_time: Annotated[
+        float,
+        msgspec.Meta(
+            title="Elapsed Time",
+            description="The amount of time it took to generate the transcriptions.",
+        ),
+    ]
+
+    text: Annotated[
+        str,
+        msgspec.Meta(
+            title="Text",
+            description="The transcribed text.",
+        ),
+    ]
