@@ -338,7 +338,7 @@ def get_struct_from_schema(
 
     # 3) top-level "type" must be "object"
     if "type" in resolved_schema:
-        raw_type = resolved_schema["type"]
+        raw_type: Any = resolved_schema["type"]
         if not isinstance(raw_type, str):
             raise TypeError(f"Top-level 'type' should be a string, got {type(raw_type)!r}")
         top_type = raw_type
@@ -408,7 +408,7 @@ def get_struct_from_schema(
             (variable) prop_schema_any: Unknown
             """
             raise TypeError(
-                f"Each property schema must be a dict, got {type(prop_schema_any)!r} for '{prop_name}'"
+                f"Each property schema must be a dict, got {type(cast(Any, prop_schema_any))!r} for '{prop_name}'"
             )
         prop_schema: dict[str, Any] = prop_schema_any
 
