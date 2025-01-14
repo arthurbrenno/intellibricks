@@ -1,3 +1,3 @@
-from .groq import GroqLanguageModel, GroqModel
+from .groq import GroqLanguageModel, GroqModel, GroqTranscriptionModel
 
-__all__: list[str] = ["GroqLanguageModel", "GroqModel"]
+__all__: list[str] = ["GroqLanguageModel", "GroqModel", "GroqTranscriptionModel"]

@@ -9,17 +9,24 @@ from typing import (
     cast,
     overload,
     override,
-    Any
+    Any,
 )
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 
-from intellibricks.llms.base.contracts import LanguageModel
+from intellibricks.llms.base import (
+    LanguageModel,
+    TranscriptionModel,
+    FileContent,
+    Language,
+)
+
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     GeneratedAssistantMessage,
     CalledFunction,
+    TextTranscriptionOutput,
     ChatCompletion,
     Function,
     Message,
@@ -34,6 +41,7 @@ from intellibricks.llms.schema import (
 from intellibricks.llms.types import GroqModelType
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
+    get_audio_duration,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
@@ -56,6 +64,10 @@ GroqModel: TypeAlias = Literal[
     "llama3-70b-8192",
     "llama3-8b-8192",
     "mixtral-8x7b-32768",
+]
+
+GroqTranscriptionModelType: TypeAlias = Literal[
+    "whisper-large-v3-turbo", "distil-whisper-large-v3-en", "whisper-large-v3"
 ]
 
 MODEL_PRICING: dict[GroqModel, dict[Literal["input_cost", "output_cost"], float]] = {
@@ -259,3 +271,48 @@ class GroqLanguageModel(LanguageModel, frozen=True):
         )
 
         return chat_completion
+
+
+class GroqTranscriptionModel(TranscriptionModel, frozen=True):
+    model_name: GroqTranscriptionModelType
+    api_key: Optional[str] = None
+    max_retries: int = 2
+
+    @ensure_module_installed("groq", "groq")
+    @override
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TextTranscriptionOutput:
+        from groq import AsyncGroq
+        from groq._types import NOT_GIVEN
+
+        client = AsyncGroq(api_key=self.api_key, max_retries=self.max_retries)
+
+        now = timeit.default_timer()
+        transcription = await client.audio.transcriptions.create(
+            file=audio,
+            model=self.model_name,
+            language=language or NOT_GIVEN,
+            temperature=temperature or NOT_GIVEN,
+            prompt=prompt or NOT_GIVEN,
+        )
+
+        audio_duration = get_audio_duration(audio)
+        
+        # AI Model	Speed Factor	Price
+        # (Per Hour Transcribed)
+        # Whisper V3 Large	189x	$0.111*
+        # Whisper Large v3 Turbo	216x	$0.04*
+        # Distil-Whisper	250x	$0.02*
+        #TODO(arthur)
+
+        return TextTranscriptionOutput(
+            elapsed_time=timeit.default_timer() - now,
+            text=transcription.text,
+            cost=0.0,
+            duration=audio_duration,
+        )

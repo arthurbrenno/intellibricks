@@ -10,6 +10,8 @@ from .llms import (
     Prompt,
     MessageType,
     SynapseCascade,
+    TextTranscriptionSynapse,
+    ChainOfThought,
 )
 from .files import RawFile
 
@@ -29,4 +31,6 @@ __all__: list[str] = [
     "RawFile",
     "MessageType",
     "SynapseCascade",
+    "TextTranscriptionSynapse",
+    "ChainOfThought",
 ]

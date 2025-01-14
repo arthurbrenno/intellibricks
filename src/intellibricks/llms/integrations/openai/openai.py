@@ -1,47 +1,58 @@
 import timeit
-from typing import Literal, Optional, Sequence, TypeVar, cast, overload, override, Any
+from typing import Any, Literal, Optional, Sequence, TypeVar, cast, overload, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 from langfuse.client import os
-from openai import NOT_GIVEN, AsyncOpenAI
-from openai.types.chat.chat_completion import (
-    ChatCompletion as OpenAIChatCompletion,
+
+from intellibricks.llms.base import (
+    FileContent,
+    Language,
+    LanguageModel,
+    TranscriptionModel,
 )
-from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from openai.types.completion_usage import CompletionUsage
-from openai.types.shared_params.response_format_json_schema import (
-    JSONSchema,
-    ResponseFormatJSONSchema,
-)
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
-)
-from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
-    GeneratedAssistantMessage,
     CalledFunction,
     ChatCompletion,
     CompletionTokensDetails,
     Function,
+    GeneratedAssistantMessage,
     Message,
     MessageChoice,
     Part,
     PromptTokensDetails,
     RawResponse,
+    TextTranscriptionOutput,
     ToolCall,
     ToolCallSequence,
-    Usage,
     ToolInputType,
+    TypeAlias,
+    Usage,
 )
 from intellibricks.llms.types import OpenAIModelType
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
+    get_audio_duration,
     get_parsed_response,
 )
 from intellibricks.util import flatten_msgspec_schema
+from openai import NOT_GIVEN, AsyncOpenAI
+from openai.types.chat.chat_completion import (
+    ChatCompletion as OpenAIChatCompletion,
+)
+from openai.types.chat.chat_completion_message_tool_call import (
+    ChatCompletionMessageToolCall,
+)
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from openai.types.chat_model import ChatModel
+from openai.types.completion_usage import CompletionUsage
+from openai.types.shared_params.response_format_json_schema import (
+    JSONSchema,
+    ResponseFormatJSONSchema,
+)
+
+OpenAITranscriptionModelType: TypeAlias = Literal["whisper-1"]
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
@@ -307,3 +318,39 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
         )
 
         return chat_completion
+
+
+class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
+    model_name: OpenAITranscriptionModelType
+    api_key: Optional[str] = None
+    max_retries: int = 2
+
+    @ensure_module_installed("openai", "openai")
+    @override
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TextTranscriptionOutput:
+        from openai import AsyncOpenAI
+        from openai._types import NOT_GIVEN
+
+        client = AsyncOpenAI(api_key=self.api_key, max_retries=self.max_retries)
+
+        now = timeit.default_timer()
+        transcription = await client.audio.transcriptions.create(
+            file=audio,
+            model=self.model_name,
+            language=language or NOT_GIVEN,
+            temperature=temperature or NOT_GIVEN,
+            prompt=prompt or NOT_GIVEN,
+        )
+
+        return TextTranscriptionOutput(
+            elapsed_time=timeit.default_timer() - now,
+            text=transcription.text,
+            cost=0.0,
+            duration=get_audio_duration(audio),
+        )

@@ -1,28 +1,25 @@
 from __future__ import annotations
 
-# NOTE: use case of __future__ annotations
-from typing import (
-    Optional,
-    Sequence,
-    TypeVar,
-    overload,
-)
-from architecture.utils import run_sync
+
+from typing import Optional, Sequence, TypeVar, overload, TYPE_CHECKING
+
 import msgspec
+from architecture.utils import run_sync
+from .types import FileContent, Language
 
-from intellibricks.llms.schema import (
-    DeveloperMessage,
-    Part,
-    PartType,
-    Prompt,
-    RawResponse,
-    UserMessage,
-    ToolInputType,
-    ChatCompletion,
-    Message,
-)
+if TYPE_CHECKING:
+    from intellibricks.llms.schema import (
+        ChatCompletion,
+        Message,
+        PartType,
+        Prompt,
+        RawResponse,
+        ToolInputType,
+        TextTranscriptionOutput,
+    )
 
-S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
+
+S = TypeVar("S", bound=msgspec.Struct, default="RawResponse")
 
 
 class LanguageModel(msgspec.Struct, frozen=True):
@@ -177,6 +174,12 @@ class LanguageModel(msgspec.Struct, frozen=True):
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        from intellibricks.llms.schema import (
+            DeveloperMessage,
+            UserMessage,
+            Part,
+        )
+
         if system_prompt is None:
             system_prompt = [
                 Part.from_text(
@@ -229,3 +232,23 @@ class LanguageModel(msgspec.Struct, frozen=True):
             tools=tools,
             timeout=timeout,
         )
+
+
+class TranscriptionModel(msgspec.Struct, frozen=True):
+    def transcribe(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TextTranscriptionOutput:
+        return run_sync(self.transcribe_async, audio, temperature, language, prompt)
+
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TextTranscriptionOutput:
+        raise NotImplementedError
