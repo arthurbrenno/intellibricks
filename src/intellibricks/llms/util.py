@@ -113,12 +113,7 @@ def get_new_messages_with_response_format_instructions[S](
         raise ValueError("Empty messages list")
 
     msgspec_generated_schema = msgspec.json.schema(response_model)
-
-    logger.info(f"Msgpec Generated Schema: {msgspec_generated_schema}")
-
     basemodel_schema = flatten_msgspec_schema(msgspec_generated_schema)
-
-    logger.debug(f"Schema: {basemodel_schema}")
 
     instructions = get_structured_prompt_instructions_by_language(
         language=language or Language.ENGLISH, schema=basemodel_schema
