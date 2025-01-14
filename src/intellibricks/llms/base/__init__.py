@@ -1,4 +1,4 @@
-from .contracts import LanguageModel, TranscriptionModel, ResponseFormatType
+from .contracts import LanguageModel, TranscriptionModel
 from .types import FileContent, Language
 
 __all__: list[str] = [
@@ -6,5 +6,4 @@ __all__: list[str] = [
     "TranscriptionModel",
     "Language",
     "FileContent",
-    "ResponseFormatType",
 ]

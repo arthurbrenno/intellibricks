@@ -26,7 +26,7 @@ from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
     GeneratedAssistantMessage,
     CalledFunction,
-    TranscriptionOutput,
+    TextTranscriptionOutput,
     ChatCompletion,
     Function,
     Message,
@@ -285,7 +285,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
-    ) -> TranscriptionOutput:
+    ) -> TextTranscriptionOutput:
         from groq import AsyncGroq
         from groq._types import NOT_GIVEN
 
@@ -300,6 +300,6 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
             prompt=prompt or NOT_GIVEN,
         )
 
-        return TranscriptionOutput(
+        return TextTranscriptionOutput(
             elapsed_time=timeit.default_timer() - now, text=transcription.text
         )

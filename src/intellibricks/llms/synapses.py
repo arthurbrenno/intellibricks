@@ -31,6 +31,7 @@ from langfuse.client import (
 from langfuse.model import ModelUsage
 
 from intellibricks.llms.base import LanguageModel, TranscriptionModel, FileContent
+from intellibricks.llms.base import Language as TranscriptionsLanguage
 from intellibricks.llms.factories import LanguageModelFactory, TranscriptionModelFactory
 from intellibricks.llms.general_web_search import WebSearchable
 
@@ -49,7 +50,7 @@ from .schema import (
     CacheConfig,
     TraceParams,
     ToolInputType,
-    TranscriptionOutput,
+    TextTranscriptionOutput,
 )
 from .types import AIModel, TranscriptionModelType
 
@@ -784,7 +785,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         raise RuntimeError("All synapses failed for chat_async method.")
 
 
-class TranscriptionSynapse(msgspec.Struct, frozen=True):
+class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
     """A synapse for audio transcriptions"""
 
     model: TranscriptionModelType
@@ -797,7 +798,7 @@ class TranscriptionSynapse(msgspec.Struct, frozen=True):
         model: TranscriptionModelType,
         api_key: Optional[str] = None,
         langfuse: Optional[Langfuse] = None,
-    ) -> TranscriptionSynapse:
+    ) -> TextTranscriptionSynapse:
         return cls(
             model=model,
             api_key=api_key,
@@ -807,23 +808,53 @@ class TranscriptionSynapse(msgspec.Struct, frozen=True):
         self,
         audio: FileContent,
         temperature: Optional[float] = None,
-        language: Optional[Language] = None,
+        language: Optional[TranscriptionsLanguage] = None,
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
-    ) -> TranscriptionOutput:
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput:
         return run_sync(
             self.transcribe_async,
             audio=audio,
             temperature=temperature,
             language=language,
             prompt=prompt,
+            trace_params=trace_params,
+            max_retries=max_retries,
         )
 
     async def transcribe_async(
         self,
         audio: FileContent,
         temperature: Optional[float] = None,
-        language: Optional[Language] = None,
+        language: Optional[TranscriptionsLanguage] = None,
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
-    ) -> TranscriptionOutput: ...
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput:
+        # TODO: implment tracing with langfuse
+        trace_params = trace_params or {
+            "name": "transcription",
+            "user_id": "not_provided",
+        }
+
+        if trace_params.get("user_id") is None:
+            trace_params["user_id"] = "not_provided"
+
+        if trace_params.get("name") is None:
+            trace_params["name"] = "transcription"
+
+        transcription_model: TranscriptionModel = TranscriptionModelFactory.create(
+            model=self.model,
+            params={
+                "model_name": self.model.split("/")[2],
+                "max_retries": max_retries,
+            },
+        )
+
+        return await transcription_model.transcribe_async(
+            audio=audio,
+            temperature=temperature,
+            language=language,
+            prompt=prompt,
+        )

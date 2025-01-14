@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Literal, Optional, Sequence, TypeVar, overload
+
+from typing import Optional, Sequence, TypeVar, overload
 
 import msgspec
 from architecture.utils import run_sync
@@ -14,16 +15,12 @@ from intellibricks.llms.schema import (
     Prompt,
     RawResponse,
     ToolInputType,
-    TranscriptionOutputType,
     TextTranscriptionOutput,
-    WordSegmentsTranscriptionOutput,
-    SentenceSegmentsTranscriptionOutput,
     UserMessage,
 )
-
 from .types import FileContent, Language
 
-type ResponseFormatType = Literal["text", "word_segments", "sentence_segments"]
+
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 
@@ -234,102 +231,20 @@ class LanguageModel(msgspec.Struct, frozen=True):
 
 
 class TranscriptionModel(msgspec.Struct, frozen=True):
-    @overload
     def transcribe(
         self,
         audio: FileContent,
-        response_format: None = None,
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput: ...
-
-    @overload
-    def transcribe(
-        self,
-        audio: FileContent,
-        response_format: Literal["text"],
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput: ...
-
-    @overload
-    def transcribe(
-        self,
-        audio: FileContent,
-        response_format: Literal["word_segments"],
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> WordSegmentsTranscriptionOutput: ...
-
-    @overload
-    def transcribe(
-        self,
-        audio: FileContent,
-        response_format: Literal["sentence_segments"],
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> SentenceSegmentsTranscriptionOutput: ...
-
-    def transcribe(
-        self,
-        audio: FileContent,
-        response_format: Optional[ResponseFormatType] = None,
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> TranscriptionOutputType:
+    ) -> TextTranscriptionOutput:
         return run_sync(self.transcribe_async, audio, temperature, language, prompt)
 
-    @overload
     async def transcribe_async(
         self,
         audio: FileContent,
-        response_format: None = None,
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput: ...
-
-    @overload
-    async def transcribe_async(
-        self,
-        audio: FileContent,
-        response_format: Literal["text"],
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput: ...
-
-    @overload
-    async def transcribe_async(
-        self,
-        audio: FileContent,
-        response_format: Literal["word_segments"],
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> WordSegmentsTranscriptionOutput: ...
-
-    @overload
-    async def transcribe_async(
-        self,
-        audio: FileContent,
-        response_format: Literal["sentence_segments"],
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> SentenceSegmentsTranscriptionOutput: ...
-
-    async def transcribe_async(
-        self,
-        audio: FileContent,
-        response_format: Optional[ResponseFormatType] = None,
-        temperature: Optional[float] = None,
-        language: Optional[Language] = None,
-        prompt: Optional[str] = None,
-    ) -> TranscriptionOutputType:
-        raise NotImplementedError("This method must be implemented by subclasses")
+    ) -> TextTranscriptionOutput:
+        raise NotImplementedError

@@ -10,7 +10,7 @@ from .schema import (
     TraceParams,
     MessageType,
 )
-from .synapses import Synapse, SynapseCascade
+from .synapses import Synapse, SynapseCascade, TextTranscriptionSynapse
 
 __all__ = [
     "Synapse",
@@ -25,4 +25,5 @@ __all__ = [
     "Prompt",
     "CacheConfig",
     "SynapseCascade",
+    "TextTranscriptionSynapse",
 ]

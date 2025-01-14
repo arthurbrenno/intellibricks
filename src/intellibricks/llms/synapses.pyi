@@ -22,6 +22,8 @@ from architecture.extensions import Maybe
 from architecture.logging import LoggerFactory
 from langfuse import Langfuse
 
+from intellibricks.llms.base import FileContent
+from intellibricks.llms.base import Language as TranscriptionsLanguage
 from intellibricks.llms.general_web_search import WebSearchable
 
 from .constants import (
@@ -34,10 +36,11 @@ from .schema import (
     PartType,
     Prompt,
     RawResponse,
-    TraceParams,
+    TextTranscriptionOutput,
     ToolInputType,
+    TraceParams,
 )
-from .types import AIModel
+from .types import AIModel, TranscriptionModelType
 
 logger = LoggerFactory.create(__name__)
 
@@ -565,3 +568,36 @@ class SynapseCascade:
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]: ...
+
+class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
+    """A synapse for audio transcriptions"""
+
+    model: TranscriptionModelType
+    api_key: Optional[str] = None
+    langfuse: Optional[Langfuse] = None
+
+    @classmethod
+    def of(
+        cls,
+        model: TranscriptionModelType,
+        api_key: Optional[str] = None,
+        langfuse: Optional[Langfuse] = None,
+    ) -> TextTranscriptionSynapse: ...
+    def transcribe(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[TranscriptionsLanguage] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput: ...
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[TranscriptionsLanguage] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput: ...
