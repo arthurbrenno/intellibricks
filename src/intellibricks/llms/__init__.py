@@ -9,6 +9,7 @@ from .schema import (
     UserMessage,
     TraceParams,
     MessageType,
+    ChainOfThought,
 )
 from .synapses import Synapse, SynapseCascade, TextTranscriptionSynapse
 
@@ -26,4 +27,5 @@ __all__ = [
     "CacheConfig",
     "SynapseCascade",
     "TextTranscriptionSynapse",
+    "ChainOfThought",
 ]

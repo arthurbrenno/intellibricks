@@ -1,5 +1,5 @@
 import msgspec
-from intellibricks import Synapse
+from intellibricks import Synapse, ChainOfThought
 from langfuse import Langfuse
 
 
@@ -13,9 +13,13 @@ langfuse = Langfuse(
     host="http://localhost:3000",
 )
 
-synapse = Synapse.of("cerebras/api/llama3.1-70b", langfuse=langfuse)
+synapse = Synapse.of("cerebras/api/llama-3.3-70b")
 
 completion = synapse.complete(
-    "Hello, how are you?", trace_params={"name": "test completion"}
+    "Hello, how are you?",
+    trace_params={"name": "test completion"},
+    response_model=ChainOfThought[Response],
+    max_retries=1,
 )
-print(completion)
+
+print(completion.parsed)

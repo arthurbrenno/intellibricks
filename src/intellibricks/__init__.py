@@ -11,6 +11,7 @@ from .llms import (
     MessageType,
     SynapseCascade,
     TextTranscriptionSynapse,
+    ChainOfThought,
 )
 from .files import RawFile
 
@@ -31,4 +32,5 @@ __all__: list[str] = [
     "MessageType",
     "SynapseCascade",
     "TextTranscriptionSynapse",
+    "ChainOfThought",
 ]

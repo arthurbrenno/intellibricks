@@ -1,27 +1,25 @@
 from __future__ import annotations
 
 
-from typing import Optional, Sequence, TypeVar, overload
+from typing import Optional, Sequence, TypeVar, overload, TYPE_CHECKING
 
 import msgspec
 from architecture.utils import run_sync
-
-from intellibricks.llms.schema import (
-    ChatCompletion,
-    DeveloperMessage,
-    Message,
-    Part,
-    PartType,
-    Prompt,
-    RawResponse,
-    ToolInputType,
-    TextTranscriptionOutput,
-    UserMessage,
-)
 from .types import FileContent, Language
 
+if TYPE_CHECKING:
+    from intellibricks.llms.schema import (
+        ChatCompletion,
+        Message,
+        PartType,
+        Prompt,
+        RawResponse,
+        ToolInputType,
+        TextTranscriptionOutput,
+    )
 
-S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
+
+S = TypeVar("S", bound=msgspec.Struct, default="RawResponse")
 
 
 class LanguageModel(msgspec.Struct, frozen=True):
@@ -176,6 +174,12 @@ class LanguageModel(msgspec.Struct, frozen=True):
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        from intellibricks.llms.schema import (
+            DeveloperMessage,
+            UserMessage,
+            Part,
+        )
+
         if system_prompt is None:
             system_prompt = [
                 Part.from_text(
