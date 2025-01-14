@@ -301,9 +301,18 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
             prompt=prompt or NOT_GIVEN,
         )
 
+        audio_duration = get_audio_duration(audio)
+        
+        # AI Model	Speed Factor	Price
+        # (Per Hour Transcribed)
+        # Whisper V3 Large	189x	$0.111*
+        # Whisper Large v3 Turbo	216x	$0.04*
+        # Distil-Whisper	250x	$0.02*
+        #TODO(arthur)
+
         return TextTranscriptionOutput(
             elapsed_time=timeit.default_timer() - now,
             text=transcription.text,
             cost=0.0,
-            duration=get_audio_duration(audio),
+            duration=audio_duration,
         )
