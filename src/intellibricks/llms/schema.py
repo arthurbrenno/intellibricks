@@ -3048,7 +3048,13 @@ class CalledFunction[R = Any](msgspec.Struct, frozen=True, kw_only=True):
         return self.function.callable(**self.arguments)
 
 
-class TranscriptionOutput(msgspec.Struct, frozen=True):
+class WordSegment(msgspec.Struct, frozen=True):
+    word: str
+    start: float
+    end: float
+
+
+class TranscriptionOutput(msgspec.Struct, frozen=True, tag_field="type"):
     """The output of a transcriptions result call."""
 
     elapsed_time: Annotated[
@@ -3059,6 +3065,8 @@ class TranscriptionOutput(msgspec.Struct, frozen=True):
         ),
     ]
 
+
+class TextTranscriptionOutput(TranscriptionOutput, frozen=True, tag="text"):
     text: Annotated[
         str,
         msgspec.Meta(
@@ -3066,3 +3074,124 @@ class TranscriptionOutput(msgspec.Struct, frozen=True):
             description="The transcribed text.",
         ),
     ]
+
+
+class WordSegmentsTranscriptionOutput(
+    TranscriptionOutput, frozen=True, tag="word_segments"
+):
+    word_segments: Annotated[
+        Sequence[WordSegment],
+        msgspec.Meta(
+            title="Word Segments",
+            description="The transcribed word segments.",
+        ),
+    ]
+
+
+class SentenceSegment(msgspec.Struct, frozen=True):
+    id: Annotated[
+        str,
+        msgspec.Meta(
+            title="ID",
+            description="The unique identifier of the segment.",
+        ),
+    ]
+
+    seek: Annotated[
+        int,
+        msgspec.Meta(
+            title="Seek",
+            description="Seek offset of the segment.",
+        ),
+    ]
+
+    start: Annotated[
+        float,
+        msgspec.Meta(
+            title="Start",
+            description="Start time of the segment in seconds.",
+        ),
+    ]
+
+    end: Annotated[
+        float,
+        msgspec.Meta(
+            title="End",
+            description="End time of the segment in seconds.",
+        ),
+    ]
+
+    text: Annotated[
+        str,
+        msgspec.Meta(
+            title="Text",
+            description="Text content of the segment.",
+        ),
+    ]
+
+    tokens: Annotated[
+        Sequence[int],
+        msgspec.Meta(
+            title="Tokens",
+            description="Array of token IDs for the text content.",
+        ),
+    ]
+
+    temperature: Annotated[
+        float,
+        msgspec.Meta(
+            title="Temperature",
+            description="Temperature parameter used for generating the segment.",
+        ),
+    ]
+
+    avg_logprob: Annotated[
+        float,
+        msgspec.Meta(
+            title="Average Logprob",
+            description="Average logprob of the segment. If the value is lower than -1, consider the logprobs failed.",
+        ),
+    ]
+
+    compression_ratio: Annotated[
+        float,
+        msgspec.Meta(
+            title="Compression Ratio",
+            description="Compression ratio of the segment. If the value is greater than 2.4, consider the compression failed.",
+        ),
+    ]
+
+    no_speech_prob: Annotated[
+        float,
+        msgspec.Meta(
+            title="No Speech Probability",
+            description="Probability of no speech in the segment. If the value is higher than 1.0 and the avg_logprob is below -1, consider this segment silent.",
+        ),
+    ]
+
+
+class SentenceSegmentsTranscriptionOutput(
+    TranscriptionOutput, frozen=True, tag="sentence_segments"
+):
+    segments: Sequence[SentenceSegment]
+
+    def to_srt(self) -> str:
+        """
+        Convert the sentence segments to an SRT file.
+
+        Returns:
+            str: The SRT file content.
+        """
+        srt = ""
+        for i, segment in enumerate(self.segments):
+            srt += f"{i + 1}\n"
+            srt += f"{datetime.timedelta(seconds=segment.start)} --> {datetime.timedelta(seconds=segment.end)}\n"
+            srt += f"{segment.text}\n\n"
+        return srt
+
+
+type TranscriptionOutputType = (
+    TextTranscriptionOutput
+    | WordSegmentsTranscriptionOutput
+    | SentenceSegmentsTranscriptionOutput
+)

@@ -22,6 +22,7 @@ from intellibricks.llms.base import (
     TranscriptionModel,
     Language,
     FileContent,
+    ResponseFormatType,
 )
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
@@ -41,6 +42,9 @@ from intellibricks.llms.schema import (
     Usage,
     ToolInputType,
     TranscriptionOutput,
+    TextTranscriptionOutput,
+    WordSegmentsTranscriptionOutput,
+    SentenceSegmentsTranscriptionOutput,
 )
 from intellibricks.llms.types import OpenAIModelType
 from intellibricks.llms.util import (
@@ -323,27 +327,82 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
     api_key: Optional[str] = None
     max_retries: int = 2
 
+    @overload
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        response_format: None = None,
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TextTranscriptionOutput: ...
+
+    @overload
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        response_format: Literal["text"],
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> TextTranscriptionOutput: ...
+
+    @overload
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        response_format: Literal["word_segments"],
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> WordSegmentsTranscriptionOutput: ...
+
+    @overload
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        response_format: Literal["sentence_segments"],
+        temperature: Optional[float] = None,
+        language: Optional[Language] = None,
+        prompt: Optional[str] = None,
+    ) -> SentenceSegmentsTranscriptionOutput: ...
+
     @ensure_module_installed("openai", "openai")
     @override
     async def transcribe_async(
         self,
         audio: FileContent,
+        response_format: Optional[ResponseFormatType] = None,
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
     ) -> TranscriptionOutput:
         from openai import AsyncOpenAI
         from openai._types import NOT_GIVEN
+        from openai.types.audio_response_format import AudioResponseFormat
 
         client = AsyncOpenAI(api_key=self.api_key, max_retries=self.max_retries)
 
+        response_format_mapping: dict[
+            ResponseFormatType, Literal["text", "verbose_json"]
+        ] = {
+            "text": "text",
+            "word_segments": "verbose_json",
+            "sentence_segments": "verbose_json",
+        }
+
         now = timeit.default_timer()
+        
+        response_format_final = response_format_mapping[response_format or "text"]
+
+        match response_format_final:
         transcription = await client.audio.transcriptions.create(
             file=audio,
             model=self.model_name,
             language=language or NOT_GIVEN,
             temperature=temperature or NOT_GIVEN,
             prompt=prompt or NOT_GIVEN,
+            response_format=,  # type: ignore
         )
 
         return TranscriptionOutput(
