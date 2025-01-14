@@ -432,11 +432,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             "user_id": "not_provided",
         }
 
-        if trace_params.get("user_id") is None:
-            trace_params["user_id"] = "not_provided"
-
-        if trace_params.get("name") is None:
-            trace_params["name"] = "chat_completion"
+        trace_params.setdefault("user_id", "not_provided")
+        trace_params.setdefault("name", "chat_completion")
 
         cache_config = cache_config or CacheConfig()
 
@@ -790,7 +787,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
 
     model: TranscriptionModelType
     api_key: Optional[str] = None
-    langfuse: Optional[Langfuse] = None
+    langfuse: Maybe[Langfuse] = Maybe(None)
 
     @classmethod
     def of(
@@ -802,6 +799,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         return cls(
             model=model,
             api_key=api_key,
+            langfuse=Maybe(langfuse),
         )
 
     def transcribe(
@@ -832,29 +830,145 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
     ) -> TextTranscriptionOutput:
-        # TODO: implment tracing with langfuse
+        logger.debug("Entering transcribe_async method.")
+
+        # Step 1: Initialize Trace Parameters
         trace_params = trace_params or {
             "name": "transcription",
             "user_id": "not_provided",
         }
 
-        if trace_params.get("user_id") is None:
-            trace_params["user_id"] = "not_provided"
+        trace_params.setdefault("user_id", "not_provided")
+        trace_params.setdefault("name", "transcription")
 
-        if trace_params.get("name") is None:
-            trace_params["name"] = "transcription"
+        logger.debug(f"Trace parameters: {trace_params}")
 
+        # Step 2: Generate a unique transcription ID
+        transcription_id: uuid.UUID = uuid.uuid4()
+        logger.debug(f"Generated transcription ID: {transcription_id}")
+
+        # Step 3: Initialize Langfuse Trace (if available)
+        trace: Maybe[StatefulTraceClient] = self.langfuse.map(
+            lambda lf: lf.trace(**trace_params)  # type: ignore
+        )
+        logger.debug("Initialized Langfuse trace.")
+
+        # Step 4: Create a Span for the transcription process
+        span: Maybe[StatefulSpanClient] = trace.map(
+            lambda t: t.span(  # type: ignore
+                id=f"span-{transcription_id}",
+                input={
+                    "audio": "FileContent"
+                },  # You can provide more detailed input if available
+                name="Transcription Process",
+            )
+        )
+        logger.debug("Created Langfuse span for transcription.")
+
+        # Step 5: Create a Transcription Model instance
         transcription_model: TranscriptionModel = TranscriptionModelFactory.create(
             model=self.model,
             params={
                 "model_name": self.model.split("/")[2],
                 "max_retries": max_retries,
+                "api_key": self.api_key,
             },
         )
+        logger.debug(f"Created TranscriptionModel instance for model: {self.model}")
 
-        return await transcription_model.transcribe_async(
-            audio=audio,
-            temperature=temperature,
-            language=language,
-            prompt=prompt,
+        try:
+            # Step 6: Perform the transcription asynchronously
+            logger.debug("Calling transcribe_async method of the Transcription Model.")
+            transcription_result: TextTranscriptionOutput = (
+                await transcription_model.transcribe_async(
+                    audio=audio,
+                    temperature=temperature,
+                    language=language,
+                    prompt=prompt,
+                )
+            )
+            logger.debug("transcribe_async method call completed successfully.")
+
+            # Step 7: Fire and forget the observability logic
+            fire_and_forget(self.__end_observability_logic, span, transcription_result)
+            logger.debug("Observability logic triggered.")
+
+            logger.debug("Returning transcription result.")
+            return transcription_result
+
+        except Exception as e:
+            logger.error(f"An error occurred during transcription: {e}", exc_info=True)
+            # Handle trace/span termination on error
+            fire_and_forget(self.__handle_error_observability, span, e)
+            raise e
+
+    async def __end_observability_logic(
+        self,
+        span: Maybe[StatefulSpanClient],
+        transcription_result: TextTranscriptionOutput,
+    ) -> None:
+        logger.debug("Ending Langfuse span.")
+        span.map(lambda s: s.end(output={"text": transcription_result.text}))  # type: ignore
+        logger.debug("Langfuse span ended.")
+
+        logger.debug("Updating Langfuse span usage.")
+        span.map(
+            lambda s: s.update(  # type: ignore
+                usage=ModelUsage(
+                    unit="SECONDS",
+                    input=int(
+                        transcription_result.duration
+                    ),  # Assuming elapsed_time is in seconds
+                    output=0,  # Transcription might not have a separate output metric
+                    total=int(transcription_result.duration),
+                    input_cost=transcription_result.cost,
+                    output_cost=0.0,  # No output cost if not applicable
+                    total_cost=transcription_result.cost,
+                )
+            )
         )
+        logger.debug("Langfuse span usage updated.")
+
+        logger.debug("Scoring Langfuse span as successful.")
+        span.map(
+            lambda s: s.score(  # type: ignore
+                id=f"sc-{s.id}",
+                name="Success",
+                value=1.0,
+                comment="Transcription completed successfully!",
+            )
+        )
+        logger.debug("Langfuse span scored as successful.")
+
+    async def __handle_error_observability(
+        self,
+        span: Maybe[StatefulSpanClient],
+        exception: Exception,
+    ) -> None:
+        logger.debug("Handling error in observability logic.")
+
+        logger.debug("Ending Langfuse span due to error.")
+        span.map(lambda s: s.end(output={"error": str(exception)}))  # type: ignore
+        logger.debug("Langfuse span ended with error.")
+
+        logger.debug("Updating Langfuse span status due to error.")
+        span.map(
+            lambda s: s.update(  # type: ignore
+                status_message="Error in transcription",
+                level="ERROR",
+            )
+        )
+        logger.debug("Langfuse span status updated to ERROR.")
+
+        logger.debug("Scoring Langfuse span as failed.")
+        span.map(
+            lambda s: s.score(  # type: ignore
+                id=f"sc-{s.id}",
+                name="Failure",
+                value=0.0,
+                comment=f"Error during transcription: {exception}",
+            )
+        )
+        logger.debug("Langfuse span scored as failed.")
+
+        logger.debug("Error observability logic completed.")

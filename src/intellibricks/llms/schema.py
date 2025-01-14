@@ -3065,6 +3065,22 @@ class TranscriptionOutput(msgspec.Struct, frozen=True, tag_field="type"):
         ),
     ]
 
+    cost: Annotated[
+        float,
+        msgspec.Meta(
+            title="Cost",
+            description="The cost incurred by the transcriptions request.",
+        ),
+    ]
+
+    duration: Annotated[
+        float,
+        msgspec.Meta(
+            title="Duration",
+            description="The duration of the audio file in seconds.",
+        ),
+    ]
+
 
 class TextTranscriptionOutput(TranscriptionOutput, frozen=True, tag="text"):
     text: Annotated[

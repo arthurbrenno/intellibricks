@@ -41,6 +41,7 @@ from intellibricks.llms.schema import (
 from intellibricks.llms.types import GroqModelType
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
+    get_audio_duration,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
 )
@@ -301,5 +302,8 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         )
 
         return TextTranscriptionOutput(
-            elapsed_time=timeit.default_timer() - now, text=transcription.text
+            elapsed_time=timeit.default_timer() - now,
+            text=transcription.text,
+            cost=0.0,
+            duration=get_audio_duration(audio),
         )

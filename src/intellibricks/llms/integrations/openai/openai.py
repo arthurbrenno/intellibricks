@@ -1,54 +1,56 @@
 import timeit
-from typing import Literal, Optional, Sequence, TypeVar, cast, overload, override, Any
+from typing import Any, Literal, Optional, Sequence, TypeVar, cast, overload, override
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 from langfuse.client import os
-from openai import NOT_GIVEN, AsyncOpenAI
-from openai.types.chat.chat_completion import (
-    ChatCompletion as OpenAIChatCompletion,
-)
-from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from openai.types.completion_usage import CompletionUsage
-from openai.types.shared_params.response_format_json_schema import (
-    JSONSchema,
-    ResponseFormatJSONSchema,
-)
-from openai.types.chat.chat_completion_message_tool_call import (
-    ChatCompletionMessageToolCall,
-)
+
 from intellibricks.llms.base import (
+    FileContent,
+    Language,
     LanguageModel,
     TranscriptionModel,
-    Language,
-    FileContent,
 )
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.schema import (
-    GeneratedAssistantMessage,
     CalledFunction,
     ChatCompletion,
     CompletionTokensDetails,
     Function,
+    GeneratedAssistantMessage,
     Message,
     MessageChoice,
     Part,
     PromptTokensDetails,
     RawResponse,
-    TypeAlias,
+    TextTranscriptionOutput,
     ToolCall,
     ToolCallSequence,
-    Usage,
     ToolInputType,
-    TextTranscriptionOutput,
+    TypeAlias,
+    Usage,
 )
 from intellibricks.llms.types import OpenAIModelType
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
+    get_audio_duration,
     get_parsed_response,
 )
 from intellibricks.util import flatten_msgspec_schema
+from openai import NOT_GIVEN, AsyncOpenAI
+from openai.types.chat.chat_completion import (
+    ChatCompletion as OpenAIChatCompletion,
+)
+from openai.types.chat.chat_completion_message_tool_call import (
+    ChatCompletionMessageToolCall,
+)
+from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from openai.types.chat_model import ChatModel
+from openai.types.completion_usage import CompletionUsage
+from openai.types.shared_params.response_format_json_schema import (
+    JSONSchema,
+    ResponseFormatJSONSchema,
+)
 
 OpenAITranscriptionModelType: TypeAlias = Literal["whisper-1"]
 
@@ -347,5 +349,8 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
         )
 
         return TextTranscriptionOutput(
-            elapsed_time=timeit.default_timer() - now, text=transcription.text
+            elapsed_time=timeit.default_timer() - now,
+            text=transcription.text,
+            cost=0.0,
+            duration=get_audio_duration(audio),
         )

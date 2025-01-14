@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import struct
+from os import PathLike
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 import msgspec
 from architecture.logging import LoggerFactory
 
-from intellibricks.util import flatten_msgspec_schema, fix_broken_json
+from intellibricks.llms.base import FileContent
+from intellibricks.util import fix_broken_json, flatten_msgspec_schema
 
 if TYPE_CHECKING:
     from intellibricks.llms.constants import Language
@@ -160,3 +163,94 @@ def create_function_mapping_by_tools(tools: Sequence[ToolInputType]):
     }
 
     return functions
+
+
+def get_audio_duration(file_content: FileContent) -> float | None:
+    """
+    Attempts to quickly determine the duration of an audio file (WAV or basic MP3)
+    without using external audio libraries.
+
+    Args:
+        file_content: The audio file content (path, bytes, or file object).
+
+    Returns:
+        The duration in seconds, or None if the duration cannot be determined.
+    """
+    try:
+        if isinstance(file_content, (str, PathLike)):
+            with open(file_content, "rb") as f:
+                header = f.read(100)  # Read enough for basic header info
+        elif isinstance(file_content, bytes):
+            header = file_content[:100]
+        else:  # Assume it's a file object
+            header = file_content.read(100)
+            file_content.seek(0)  # Reset file pointer
+
+        if header.startswith(b"RIFF") and header[8:12] == b"WAVE":
+            # WAV file
+            try:
+                fmt_start = header.find(b"fmt ")
+                if fmt_start != -1:
+                    fmt_chunk = header[fmt_start + 4 :]
+                    num_channels = struct.unpack("<H", fmt_chunk[2:4])[0]
+                    sample_rate = struct.unpack("<I", fmt_chunk[4:8])[0]
+                    bits_per_sample = struct.unpack("<H", fmt_chunk[14:16])[0]
+
+                    data_start = header.find(b"data")
+                    if data_start != -1:
+                        data_chunk_size = struct.unpack(
+                            "<I", header[data_start + 4 : data_start + 8]
+                        )[0]
+                        bytes_per_second = (
+                            sample_rate * num_channels * (bits_per_sample // 8)
+                        )
+                        if bytes_per_second > 0:
+                            return data_chunk_size / bytes_per_second
+            except struct.error:
+                return None  # Could not unpack WAV header
+
+        elif (
+            header.startswith(b"\xff\xfb")
+            or header.startswith(b"ID3")
+            and b"Xing" in header
+            or b"Info" in header
+        ):
+            # Basic attempt for MP3 (limited accuracy, assumes CBR or has Xing/Info tag)
+            try:
+                # Look for Xing or Info tag
+                xing_index = header.find(b"Xing")
+                info_index = header.find(b"Info")
+
+                if xing_index != -1 or info_index != -1:
+                    tag_start = xing_index if xing_index != -1 else info_index
+                    frames_offset = tag_start + (
+                        12 if header[tag_start : tag_start + 4] == b"Xing" else 8
+                    )  # Offset varies slightly
+                    num_frames_bytes = header[frames_offset : frames_offset + 4]
+                    if len(num_frames_bytes) == 4:
+                        num_frames = struct.unpack(">I", num_frames_bytes)[0]
+
+                        # Try to find bitrate (often near Xing/Info) - this is a simplified guess
+                        bitrate_loc = header.find(
+                            b"\x00\x00", tag_start + 4
+                        )  # Look for potential bitrate marker
+                        if bitrate_loc != -1 and bitrate_loc + 1 < len(header):
+                            bitrate_bytes = header[bitrate_loc - 1 : bitrate_loc + 1]
+                            try:
+                                bitrate_kbps = int(
+                                    bitrate_bytes.hex(), 16
+                                )  # Simplistic interpretation
+                                if bitrate_kbps > 0:
+                                    return (num_frames * 1152) / (
+                                        bitrate_kbps * 1000
+                                    )  # Rough calculation
+                            except ValueError:
+                                pass  # Couldn't parse bitrate
+
+            except Exception:
+                return None  # Error parsing basic MP3 info
+
+    except Exception:
+        return None  # Error reading or processing the file
+
+    return None
