@@ -3,12 +3,12 @@
 from architecture.data.files import FileExtension
 
 from .parsed_document import ParsedDocument
-from .file_extractors import AsyncFileExtractor
+from .file_parsers import FileParser
 from .raw_file import RawFile
 
 __all__: list[str] = [
     "ParsedDocument",
-    "AsyncFileExtractor",
+    "FileParser",
     "FileExtension",
     "RawFile",
 ]

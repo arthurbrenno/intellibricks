@@ -155,7 +155,7 @@ class PageContent(msgspec.Struct, frozen=True):
     ] = None
 
     images: Annotated[
-        list[Image],
+        Sequence[Image],
         msgspec.Meta(
             title="Images",
             description="Images present in the page",
@@ -283,7 +283,7 @@ class Schema(msgspec.Struct, frozen=True):
     """
 
     entities: Annotated[
-        list[str],
+        Sequence[str],
         msgspec.Meta(
             title="Entities",
             description="A list of entity names present in the document.",
@@ -293,7 +293,7 @@ class Schema(msgspec.Struct, frozen=True):
     ]
 
     relations: Annotated[
-        list[str],
+        Sequence[str],
         msgspec.Meta(
             title="Relations",
             description="A list of relation names present in the document.",
@@ -303,7 +303,7 @@ class Schema(msgspec.Struct, frozen=True):
     ]
 
     validation_schema: Annotated[
-        dict[str, list[str]],
+        dict[str, Sequence[str]],
         msgspec.Meta(
             title="Validation Schema",
             description="A dictionary mapping entities to lists of valid relations.",
@@ -328,7 +328,7 @@ class ParsedDocument(msgspec.Struct, frozen=True):
     ]
 
     pages: Annotated[
-        list[PageContent],
+        Sequence[PageContent],
         msgspec.Meta(
             title="Pages",
             description="Pages of the document",
@@ -345,7 +345,8 @@ class ParsedDocument(msgspec.Struct, frozen=True):
     async def get_schema_async(self, synapse: Synapse) -> Schema:
         output = await synapse.complete_async(
             prompt=f"<document> {[page.text for page in self.pages]} </document>",
-            system_prompt="You are an AI assistant who is an expert in natural language processing and especially name entity recognition.",
+            system_prompt="You are an AI assistant who is an expert in natural"
+            "language processing and especially named entity recognition.",
             response_model=Schema,
             temperature=1,
             trace_params={
@@ -357,7 +358,7 @@ class ParsedDocument(msgspec.Struct, frozen=True):
         return output.parsed
 
     @ensure_module_installed("llama_index.core.schema", "llama-index")
-    def as_llamaindex_documents(self) -> list[LlamaIndexDocument]:
+    def as_llamaindex_documents(self) -> Sequence[LlamaIndexDocument]:
         from llama_index.core.schema import Document as LlamaIndexDocument
 
         adapted_docs: list[LlamaIndexDocument] = []
@@ -365,23 +366,23 @@ class ParsedDocument(msgspec.Struct, frozen=True):
         filename: str = self.name
         for page in self.pages:
             page_number: int = page.page or 0
-            images: list[Image] = page.images
+            images: Sequence[Image] = page.images
 
             metadata = {
                 "page_number": page_number,
-                "images": [dictify(image) for image in images if image is not None]
-                or [],
+                "images": [dictify(image) for image in images] or [],
                 "source": filename,
             }
 
             content: str = page.md or ""
-            adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))  # type: ignore[call-arg]
+            adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))
 
         return adapted_docs
 
     @ensure_module_installed("langchain_core", "langchain")
     def as_langchain_documents(
-        self, transformations: Optional[list[DocumentTransformer]] = None
+        self,
+        transformations: Optional[list[DocumentTransformer[LangchainDocument]]] = None,
     ) -> list[LangchainDocument]:
         """Converts itself representation to a List of Langchain Document"""
         from langchain_core.documents import Document as LangchainDocument
