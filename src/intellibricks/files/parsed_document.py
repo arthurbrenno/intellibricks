@@ -4,18 +4,19 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Optional, Sequence
+from typing import TYPE_CHECKING, Annotated, Optional, Sequence, cast, Any
 
 import msgspec
 from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.structs import dictify
 
-from intellibricks.llms.synapses import Synapse
+from intellibricks import Synapse, TraceParams
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document as LangchainDocument
     from llama_index.core.schema import Document as LlamaIndexDocument
+
     from intellibricks.rag.transformations import DocumentTransformer
 
 
@@ -342,17 +343,22 @@ class ParsedDocument(msgspec.Struct, frozen=True):
     def get_schema(self, synapse: Synapse) -> Schema:
         return run_sync(self.get_schema_async, synapse)
 
-    async def get_schema_async(self, synapse: Synapse) -> Schema:
+    async def get_schema_async(
+        self, synapse: Synapse, trace_params: Optional[TraceParams] = None
+    ) -> Schema:
+        _trace_params = {
+            "name": "NLP: Internal Entity Extraction",
+            "user_id": "file_parser",
+        }
+        _trace_params.update(cast(dict[str, Any], trace_params) or {})
+
         output = await synapse.complete_async(
             prompt=f"<document> {[page.text for page in self.pages]} </document>",
             system_prompt="You are an AI assistant who is an expert in natural"
             "language processing and especially named entity recognition.",
             response_model=Schema,
             temperature=1,
-            trace_params={
-                "name": "NLP: Internal Entity Extraction",
-                "user_id": "cortex_content_extractor",
-            },
+            trace_params=cast(TraceParams, _trace_params),
         )
 
         return output.parsed
