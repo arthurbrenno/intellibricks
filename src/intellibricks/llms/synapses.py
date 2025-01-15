@@ -7,6 +7,7 @@ Welcome to the synapses
 
 from __future__ import annotations
 
+import random
 import uuid
 from typing import (
     Literal,
@@ -14,6 +15,7 @@ from typing import (
     Protocol,
     Sequence,
     TypeVar,
+    cast,
     runtime_checkable,
 )
 
@@ -30,7 +32,7 @@ from langfuse.client import (
 )
 from langfuse.model import ModelUsage
 
-from intellibricks.llms.base import LanguageModel, TranscriptionModel, FileContent
+from intellibricks.llms.base import FileContent, LanguageModel, TranscriptionModel
 from intellibricks.llms.base import Language as TranscriptionsLanguage
 from intellibricks.llms.factories import LanguageModelFactory, TranscriptionModelFactory
 from intellibricks.llms.general_web_search import WebSearchable
@@ -39,21 +41,20 @@ from .constants import (
     Language,
 )
 from .schema import (
+    CacheConfig,
     ChatCompletion,
+    DeveloperMessage,
     Message,
-    PartType,
     Part,
+    PartType,
     Prompt,
     RawResponse,
-    DeveloperMessage,
-    UserMessage,
-    CacheConfig,
-    TraceParams,
-    ToolInputType,
     TextTranscriptionOutput,
+    ToolInputType,
+    TraceParams,
+    UserMessage,
 )
 from .types import AIModel, TranscriptionModelType
-
 
 logger = LoggerFactory.create(__name__)
 
@@ -584,10 +585,13 @@ class SynapseCascade(msgspec.Struct, frozen=True):
     """
 
     synapses: Sequence[Synapse | SynapseCascade]
+    shuffle: bool = False
 
     @classmethod
-    def of(cls, *synapses: Synapse | SynapseCascade) -> SynapseCascade:
-        return cls(synapses=synapses)
+    def of(
+        cls, *synapses: Synapse | SynapseCascade, shuffle: bool = False
+    ) -> SynapseCascade:
+        return cls(synapses=synapses, shuffle=shuffle)
 
     def complete(
         self,
@@ -610,7 +614,16 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         last_exception = None
-        for synapse in self.synapses:
+        synapses = (
+            self.synapses
+            if not self.shuffle
+            else cast(
+                Sequence[Synapse | SynapseCascade],
+                random.sample(self.synapses, len(self.synapses)),
+            )
+        )
+
+        for synapse in synapses:
             try:
                 return synapse.complete(
                     prompt=prompt,
@@ -658,7 +671,16 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         last_exception = None
-        for synapse in self.synapses:
+        synapses = (
+            self.synapses
+            if not self.shuffle
+            else cast(
+                Sequence[Synapse | SynapseCascade],
+                random.sample(self.synapses, len(self.synapses)),
+            )
+        )
+
+        for synapse in synapses:
             try:
                 return synapse.chat(
                     messages=messages,
@@ -706,7 +728,16 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         last_exception = None
-        for synapse in self.synapses:
+        synapses = (
+            self.synapses
+            if not self.shuffle
+            else cast(
+                Sequence[Synapse | SynapseCascade],
+                random.sample(self.synapses, len(self.synapses)),
+            )
+        )
+
+        for synapse in synapses:
             try:
                 return await synapse.complete_async(
                     prompt=prompt,
@@ -754,7 +785,16 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         last_exception = None
-        for synapse in self.synapses:
+        synapses = (
+            self.synapses
+            if not self.shuffle
+            else cast(
+                Sequence[Synapse | SynapseCascade],
+                random.sample(self.synapses, len(self.synapses)),
+            )
+        )
+
+        for synapse in synapses:
             try:
                 return await synapse.chat_async(
                     messages=messages,
