@@ -818,10 +818,10 @@ def dict_to_struct[S: msgspec.Struct](d: dict[str, Any], struct: type[S]) -> S:
 
 
 def flatten_msgspec_schema(
-    schema: dict[str, None | bool | int | float | str | list[Any] | dict[str, Any]],
+    schema: dict[str, Any],
     remove_parameters: Optional[list[str]] = None,
     openai_like: bool = False,
-) -> dict[str, None | bool | int | float | str | list[Any] | dict[str, Any]]:
+) -> dict[str, Any]:
     """
     A function that flattens msgspec's JSON schema into a Vertex AI–compliant schema.
     Specifically:
@@ -843,7 +843,7 @@ def flatten_msgspec_schema(
     schema_copy = deepcopy(schema)
 
     # Our local store of $defs (if any)
-    defs: dict[str, None | bool | int | float | str | list[Any] | dict[str, Any]] = {}
+    defs: dict[str, Any] = {}
 
     # 1) Extract $defs
     if "$defs" in schema_copy:
@@ -886,7 +886,7 @@ def flatten_msgspec_schema(
                         Argument corresponds to parameter "node" in function "resolve_references"PylancereportUnknownArgumentType
                         (variable) sub: Unknown
                         """
-                        new_anyof.append(resolve_references(sub))
+                        new_anyof.append(resolve_references(sub))  # type: ignore
                     node["anyOf"] = new_anyof
 
             # remove specified parameters
@@ -915,7 +915,7 @@ def flatten_msgspec_schema(
                 ) -> None
                 Append object to the end of the list.
                 """
-                new_list.append(resolve_references(i))
+                new_list.append(resolve_references(i))  # type: ignore
             return new_list
 
         else:
@@ -938,7 +938,7 @@ def flatten_msgspec_schema(
                 Argument type is "list[Unknown]"PylancereportUnknownArgumentType
                 (variable) any_of_val: list[Unknown]
                 """
-                if len(any_of_val) == 2:
+                if len(any_of_val) == 2:  # type: ignore
                     # check if exactly one is {"type": "null"}
                     types_collected: list[Optional[str]] = []
                     for sub in any_of_val:
@@ -948,7 +948,7 @@ def flatten_msgspec_schema(
                             Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
                             (variable) sub: dict[Unknown, Unknown]
                             """
-                            t = sub.get("type")
+                            t = sub.get("type")  # type: ignore
                             if isinstance(t, str):
                                 types_collected.append(t)
                             else:
@@ -979,7 +979,7 @@ def flatten_msgspec_schema(
                             Argument type is "dict_items[Unknown, Unknown]"PylancereportUnknownArgumentType
                             (variable) nonnull_sub: dict[Unknown, Unknown]
                             """
-                            for key, val in list(nonnull_sub.items()):
+                            for key, val in list(nonnull_sub.items()):  # type: ignore
                                 if key != "type":
                                     n[key] = val
                             n.pop("anyOf", None)
@@ -995,7 +995,7 @@ def flatten_msgspec_schema(
                         ) -> None
                         Append object to the end of the list.
                         """
-                        new_anyof.append(convert_optional_to_nullable(s))
+                        new_anyof.append(convert_optional_to_nullable(s))  # type: ignore
                     n["anyOf"] = new_anyof
 
             # deeper recursion
@@ -1027,7 +1027,7 @@ def flatten_msgspec_schema(
                 Argument type is "list[Unknown]"PylancereportUnknownArgumentType
                 (variable) any_of_val: list[Unknown]
                 """
-                if len(any_of_val) >= 1:
+                if len(any_of_val) >= 1:  # type: ignore
                     # remove all siblings except "anyOf"
                     keep = {"anyOf"}
                     for k_to_delete in list(n.keys()):
@@ -1045,7 +1045,7 @@ def flatten_msgspec_schema(
                         ) -> None
                         Append object to the end of the list.
                         """
-                        new_anyof.append(remove_siblings_if_anyof(x))
+                        new_anyof.append(remove_siblings_if_anyof(x))  # type: ignore
                     n["anyOf"] = new_anyof
                     return n
 
@@ -1095,7 +1095,7 @@ def flatten_msgspec_schema(
                         Argument corresponds to parameter "n" in function "ensure_type_fields"PylancereportUnknownArgumentType
                         (variable) item: Unknown
                         """
-                        ensure_type_fields(item)
+                        ensure_type_fields(item)  # type: ignore
                 return
 
             node_type = n.get("type")
@@ -1138,7 +1138,7 @@ def flatten_msgspec_schema(
                 Argument type is "dict_items[Unknown, Unknown]"PylancereportUnknownArgumentType
                 (method) def items() -> dict_items[Unknown, Unknown]
                 """
-                for prop_key, prop_val in list(props.items()):
+                for prop_key, prop_val in list(props.items()):  # type: ignore
                     if isinstance(prop_val, str):
                         props[prop_key] = {"type": prop_val}
                     elif isinstance(prop_val, (int, float, bool)):
