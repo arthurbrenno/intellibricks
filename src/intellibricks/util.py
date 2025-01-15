@@ -955,17 +955,19 @@ def flatten_msgspec_schema(
                 if len(node_dict["anyOf"]) == 2 and any(
                     item.get("type") == "null" for item in node_dict["anyOf"]
                 ):
-                    non_null_types = [
-                        item["type"]
+                    non_null_item = next(
+                        item
                         for item in node_dict["anyOf"]
                         if item.get("type") != "null"
+                    )
+                    inferred_type = non_null_item.get("type")
+                    node_dict["type"] = [
+                        inferred_type if inferred_type is not None else "object",
+                        "null",
                     ]
-                    if non_null_types:
-                        node_dict["type"] = non_null_types + ["null"]
-                        del node_dict["anyOf"]
-                    # If for some reason non_null_types is empty, we leave it as is
+                    del node_dict["anyOf"]
                 else:
-                    # Recursively resolve items in anyOf if it's not an Optional
+                    # Recursively resolve items in anyOf
                     node_dict["anyOf"] = [
                         resolve_references(item) for item in node_dict["anyOf"]
                     ]
@@ -975,8 +977,7 @@ def flatten_msgspec_schema(
                     for param in remove_parameters:
                         if param in node_dict:
                             del node_dict[param]
-                return node_dict  # Return after handling anyOf
-
+                return node_dict
             else:
                 # Remove unwanted parameters
                 if remove_parameters:
