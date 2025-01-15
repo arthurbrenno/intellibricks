@@ -185,8 +185,8 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
         client: genai.Client = genai.Client(
             vertexai=self.vertexai,
             api_key=self.api_key,
-            project=self.project,
-            location=self.location,
+            project=self.project if self.vertexai else None,
+            location=self.location if self.vertexai else None,
         )
 
         # TODO(arthur): make intellibricks support this kind of integration:
