@@ -114,7 +114,7 @@ M = TypeVar(
 
 T = TypeVar("T", default="RawResponse")
 R = TypeVar("R", default=Any)
-_T = TypeVar("_T")
+_T = TypeVar("_T", default=str)
 
 logger = LoggerFactory.create(__name__)
 
