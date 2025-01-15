@@ -923,12 +923,12 @@ def flatten_msgspec_schema(
         if isinstance(defs_val_any, dict):
             defs = defs_val_any
         else:
-            # If we wanted to be extra defensive:
             raise TypeError(f"Expected $defs to be a dict, got {type(defs_val_any)!r}")
 
     def resolve_references(node: Any) -> Any:
         """
-        Recursively walk through the schema and resolve any $ref entries.
+        Recursively walk through the schema and resolve any $ref entries,
+        and transform the representation of Optional types.
         """
         if isinstance(node, dict):
             node_dict: dict[str, Any] = node
@@ -940,22 +940,45 @@ def flatten_msgspec_schema(
                         f"Expected '$ref' value to be a string, got {type(ref_path_any)!r}."
                     )
                 ref_path: str = ref_path_any
-
-                # Now safe to call .split()
                 parts = ref_path.split("/")
                 if not parts:
                     raise ValueError(f"Invalid $ref path: {ref_path!r}")
-
                 ref_name: str = parts[-1]
                 if ref_name not in defs:
                     raise ValueError(
                         f"Reference {ref_path} cannot be resolved - {ref_name} not in $defs."
                     )
-                # Substitute the definition
                 resolved_node: Any = deepcopy(defs[ref_name])
                 return resolve_references(resolved_node)
+            elif "anyOf" in node_dict:
+                # Check if this anyOf represents an Optional type
+                if len(node_dict["anyOf"]) == 2 and any(
+                    item.get("type") == "null" for item in node_dict["anyOf"]
+                ):
+                    non_null_types = [
+                        item["type"]
+                        for item in node_dict["anyOf"]
+                        if item.get("type") != "null"
+                    ]
+                    if non_null_types:
+                        node_dict["type"] = non_null_types + ["null"]
+                        del node_dict["anyOf"]
+                    # If for some reason non_null_types is empty, we leave it as is
+                else:
+                    # Recursively resolve items in anyOf if it's not an Optional
+                    node_dict["anyOf"] = [
+                        resolve_references(item) for item in node_dict["anyOf"]
+                    ]
+
+                # Remove unwanted parameters after potentially transforming anyOf
+                if remove_parameters:
+                    for param in remove_parameters:
+                        if param in node_dict:
+                            del node_dict[param]
+                return node_dict  # Return after handling anyOf
+
             else:
-                # Remove unwanted parameters if specified
+                # Remove unwanted parameters
                 if remove_parameters:
                     for param in remove_parameters:
                         if param in node_dict:
@@ -964,17 +987,12 @@ def flatten_msgspec_schema(
                 # Recursively resolve children
                 for k, v in list(node_dict.items()):
                     node_dict[k] = resolve_references(v)
-
                 return node_dict
 
         elif isinstance(node, list):
             # Resolve each item in the list
-            new_list: list[Any] = []
-            for item in node:
-                resolved_item = resolve_references(item)
-                new_list.append(resolved_item)
+            new_list: list[Any] = [resolve_references(item) for item in node]
             return new_list
-
         else:
             # Base case: return the node as is
             return node
@@ -986,26 +1004,21 @@ def flatten_msgspec_schema(
         """
         if isinstance(n, dict):
             n_dict: dict[str, Any] = n
-            # Safely call .get()
-            maybe_type: Any = n_dict.get("type", None)
-            if maybe_type == "object":
-                # Now safe to call .setdefault() with known str key
+            if n_dict.get("type") == "object":
                 n_dict.setdefault("additionalProperties", False)
-
             for child_val in n_dict.values():
                 enforce_additional_properties_false(child_val)
         elif isinstance(n, list):
             for i in n:
                 enforce_additional_properties_false(i)
 
-    # 2) Resolve references (remove all $ref) in the schema
+    # 2) Resolve references and transform Optional types in the schema
     final_schema: Any = resolve_references(schema_copy)
 
     # 3) If openai_like, recursively enforce additionalProperties=false
     if openai_like:
         enforce_additional_properties_false(final_schema)
 
-    # final_schema should now be fully standalone: no $ref, no $defs
     return final_schema
 
 
