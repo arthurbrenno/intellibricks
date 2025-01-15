@@ -1,20 +1,10 @@
 [project]
 name = "intellibricks"
-version = "v0.3.0"
+version = "v0.3.1"
 description = "IntelliBricks provides a streamlined set of tools for developing AI-powered applications. It simplifies complex tasks such as interacting with LLMs, training machine learning models, and implementing Retrieval Augmented Generation (RAG). Focus on building your application logic, not wrestling with boilerplate. IntelliBricks empowers you to build intelligent applications faster and more efficiently."
 readme = "README.md"
 requires-python = ">=3.13.0"
-dependencies = [
-    "architecture>=0.2.3",
-    "langfuse>=2.57.0",
-    "groq>=0.13.1",
-    "google-genai>=0.3.0",
-    "msgspec",
-    "langchain-core==0.3.28",
-    "openai>=1.54.3",
-    "beautifulsoup4>=4.12.3",
-    "mypy>=1.14.1",
-]
+dependencies = ["architecture>=0.2.3", "langfuse>=2.57.0", "groq>=0.13.1", "google-genai>=0.3.0", "msgspec", "langchain-core==0.3.28", "openai>=1.54.3", "beautifulsoup4>=4.12.3", "mypy>=1.14.1"]
 
 [project.urls]
 Source = "https://github.com/arthurbrenno/intellibricks"
