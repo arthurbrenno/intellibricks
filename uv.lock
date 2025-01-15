@@ -105,7 +105,7 @@ wheels = [
 
 [[package]]
 name = "architecture"
-version = "0.5.13"
+version = "0.5.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiocache" },
@@ -113,9 +113,9 @@ dependencies = [
     { name = "msgspec" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ec/03/95819b0332a440b687f2af8d3f85d53914a727d319a0b7533ca3b8182c3b/architecture-0.5.13.tar.gz", hash = "sha256:ff892ff0d6f689445d953703d0a48c97bc132284793ee922f556258f0198130a", size = 51387 }
+sdist = { url = "https://files.pythonhosted.org/packages/3f/06/4192949521a48f03c381c2f2708eb855557f339185b907cd45991e2677d4/architecture-0.5.14.tar.gz", hash = "sha256:16ea6727a9834297876764a86ac71f9eed8df9d097cdbe00f1bee7b2e310b0c5", size = 49508 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f3/10/9d03fcf0f47515a5a44bdce3f6c643f0156bdf7fe8b1d0bc91988968d83f/architecture-0.5.13-py3-none-any.whl", hash = "sha256:41a959652cc2bb74da8b37ed0a85ab48761d4e9f3d41e13d4747637d18911040", size = 33718 },
+    { url = "https://files.pythonhosted.org/packages/b5/cf/1ceed0e510d5961567b96d934d8d1ef3a7361f210401fc19610de84f0358/architecture-0.5.14-py3-none-any.whl", hash = "sha256:18945389367d19b79f0ef5b0cc2c9ec724a0c0559466fca2c2cb72efbecd754d", size = 31458 },
 ]
 
 [[package]]
@@ -672,7 +672,7 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.3.9"
+version = "0.3.10"
 source = { editable = "." }
 dependencies = [
     { name = "architecture" },
