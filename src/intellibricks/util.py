@@ -823,7 +823,7 @@ def flatten_msgspec_schema(
     openai_like: bool = False,
 ) -> dict[str, Any]:
     """
-    A function that flattens msgspec's JSON schema into a Vertex AI–compliant schema.
+    A function that flattens msgspec's JSON schema into a OpenAPI3.0–compliant schema.
     Specifically:
       1. Inlines $ref from $defs, removes $defs.
       2. Removes specified parameters (title, examples, etc.).
