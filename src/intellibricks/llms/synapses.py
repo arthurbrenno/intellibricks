@@ -536,18 +536,18 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
     async def __end_observability_logic(
         self,
-        generation: StatefulGenerationClient,
+        generation: Maybe[StatefulGenerationClient],
         maybe_span: Maybe[StatefulSpanClient],
-        completion: ChatCompletion[S],
+        completion: ChatCompletion[S] | ChatCompletion[RawResponse],
     ) -> None:
         logger.debug("Ending Langfuse generation.")
-        generation.end(  # type: ignore
+        generation.end(
             output=completion.message,
         )
         logger.debug("Langfuse generation ended.")
 
         logger.debug("Updating Langfuse generation usage.")
-        generation.update(  # type: ignore
+        generation.update(
             usage=ModelUsage(
                 unit="TOKENS",
                 input=completion.usage.prompt_tokens
@@ -583,10 +583,10 @@ class SynapseCascade(msgspec.Struct, frozen=True):
     synapse: Synapse | SynapseCascade
     """
 
-    synapses: Sequence[Synapse]
+    synapses: Sequence[Synapse | SynapseCascade]
 
     @classmethod
-    def of(cls, *synapses: Synapse) -> SynapseCascade:
+    def of(cls, *synapses: Synapse | SynapseCascade) -> SynapseCascade:
         return cls(synapses=synapses)
 
     def complete(
@@ -631,7 +631,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse {synapse.model} failed on complete: {e}")
+                logger.warning(f"Synapse failed on complete: {e}")
                 last_exception = e
                 continue
         if last_exception:
@@ -678,7 +678,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse {synapse.model} failed on chat: {e}")
+                logger.warning(f"Synapse failed on chat: {e}")
                 last_exception = e
                 continue
         if last_exception:
@@ -727,7 +727,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse {synapse.model} failed on complete_async: {e}")
+                logger.warning(f"Synapse failed on complete_async: {e}")
                 last_exception = e
                 continue
         if last_exception:
@@ -774,7 +774,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse {synapse.model} failed on chat_async: {e}")
+                logger.warning(f"Synapse failed on chat_async: {e}")
                 last_exception = e
                 continue
         if last_exception:

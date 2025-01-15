@@ -400,10 +400,10 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
     ) -> ChatCompletion[RawResponse]: ...
 
 class SynapseCascade:
-    synapses: Sequence[Synapse]
+    synapses: Sequence[Synapse | SynapseCascade]
 
     @classmethod
-    def of(cls, *synapses: Synapse) -> SynapseCascade: ...
+    def of(cls, *synapses: Synapse | SynapseCascade) -> SynapseCascade: ...
     @overload
     def complete(
         self,
