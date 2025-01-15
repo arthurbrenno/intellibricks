@@ -19,7 +19,7 @@ class LocalSettings(TypedDict):
 class FileParser(msgspec.Struct, frozen=True):
     """
     Abstract class for extracting content from files.
-    This should be used as a base class for specific file extractors.
+    This should be used as a base class for specific file parsers.
     """
 
     @abc.abstractmethod
