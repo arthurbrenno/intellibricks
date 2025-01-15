@@ -223,7 +223,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                         else None,
                         response_schema=flatten_msgspec_schema(
                             msgspec.json.schema(response_model),
-                            remove_parameters=["title"],
+                            remove_parameters=["title", "examples"],
                         )
                         if response_model
                         else None,

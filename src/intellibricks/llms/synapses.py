@@ -439,12 +439,9 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config = cache_config or CacheConfig()
 
         trace_params["input"] = messages
-        logger.debug(f"Trace parameters: {trace_params}")
-        logger.debug(f"Cache configuration: {cache_config}")
 
         logger.debug("Generating completion ID.")
         completion_id: uuid.UUID = uuid.uuid4()
-        logger.debug(f"Generated completion ID: {completion_id}")
 
         logger.debug("Initializing Langfuse trace (if available).")
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
