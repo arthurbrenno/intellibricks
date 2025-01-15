@@ -189,7 +189,7 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
                     schema=flatten_msgspec_schema(
                         msgspec.json.schema(response_model),
                         openai_like=True,
-                        remove_parameters=["minimum", "maximum"],
+                        remove_parameters=["minimum", "maximum", "examples"],
                     ),
                     strict=True,
                 ),
