@@ -585,7 +585,10 @@ class SynapseCascade(msgspec.Struct, frozen=True):
     """
 
     synapses: Sequence[Synapse | SynapseCascade]
+    """A sequence of Synapse or SynapseCascade objects"""
+
     shuffle: bool = False
+    """Indicates whether the synapses should be shuffled before trying them"""
 
     @classmethod
     def of(
