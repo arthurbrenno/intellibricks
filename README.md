@@ -13,6 +13,8 @@
  <img src="/docs/readme_images/advantages.jpeg" alt="IntelliBricks Advantages" width="600"/>
 </p>
 
+(Official launch in Feb.)
+
 IntelliBricks is a cutting-edge Agentic/LLM framework meticulously crafted for developers like you. It's designed from the ground up to make your language (Python) a first-class citizen when building AI-powered applications. By leveraging the latest features and capabilities of modern Python (3.13+), including `default generics`, IntelliBricks ensures a seamless experience with structured outputs and predictable LLM interactions. Say goodbye to the boilerplate and hello to intelligent applications built with ease!
 
 ```bash
@@ -191,7 +193,7 @@ chat_completion_COT_structured = synapse.chat(
 
 chat_completion_COT_structured_model_info = synapse.chat(
     messages, response_model=ChainOfThought[ModelInfo], trace_params=trace_params
-) # ChatCompletion[ChainOfThought[ModelInfo]]
+) # ChatCompletion[ChainOfThought[ModelInfo]] # broken(working on a fix)
 
 # Try to see what each one does and returns ;) You'll like it.
 print(...)
