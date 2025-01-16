@@ -9,7 +9,7 @@ from intellibricks import (
 import msgspec
 
 synapse = Synapse.of(
-    "openai/api/gpt-4o",
+    "google/genai/gemini-2.0-flash-exp",
 )
 
 messages = (
