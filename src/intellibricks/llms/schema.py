@@ -1701,7 +1701,11 @@ class UserMessage(Message, frozen=True, tag="user"):
     def to_google_format(self) -> GenaiContent:
         from google.genai.types import Content as GenaiContent
 
-        parts = [part.to_google_part() for part in self.contents]
+        name_part = (
+            [Part.from_text(f"{self.name}: ").to_google_part()] if self.name else []
+        )
+
+        parts = name_part + [part.to_google_part() for part in self.contents]
         return GenaiContent(role="user", parts=parts)
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
@@ -1878,9 +1882,15 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
                 for tool in self.tool_calls
             ]
 
+        name_part = (
+            [Part.from_text(f"{self.name}: ").to_google_part()] if self.name else []
+        )
+
         return GenaiContent(
             role="model",
-            parts=[part.to_google_part() for part in self.contents] + tool_parts,
+            parts=name_part
+            + [part.to_google_part() for part in self.contents]
+            + tool_parts,
         )
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
