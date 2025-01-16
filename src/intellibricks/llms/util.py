@@ -9,7 +9,7 @@ import msgspec
 from architecture.logging import LoggerFactory
 
 from intellibricks.llms.base import FileContent
-from intellibricks.util import fix_broken_json, flatten_msgspec_schema
+from intellibricks.util import fix_broken_json, ms_type_to_schema
 
 if TYPE_CHECKING:
     from intellibricks.llms.constants import Language
@@ -96,7 +96,7 @@ def get_structured_prompt_instructions_by_language(
             return f"Retorne apenas um json válido que esteja de acordo com o seguinte esquema:\n{schema_str}"
 
 
-def get_new_messages_with_response_format_instructions[S](
+def get_new_messages_with_response_format_instructions[S: msgspec.Struct](
     *,
     messages: Sequence[Message],
     response_model: type[S],
@@ -112,8 +112,7 @@ def get_new_messages_with_response_format_instructions[S](
     if not messages:
         raise ValueError("Empty messages list")
 
-    msgspec_generated_schema = msgspec.json.schema(response_model)
-    basemodel_schema = flatten_msgspec_schema(msgspec_generated_schema)
+    basemodel_schema = ms_type_to_schema(response_model)
 
     instructions = get_structured_prompt_instructions_by_language(
         language=language or Language.ENGLISH, schema=basemodel_schema

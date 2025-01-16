@@ -2,7 +2,6 @@ import inspect
 import mimetypes
 import os
 import re
-from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Literal, Union, Optional, cast, get_args, Mapping
 from urllib.parse import urlparse
@@ -817,384 +816,6 @@ def dict_to_struct[S: msgspec.Struct](d: dict[str, Any], struct: type[S]) -> S:
     return msgspec.json.decode(msgspec.json.encode(d), type=struct)
 
 
-def flatten_msgspec_schema(
-    schema: dict[str, Any],
-    remove_parameters: Optional[list[str]] = None,
-    openai_like: bool = False,
-) -> dict[str, Any]:
-    """
-    A function that flattens msgspec's JSON schema into a OpenAPI3.0–compliant schema.
-    Specifically:
-      1. Inlines $ref from $defs, removes $defs.
-      2. Removes specified parameters (title, examples, etc.).
-      3. Converts anyOf=[{type:null},{type:X}] -> {type:X, nullable:true}.
-      4. If anyOf remains and has more than 1 branch, remove all sibling fields,
-         so the node only has {"anyOf": [...]} (Vertex's constraint).
-      5. Ensures each node not in an anyOf has a valid "type" if it's an object/array/string.
-      6. If openai_like=True, sets "additionalProperties": false for "type=object".
-      7. Wraps raw string properties so they become { "type": "string" } if needed.
-
-    This handles the error:
-      "Unable to submit request because one or more response schemas specified
-       other fields alongside any_of. When using any_of, it must be the only field set."
-    """
-
-    # Copy the input so we don't mutate the original
-    schema_copy = deepcopy(schema)
-
-    # Our local store of $defs (if any)
-    defs: dict[str, Any] = {}
-
-    # 1) Extract $defs
-    if "$defs" in schema_copy:
-        raw_defs = schema_copy.pop("$defs")
-        if not isinstance(raw_defs, dict):
-            raise TypeError(f"Expected $defs to be a dict, got {type(raw_defs)!r}")
-        defs = raw_defs
-
-    # region --- Helper Functions ---
-
-    def resolve_references(
-        node: None | bool | int | float | str | list[Any] | dict[str, Any],
-    ) -> None | bool | int | float | str | list[Any] | dict[str, Any]:
-        """Inline references, remove unwanted parameters, recurse."""
-        if isinstance(node, dict):
-            # inline $ref
-            if "$ref" in node:
-                ref_val = node["$ref"]
-                if not isinstance(ref_val, str):
-                    raise TypeError(f"$ref must be a string, got {type(ref_val)!r}")
-                ref_name = ref_val.split("/")[-1]
-                if ref_name not in defs:
-                    raise ValueError(f"Ref {ref_name!r} not found in $defs.")
-                inlined = deepcopy(defs[ref_name])
-                return resolve_references(inlined)
-
-            # handle anyOf by resolving each item
-            if "anyOf" in node:
-                any_of_val = node["anyOf"]
-                if isinstance(any_of_val, list):
-                    new_anyof = []
-                    for sub in any_of_val:
-                        """
-                        Type of "append" is partially unknown
-                        Type of "append" is "(object: Unknown, /) -> None"PylancereportUnknownMemberType
-                        (variable) new_anyof: list[Unknown]
-                        """
-                        """
-                        Argument type is unknown
-                        Argument corresponds to parameter "node" in function "resolve_references"PylancereportUnknownArgumentType
-                        (variable) sub: Unknown
-                        """
-                        new_anyof.append(resolve_references(sub))  # type: ignore
-                    node["anyOf"] = new_anyof
-
-            # remove specified parameters
-            if remove_parameters is not None:
-                for p in remove_parameters:
-                    if p in node:
-                        node.pop(p)
-
-            # recurse into children
-            for _k, v in list(node.items()):
-                # don't re-handle anyOf if we already replaced it
-                if _k != "anyOf":
-                    node[_k] = resolve_references(v)
-
-            return node
-
-        elif isinstance(node, list):
-            new_list = []
-            for i in node:
-                """
-                Type of "append" is partially unknown
-                Type of "append" is "(object: Unknown, /) -> None"PylancereportUnknownMemberType
-                (method) def append(
-                    object: Unknown,
-                    /
-                ) -> None
-                Append object to the end of the list.
-                """
-                new_list.append(resolve_references(i))  # type: ignore
-            return new_list
-
-        else:
-            # None, bool, int, float, str
-            return node
-
-    def convert_optional_to_nullable(
-        n: None | bool | int | float | str | list[Any] | dict[str, Any],
-    ) -> None | bool | int | float | str | list[Any] | dict[str, Any]:
-        """
-        Convert a 2-item anyOf with one null and one non-null
-        => {type: X, nullable: true}
-        """
-        if isinstance(n, dict):
-            any_of_val = n.get("anyOf")
-            if isinstance(any_of_val, list):
-                """
-                Argument type is partially unknown
-                Argument corresponds to parameter "obj" in function "len"
-                Argument type is "list[Unknown]"PylancereportUnknownArgumentType
-                (variable) any_of_val: list[Unknown]
-                """
-                if len(any_of_val) == 2:  # type: ignore
-                    # check if exactly one is {"type": "null"}
-                    types_collected: list[Optional[str]] = []
-                    for sub in any_of_val:
-                        if isinstance(sub, dict):
-                            """
-                            Type of "get" is partially unknown
-                            Type of "get" is "Overload[(key: Unknown, /) -> (Unknown | None), (key: Unknown, default: Unknown, /) -> Unknown, (key: Unknown, default: _T@get, /) -> (Unknown | _T@get)]"PylancereportUnknownMemberType
-                            (variable) sub: dict[Unknown, Unknown]
-                            """
-                            t = sub.get("type")  # type: ignore
-                            if isinstance(t, str):
-                                types_collected.append(t)
-                            else:
-                                types_collected.append(None)
-                        else:
-                            types_collected.append(None)
-                    # e.g. types_collected might be ["null", "string"]
-
-                    distinct_types = {typ for typ in types_collected if typ is not None}
-                    if (
-                        "null" in types_collected
-                        and len(distinct_types - {"null"}) == 1
-                    ):
-                        null_idx = types_collected.index("null")
-                        nonnull_idx = 1 - null_idx
-                        nonnull_sub = any_of_val[nonnull_idx]
-                        if (
-                            isinstance(nonnull_sub, dict)
-                            and "type" in nonnull_sub
-                            and isinstance(nonnull_sub["type"], str)
-                        ):
-                            # flatten
-                            n["type"] = nonnull_sub["type"]
-                            n["nullable"] = True
-                            """
-                            Argument type is partially unknown
-                            Argument corresponds to parameter "iterable" in function "__init__"
-                            Argument type is "dict_items[Unknown, Unknown]"PylancereportUnknownArgumentType
-                            (variable) nonnull_sub: dict[Unknown, Unknown]
-                            """
-                            for key, val in list(nonnull_sub.items()):  # type: ignore
-                                if key != "type":
-                                    n[key] = val
-                            n.pop("anyOf", None)
-                else:
-                    new_anyof = []
-                    for s in any_of_val:
-                        """
-                        Type of "append" is partially unknown
-                        Type of "append" is "(object: Unknown, /) -> None"PylancereportUnknownMemberType
-                        (method) def append(
-                            object: Unknown,
-                            /
-                        ) -> None
-                        Append object to the end of the list.
-                        """
-                        new_anyof.append(convert_optional_to_nullable(s))  # type: ignore
-                    n["anyOf"] = new_anyof
-
-            # deeper recursion
-            for _k, v in list(n.items()):
-                if _k != "anyOf":
-                    n[_k] = convert_optional_to_nullable(v)
-            return n
-
-        elif isinstance(n, list):
-            return [convert_optional_to_nullable(x) for x in n]
-
-        else:
-            return n
-
-    def remove_siblings_if_anyof(
-        n: None | bool | int | float | str | list[Any] | dict[str, Any],
-    ) -> None | bool | int | float | str | list[Any] | dict[str, Any]:
-        """
-        Vertex AI constraint: If anyOf is present, it must be the *only* key in that dict node.
-        We'll remove 'type', 'properties', 'nullable', etc. if anyOf is found.
-        """
-        if isinstance(n, dict):
-            any_of_val = n.get("anyOf")
-            if isinstance(any_of_val, list):
-                # If there's at least 1 item in anyOf, strip out all sibling fields
-                """
-                Argument type is partially unknown
-                Argument corresponds to parameter "obj" in function "len"
-                Argument type is "list[Unknown]"PylancereportUnknownArgumentType
-                (variable) any_of_val: list[Unknown]
-                """
-                if len(any_of_val) >= 1:  # type: ignore
-                    # remove all siblings except "anyOf"
-                    keep = {"anyOf"}
-                    for k_to_delete in list(n.keys()):
-                        if k_to_delete not in keep:
-                            n.pop(k_to_delete)
-                    # Recurse into each sub-branch
-                    new_anyof = []
-                    for x in any_of_val:
-                        """
-                        Type of "append" is partially unknown
-                        Type of "append" is "(object: Unknown, /) -> None"PylancereportUnknownMemberType
-                        (method) def append(
-                            object: Unknown,
-                            /
-                        ) -> None
-                        Append object to the end of the list.
-                        """
-                        new_anyof.append(remove_siblings_if_anyof(x))  # type: ignore
-                    n["anyOf"] = new_anyof
-                    return n
-
-            # else no anyOf or it's not a list => keep recursing
-            for _k, v in list(n.items()):
-                n[_k] = remove_siblings_if_anyof(v)
-            return n
-
-        elif isinstance(n, list):
-            return [remove_siblings_if_anyof(x) for x in n]
-
-        else:
-            return n
-
-    def enforce_no_additional_props(
-        n: None | bool | int | float | str | list[Any] | dict[str, Any],
-    ) -> None:
-        """If openai_like, set additionalProperties=false on all object nodes."""
-        if isinstance(n, dict):
-            node_type = n.get("type")
-            if node_type == "object":
-                if "additionalProperties" not in n:
-                    n["additionalProperties"] = False
-            for val in n.values():
-                enforce_no_additional_props(val)
-        elif isinstance(n, list):
-            for item in n:
-                enforce_no_additional_props(item)
-
-    def ensure_type_fields(
-        n: None | bool | int | float | str | list[Any] | dict[str, Any],
-    ) -> None:
-        """
-        For nodes that do *not* have anyOf, ensure they have a "type".
-        If they have "properties" => object
-        If they have "items" => array
-        Else => string (or if "enum"/"format"/"pattern", => string).
-        """
-        if isinstance(n, dict):
-            # If node has anyOf, skip forcing type
-            if "anyOf" in n:
-                any_of_val = n["anyOf"]
-                if isinstance(any_of_val, list):
-                    for item in any_of_val:
-                        """
-                        Argument type is unknown
-                        Argument corresponds to parameter "n" in function "ensure_type_fields"PylancereportUnknownArgumentType
-                        (variable) item: Unknown
-                        """
-                        ensure_type_fields(item)  # type: ignore
-                return
-
-            node_type = n.get("type")
-            if not isinstance(node_type, str):
-                if "properties" in n:
-                    n["type"] = "object"
-                elif "items" in n:
-                    n["type"] = "array"
-                elif any(k in n for k in ("enum", "format", "pattern")):
-                    n["type"] = "string"
-                else:
-                    n["type"] = "string"
-
-            # unify if properties => type=object
-            if "properties" in n and n.get("type") != "object":
-                n["type"] = "object"
-            # unify if items => type=array
-            if "items" in n and n.get("type") != "array":
-                n["type"] = "array"
-
-            for _k, v in list(n.items()):
-                ensure_type_fields(v)
-
-        elif isinstance(n, list):
-            for item in n:
-                ensure_type_fields(item)
-
-    def wrap_raw_string_in_type(
-        n: None | bool | int | float | str | list[Any] | dict[str, Any],
-    ) -> None:
-        """
-        If in n["properties"], we find a raw string => convert it to {"type": "string"} etc.
-        """
-        if isinstance(n, dict):
-            props = n.get("properties")
-            if isinstance(props, dict):
-                """
-                Argument type is partially unknown
-                Argument corresponds to parameter "iterable" in function "__init__"
-                Argument type is "dict_items[Unknown, Unknown]"PylancereportUnknownArgumentType
-                (method) def items() -> dict_items[Unknown, Unknown]
-                """
-                for prop_key, prop_val in list(props.items()):  # type: ignore
-                    if isinstance(prop_val, str):
-                        props[prop_key] = {"type": prop_val}
-                    elif isinstance(prop_val, (int, float, bool)):
-                        props[prop_key] = {"type": "string"}
-
-            it = n.get("items")
-            if isinstance(it, str):
-                n["items"] = {"type": it}
-
-            for _k, v in list(n.items()):
-                wrap_raw_string_in_type(v)
-
-        elif isinstance(n, list):
-            for item in n:
-                wrap_raw_string_in_type(item)
-        else:
-            # None, bool, int, float, str
-            pass
-
-    # endregion --- Helper Functions ---
-
-    # ---------------
-    # Core Execution
-    # ---------------
-
-    # A) Inline refs, remove params
-    flattened = resolve_references(schema_copy)
-
-    # B) Convert optional 2-item anyOf => type, nullable
-    flattened = convert_optional_to_nullable(flattened)
-
-    # C) Remove siblings if there's an anyOf left
-    flattened = remove_siblings_if_anyof(flattened)
-
-    # D) If openai_like, enforce no additional props
-    if openai_like:
-        enforce_no_additional_props(flattened)
-
-    # E) Ensure type fields for nodes not in anyOf
-    ensure_type_fields(flattened)
-
-    # F) Wrap raw string properties => {"type": "string"}
-    wrap_raw_string_in_type(flattened)
-
-    # We began with "dict[str, ...]" at the top,
-    # but it might theoretically have become a list if the user had a weird $ref
-    # that points to a list. Safeguard:
-    if not isinstance(flattened, dict):
-        raise TypeError(
-            "flatten_msgspec_schema ended with a top-level non-dict. "
-            "Check your references or schema structure."
-        )
-
-    return flattened
-
-
 def is_file_url(url: str) -> bool:
     """
     Check if a URL is a file URL based on its extension.
@@ -1231,3 +852,47 @@ def get_file_extension(url: str) -> FileExtension:
         raise ValueError(f"Unsupported file extension: {extension}")
 
     return cast(FileExtension, extension)
+
+
+def ms_type_to_schema(struct: type[msgspec.Struct]) -> dict[str, Any]:
+    """Generates a fully dereferenced JSON schema for a given msgspec Struct type,
+    handling recursive structures."""
+
+    schemas, components = msgspec.json.schema_components([struct])
+    main_schema = schemas[0]
+    memo: dict[str, Any] = {}  # To store already dereferenced schemas
+
+    def dereference(schema: dict[str, Any]) -> dict[str, Any]:
+        if "$ref" in schema:
+            ref_path = schema["$ref"]
+            component_name = ref_path.split("/")[-1]
+            if component_name in memo:
+                return memo[component_name]
+            elif component_name in components:
+                memo[component_name] = {
+                    "$ref": ref_path
+                }  # Mark as processing to avoid infinite recursion
+                dereferenced = components[component_name]
+                if isinstance(dereferenced, dict):
+                    dereferenced = _dereference_recursive(dereferenced)
+                memo[component_name] = dereferenced
+                return dereferenced
+            else:
+                raise ValueError(
+                    f"Component '{component_name}' not found in schema components."
+                )
+        return _dereference_recursive(schema)
+
+    def _dereference_recursive(data: Any) -> Any:
+        if isinstance(data, dict):
+            if "$ref" in data:
+                return dereference(cast(dict[str, Any], data))
+            new_data = {}
+            for key, value in data.items():
+                new_data[key] = _dereference_recursive(value)
+            return new_data
+        elif isinstance(data, list):
+            return [_dereference_recursive(item) for item in data]
+        return data
+
+    return dereference(main_schema)

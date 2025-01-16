@@ -30,7 +30,7 @@ from intellibricks.llms.util import (
     create_function_mapping_by_tools,
     get_parsed_response,
 )
-from intellibricks.util import flatten_msgspec_schema
+from intellibricks.util import ms_type_to_schema
 
 logger = LoggerFactory.create(__name__)
 
@@ -221,10 +221,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                         response_mime_type="application/json"
                         if response_model
                         else None,
-                        response_schema=flatten_msgspec_schema(
-                            msgspec.json.schema(response_model),
-                            remove_parameters=["title", "examples"],
-                        )
+                        response_schema=ms_type_to_schema(response_model)
                         if response_model
                         else None,
                         safety_settings=[

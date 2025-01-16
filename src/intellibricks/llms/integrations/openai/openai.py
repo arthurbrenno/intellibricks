@@ -36,7 +36,7 @@ from intellibricks.llms.util import (
     get_audio_duration,
     get_parsed_response,
 )
-from intellibricks.util import flatten_msgspec_schema
+from intellibricks.util import ms_type_to_schema
 from openai import NOT_GIVEN, AsyncOpenAI
 from openai.types.chat.chat_completion import (
     ChatCompletion as OpenAIChatCompletion,
@@ -186,11 +186,7 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
                 json_schema=JSONSchema(
                     name=response_model.__name__,
                     description="Structured response",
-                    schema=flatten_msgspec_schema(
-                        msgspec.json.schema(response_model),
-                        openai_like=True,
-                        remove_parameters=["minimum", "maximum", "examples"],
-                    ),
+                    schema=ms_type_to_schema(response_model),
                     strict=True,
                 ),
                 type="json_schema",

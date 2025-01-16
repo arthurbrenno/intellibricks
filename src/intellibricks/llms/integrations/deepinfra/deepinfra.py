@@ -38,7 +38,7 @@ from intellibricks.llms.util import (
     create_function_mapping_by_tools,
     get_parsed_response,
 )
-from intellibricks.util import flatten_msgspec_schema
+from intellibricks.util import ms_type_to_schema
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
@@ -298,7 +298,7 @@ class DeepInfraLanguageModel(LanguageModel, frozen=True):
                 json_schema=JSONSchema(
                     name="structured_response",
                     description="Structured response",
-                    schema=flatten_msgspec_schema(msgspec.json.schema(response_model)),
+                    schema=ms_type_to_schema(response_model),
                     strict=True,
                 ),
                 type="json_schema",

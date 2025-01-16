@@ -1,25 +1,50 @@
+from typing import Annotated
+from intellibricks import (
+    Synapse,
+    UserMessage,
+    AssistantMessage,
+    DeveloperMessage,
+    ChainOfThought,
+)
 import msgspec
-from intellibricks import Synapse, ChainOfThought
-from langfuse import Langfuse
 
+synapse = Synapse.of("google/genai/gemini-2.0-flash-exp")
 
-class Response(msgspec.Struct):
-    response: str
-
-
-langfuse = Langfuse(
-    secret_key="sk-lf-fd07a34d-d4d2-4468-92ca-94d53ef2a6a1",
-    public_key="pk-lf-30c24cd8-a23c-4f2c-b987-136ca936ecec",
-    host="http://localhost:3000",
+messages = (
+    DeveloperMessage.from_text("You are a helpful assistant."),
+    UserMessage.from_text("Hello, how are you?"),
+    AssistantMessage.from_text("I am fine, thank you."),
+    UserMessage.from_text("What is your name? And who created you?"),
 )
 
-synapse = Synapse.of("cerebras/api/llama-3.3-70b")
 
-completion = synapse.complete(
-    "Hello, how are you?",
-    trace_params={"name": "test completion"},
-    response_model=ChainOfThought[Response],
-    max_retries=1,
-)
+class CreatorInfo(msgspec.Struct):
+    name: Annotated[
+        str, msgspec.Meta(title="Name", description="Here you can enter your name.")
+    ]
+
+    is_human: Annotated[
+        bool,
+        msgspec.Meta(
+            title="Is Human",
+            description="Here you can specify whether the creator is a human or not.",
+        ),
+    ]
+
+
+class ModelInfo(msgspec.Struct):
+    name: Annotated[
+        str, msgspec.Meta(title="Name", description="Here you can enter your name.")
+    ]
+
+    creator: Annotated[
+        str,
+        msgspec.Meta(
+            title="Creator", description="Here you can enter the creator's name."
+        ),
+    ]
+
+
+completion = synapse.chat(messages, response_model=ChainOfThought[ModelInfo])
 
 print(completion.parsed)
