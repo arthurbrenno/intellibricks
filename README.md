@@ -51,13 +51,14 @@ from intellibricks import (
     AssistantMessage,
     DeveloperMessage,
     TraceParams,
+    ChainOfThought,
 )
 from langfuse import Langfuse
 import msgspec
 
 langfuse = Langfuse(
-    secret_key="sk-lf-0be2e5c3-6c86-421c-ad5f-ffb4c065daa0", # Your secret key here
-    public_key="pk-lf-753848ca-2150-473e-a335-4970fb550a20", # Your public key here
+    secret_key="...", # Your secret key here
+    public_key="...", # Your public key here
     host="http://localhost:3000",
 )
 
@@ -87,12 +88,24 @@ class ModelInfo(msgspec.Struct):
 trace_params = TraceParams(name="example_chat_completion", user_id="intellibricks")
 
 
-chat_completion = synapse.chat(
+chat_completion_raw = synapse.chat(
     messages, response_model=ModelInfo, trace_params=trace_params
-)
-model_info = chat_completion.parsed
+) # ChatCompletion[RawResponse]
 
-print(f"Model name: {model_info.name} | Creator: {model_info.creator}")
+chat_completion_structured = synapse.chat(
+    messages, response_model=ModelInfo, trace_params=trace_params
+) # ChatCompletion[ModelInfo]
+
+chat_completion_COT_structured = synapse.chat(
+    messages, response_model=ChainOfThought, trace_params=trace_params
+) # ChatCompletion[ChainOfThought[str]]
+
+chat_completion_COT_structured_model_info = synapse.chat(
+    messages, response_model=ChainOfThought[ModelInfo], trace_params=trace_params
+) # ChatCompletion[ChainOfThought[ModelInfo]]
+
+# Try to see what each one does and returns ;) You'll like it.
+print(...)
 ```
 
 In this example we defined a `ModelInfo` class using `msgspec.Struct` for structured outputs and passed this into the `synapse.chat()` method through the parameter `response_model`. We also defined some `TraceParams` which can be used to pass information to langfuse. Below, is how it could look like in langfuse:
