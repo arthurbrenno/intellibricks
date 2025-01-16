@@ -10,6 +10,11 @@ from .schema import (
     TraceParams,
     MessageType,
     ChainOfThought,
+    TextPart,
+    ImageFilePart,
+    AudioFilePart,
+    VideoFilePart,
+    WebsitePart,
 )
 from .synapses import Synapse, SynapseCascade, TextTranscriptionSynapse
 
@@ -28,4 +33,9 @@ __all__ = [
     "SynapseCascade",
     "TextTranscriptionSynapse",
     "ChainOfThought",
+    "TextPart",
+    "ImageFilePart",
+    "AudioFilePart",
+    "VideoFilePart",
+    "WebsitePart",
 ]

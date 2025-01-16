@@ -12,6 +12,11 @@ from .llms import (
     SynapseCascade,
     TextTranscriptionSynapse,
     ChainOfThought,
+    TextPart,
+    ImageFilePart,
+    AudioFilePart,
+    VideoFilePart,
+    WebsitePart,
 )
 from .files import RawFile
 
@@ -33,4 +38,9 @@ __all__: list[str] = [
     "SynapseCascade",
     "TextTranscriptionSynapse",
     "ChainOfThought",
+    "TextPart",
+    "ImageFilePart",
+    "AudioFilePart",
+    "VideoFilePart",
+    "WebsitePart",
 ]
