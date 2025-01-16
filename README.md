@@ -130,7 +130,7 @@ class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True): # _T defaults to
     ]
 ```
 
-IntelliBricks gives you the power to obtain more robust, structured data from LLMs through the use of *Structured Outputs*. It also provides powerful tools for observability with Langfuse, it's own ChainOfThought class, so you don't have to write your own. Here's an example:
+IntelliBricks gives you the power to obtain more robust, structured data from LLMs through the use of *Structured Outputs*. It also provides powerful tools for observability with Langfuse and it's own ChainOfThought class, so you don't have to write your own. Here's an example:
 
 ```python
 from typing import Annotated
