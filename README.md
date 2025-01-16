@@ -39,9 +39,98 @@ print(completion)
 
 This simple code snippet shows the core of how IntelliBricks simplifies LLM interactions.  `Synapse.of()` creates an instance of the `Synapse` object. Then the `complete` method is used for single-turn prompts. The type of the completion is `Completion[RawResponse]`.
 
-**Advanced Synapse Usage:**
+**Advanced Synapse Usage with built-in ChainOfThought class:**
 
-IntelliBricks gives you the power to obtain more robust, structured data from LLMs through the use of *Structured Outputs*. It also provides powerful tools for observability with Langfuse. Here's an example:
+```py
+
+class ThoughtDetail(msgspec.Struct, frozen=True):
+    detail: Annotated[
+        str,
+        msgspec.Meta(
+            title="Thought Detail",
+            description="A granular explanation of a specific aspect of the reasoning step.",
+            examples=["First, I added 2 + 3", "Checked if the number is even or odd"],
+        ),
+    ]
+
+
+class Step(msgspec.Struct, frozen=True):
+    step_number: Annotated[
+        int,
+        msgspec.Meta(
+            title="Step Number",
+            description="The position of this step in the overall chain of thought.",
+            examples=[1, 2, 3],
+        ),
+    ]
+    explanation: Annotated[
+        str,
+        msgspec.Meta(
+            title="Step Explanation",
+            description="A concise description of what was done in this step.",
+            examples=["Analyze the input statement", "Apply the quadratic formula"],
+        ),
+    ]
+    details: Annotated[
+        Sequence[ThoughtDetail],
+        msgspec.Meta(
+            title="Step Details",
+            description="A list of specific details for each step in the reasoning.",
+            examples=[
+                [
+                    {"detail": "Check initial values"},
+                    {"detail": "Confirm there are no inconsistencies"},
+                ]
+            ],
+        ),
+    ]
+
+
+class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True): # _T defaults to "str"
+    title: Annotated[
+        str,
+        msgspec.Meta(
+            title="Chain of Thought Title",
+            description="A brief label or description that identifies the purpose of the reasoning.",
+            examples=["Sum of two numbers", "Logical problem solving"],
+        ),
+    ]
+    steps: Annotated[
+        Sequence[Step],
+        msgspec.Meta(
+            title="Reasoning Steps",
+            description="The sequence of steps that make up the full reasoning process.",
+            examples=[
+                [
+                    {
+                        "step_number": 1,
+                        "explanation": "Analyze input data",
+                        "details": [
+                            {"detail": "Data: 234 and 567"},
+                            {"detail": "Check if they are integers"},
+                        ],
+                    },
+                    {
+                        "step_number": 2,
+                        "explanation": "Perform the calculation",
+                        "details": [
+                            {"detail": "234 + 567 = 801"},
+                        ],
+                    },
+                ]
+            ],
+        ),
+    ]
+    final_answer: Annotated[
+        _T,
+        msgspec.Meta(
+            title="Final Answer",
+            description="The conclusion or result after all the reasoning steps.",
+        ),
+    ]
+```
+
+IntelliBricks gives you the power to obtain more robust, structured data from LLMs through the use of *Structured Outputs*. It also provides powerful tools for observability with Langfuse, it's own ChainOfThought class, so you don't have to write your own. Here's an example:
 
 ```python
 from typing import Annotated
