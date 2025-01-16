@@ -3,7 +3,7 @@
 from architecture.data.files import FileExtension
 
 from .parsed_document import ParsedDocument
-from .file_parsers import FileParser
+from .parsers import FileParser
 from .raw_file import RawFile
 
 __all__: list[str] = [
