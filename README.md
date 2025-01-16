@@ -89,7 +89,7 @@ trace_params = TraceParams(name="example_chat_completion", user_id="intellibrick
 
 
 chat_completion_raw = synapse.chat(
-    messages, response_model=ModelInfo, trace_params=trace_params
+    messages, trace_params=trace_params
 ) # ChatCompletion[RawResponse]
 
 chat_completion_structured = synapse.chat(
