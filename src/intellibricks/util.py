@@ -894,7 +894,7 @@ def ms_type_to_schema(
             for key, value in data.items():
                 if remove_parameters and key in remove_parameters:
                     logger.warning(
-                        f"WARNING: REMOVING PARAMETER: {key} BECAUSE GOOGLE DOES NOT SUPPORT IT IN JSON SCHEMAS!"
+                        f"WARNING: REMOVING PARAMETER: {key} BECAUSE THE PROVIDER DOES NOT SUPPORT IT IN JSON SCHEMAS!"
                     )
                     continue  # Skip this parameter
                 new_data[key] = _dereference_recursive(value)
