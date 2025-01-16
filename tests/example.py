@@ -9,7 +9,7 @@ from intellibricks import (
 import msgspec
 
 synapse = Synapse.of(
-    "google/genai/gemini-2.0-flash-exp",
+    "openai/api/gpt-4o",
 )
 
 messages = (
@@ -18,6 +18,8 @@ messages = (
     AssistantMessage.from_text("I am fine, thank you."),
     UserMessage.from_text("What is your name? And who created you?"),
 )
+
+print(messages)
 
 
 class CreatorInfo(msgspec.Struct):

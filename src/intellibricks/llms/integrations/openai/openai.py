@@ -186,7 +186,9 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
                 json_schema=JSONSchema(
                     name=response_model.__name__,
                     description="Structured response",
-                    schema=ms_type_to_schema(response_model),
+                    schema=ms_type_to_schema(
+                        response_model, remove_parameters=["examples"]
+                    ),
                     strict=True,
                 ),
                 type="json_schema",

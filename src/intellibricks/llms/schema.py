@@ -1523,6 +1523,59 @@ class ToolCall[R = Any](msgspec.Struct, kw_only=True, frozen=True):
         )
 
 
+class ToolCallSequence[R = Any](msgspec.Struct, frozen=True):
+    """
+    Container for a heterogeneous list of ToolCall objects.
+    Each item in *Ts can be a different type, e.g. [str, int, float].
+    """
+
+    sequence: Sequence[ToolCall[R]]
+
+    def call_all(self) -> tuple[R, ...]:
+        """
+        Invoke each tool call in order and return all results
+        as a typed tuple matching Ts.
+        """
+
+        return tuple(tool.call() for tool in self.sequence)
+
+    def to_llm_described_text(self) -> str:
+        return "\n".join(tool.to_llm_described_text() for tool in self.sequence)
+
+    def to_tool_message_sequence(self) -> Sequence[ToolMessage]:
+        return [tool.to_tool_message() for tool in self.sequence]
+
+    @property
+    def first(self) -> ToolCall[R]:
+        """
+        Return the first tool call in the sequence.
+        """
+        return self.sequence[0]
+
+    @property
+    def last(self) -> ToolCall[R]:
+        """
+        Return the last tool call in the sequence.
+        """
+        return self.sequence[-1]
+
+    def __len__(self) -> int:
+        return len(self.sequence)
+
+    def __iter__(self) -> Iterator[ToolCall[R]]:
+        return iter(self.sequence)
+
+    def __bool__(self) -> bool:
+        return bool(self.sequence)
+
+    def __getitem__(self, index: int) -> ToolCall[R]:
+        """
+        Return a ToolCall[object] so we avoid Any.
+        But we lose precise type knowledge about each index.
+        """
+        return self.sequence[index]
+
+
 """
 ##     ## ########  ######   ######     ###     ######   ########  ######
 ###   ### ##       ##    ## ##    ##   ## ##   ##    ##  ##       ##    ##
@@ -1613,11 +1666,15 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
             for part in self.contents
         ]
 
-        return ChatCompletionDeveloperMessageParam(
+        message = ChatCompletionDeveloperMessageParam(
             content=content,
             role="developer",
-            name=cast(str, self.name),  # OpenAI doesnt support Optional[str], idk why
         )
+
+        if self.name:
+            message.update({"name": self.name})
+
+        return message
 
     @ensure_module_installed("groq", "groq")
     @override
@@ -1628,14 +1685,20 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
 
         content: str = get_parts_llm_described_text(self.contents)
 
-        return ChatCompletionSystemMessageParam(content=content, role="system")
+        message = ChatCompletionSystemMessageParam(content=content, role="system")
+
+        if self.name:
+            message.update({"name": self.name})
+
+        return message
 
     @ensure_module_installed("google.genai", "google-genai")
     @override
     def to_google_format(self) -> GenaiContent:
         from google.genai.types import Content as GenaiContent
 
-        parts = [part.to_google_part() for part in self.contents]
+        name_part = [TextPart(f"{self.name}: ").to_google_part()] if self.name else []
+        parts = name_part + [part.to_google_part() for part in self.contents]
         return GenaiContent(role="user", parts=parts)
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
@@ -1645,11 +1708,15 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
             MessageSystemMessageRequestTyped,
         )
 
-        return MessageSystemMessageRequestTyped(
+        message = MessageSystemMessageRequestTyped(
             content=get_parts_llm_described_text(self.contents),
             role="system",
-            name=self.name,
         )
+
+        if self.name:
+            message.update({"name": self.name})
+
+        return message
 
 
 class SystemMessage(DeveloperMessage, frozen=True, tag="system"):
@@ -1677,11 +1744,15 @@ class UserMessage(Message, frozen=True, tag="user"):
             ChatCompletionUserMessageParam,
         )
 
-        return ChatCompletionUserMessageParam(
+        message = ChatCompletionUserMessageParam(
             role="user",
             content=[part.to_openai_part() for part in self.contents],
-            name=cast(str, self.name),
         )
+
+        if self.name:
+            message.update({"name": self.name})
+
+        return message
 
     @ensure_module_installed("groq", "groq")
     @override
@@ -1690,11 +1761,15 @@ class UserMessage(Message, frozen=True, tag="user"):
             ChatCompletionUserMessageParam,
         )
 
-        return ChatCompletionUserMessageParam(
+        message = ChatCompletionUserMessageParam(
             role="user",
             content=[part.to_groq_part() for part in self.contents],
-            name=self.name or "",
         )
+
+        if self.name:
+            message.update({"name": self.name})
+
+        return message
 
     @ensure_module_installed("google.genai", "google-genai")
     @override
@@ -1720,56 +1795,6 @@ class UserMessage(Message, frozen=True, tag="user"):
             role="user",
             name=self.name,
         )
-
-
-class ToolCallSequence[R = Any](msgspec.Struct, frozen=True):
-    """
-    Container for a heterogeneous list of ToolCall objects.
-    Each item in *Ts can be a different type, e.g. [str, int, float].
-    """
-
-    sequence: Sequence[ToolCall[R]]
-
-    def call_all(self) -> tuple[R, ...]:
-        """
-        Invoke each tool call in order and return all results
-        as a typed tuple matching Ts.
-        """
-
-        return tuple(tool.call() for tool in self.sequence)
-
-    def to_llm_described_text(self) -> str:
-        return "\n".join(tool.to_llm_described_text() for tool in self.sequence)
-
-    def to_tool_message_sequence(self) -> Sequence[ToolMessage]:
-        return [tool.to_tool_message() for tool in self.sequence]
-
-    @property
-    def first(self) -> ToolCall[R]:
-        """
-        Return the first tool call in the sequence.
-        """
-        return self.sequence[0]
-
-    @property
-    def last(self) -> ToolCall[R]:
-        """
-        Return the last tool call in the sequence.
-        """
-        return self.sequence[-1]
-
-    def __len__(self) -> int:
-        return len(self.sequence)
-
-    def __iter__(self) -> Iterator[ToolCall[R]]:
-        return iter(self.sequence)
-
-    def __getitem__(self, index: int) -> ToolCall[R]:
-        """
-        Return a ToolCall[object] so we avoid Any.
-        But we lose precise type knowledge about each index.
-        """
-        return self.sequence[index]
 
 
 class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assistant"):
@@ -1821,24 +1846,30 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
             ChatCompletionMessageToolCallParam,
         )
 
-        return ChatCompletionAssistantMessageParam(
+        tool_calls = [
+            ChatCompletionMessageToolCallParam(
+                id=tool_call.id,
+                function=tool_call.called_function.to_openai_called_function(),
+                type="function",
+            )
+            for tool_call in self.tool_calls
+        ]
+
+        message = ChatCompletionAssistantMessageParam(
             role="assistant",
             content=[
                 cast(ChatCompletionContentPartTextParam, content.to_openai_part())
                 for content in self.contents
             ],
-            name=self.name or "",
-            tool_calls=[
-                ChatCompletionMessageToolCallParam(
-                    id=tool_call.id,
-                    function=tool_call.called_function.to_openai_called_function(),
-                    type="function",
-                )
-                for tool_call in self.tool_calls
-            ]
-            if self.tool_calls
-            else [],
         )
+
+        if self.name:
+            message.update({"name": self.name})
+
+        if self.tool_calls:
+            message.update({"tool_calls": tool_calls})
+
+        return message
 
     @ensure_module_installed("groq", "groq")
     @override
@@ -1850,10 +1881,9 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
             ChatCompletionMessageToolCallParam,
         )
 
-        return ChatCompletionAssistantMessageParam(
+        message = ChatCompletionAssistantMessageParam(
             role="assistant",
             content=get_parts_llm_described_text(self.contents),
-            name=self.name or "",
             tool_calls=[
                 ChatCompletionMessageToolCallParam(
                     id=tool_call.id,
@@ -1865,6 +1895,11 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
             if self.tool_calls
             else [],
         )
+
+        if self.name:
+            message.update({"name": self.name})
+
+        return message
 
     @ensure_module_installed("google.genai", "google-genai")
     @override
@@ -1905,6 +1940,7 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
         return MessageAssistantMessageRequestTyped(
             role="assistant",
             content=get_parts_llm_described_text(self.contents),
+            name=self.name,
             tool_calls=[
                 MessageAssistantMessageRequestToolCallTyped(
                     id=tool_call.id,
