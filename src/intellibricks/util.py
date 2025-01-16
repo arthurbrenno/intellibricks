@@ -854,3 +854,53 @@ def get_file_extension(url: str) -> FileExtension:
     return cast(FileExtension, extension)
 
 
+def ms_type_to_schema(
+    struct: type[msgspec.Struct], remove_parameters: Optional[list[str]] = None
+) -> dict[str, Any]:
+    """Generates a fully dereferenced JSON schema for a given msgspec Struct type,
+    handling recursive structures, with the option to remove specific parameters.
+    """
+
+    schemas, components = msgspec.json.schema_components([struct])
+    main_schema = schemas[0]
+    memo: dict[str, Any] = {}  # To store already dereferenced schemas
+
+    def dereference(schema: dict[str, Any]) -> dict[str, Any]:
+        if "$ref" in schema:
+            ref_path = schema["$ref"]
+            component_name = ref_path.split("/")[-1]
+            if component_name in memo:
+                return memo[component_name]
+            elif component_name in components:
+                memo[component_name] = {
+                    "$ref": ref_path
+                }  # Mark as processing to avoid infinite recursion
+                dereferenced = components[component_name]
+                if isinstance(dereferenced, dict):
+                    dereferenced = _dereference_recursive(dereferenced)
+                memo[component_name] = dereferenced
+                return dereferenced
+            else:
+                raise ValueError(
+                    f"Component '{component_name}' not found in schema components."
+                )
+        return _dereference_recursive(schema)
+
+    def _dereference_recursive(data: Any) -> Any:
+        if isinstance(data, dict):
+            if "$ref" in data:
+                return dereference(cast(dict[str, Any], data))
+            new_data = {}
+            for key, value in data.items():
+                if remove_parameters and key in remove_parameters:
+                    logger.warning(
+                        f"WARNING: REMOVING PARAMETER: {key} BECAUSE GOOGLE DOES NOT SUPPORT IT IN JSON SCHEMAS!"
+                    )
+                    continue  # Skip this parameter
+                new_data[key] = _dereference_recursive(value)
+            return new_data
+        elif isinstance(data, list):
+            return [_dereference_recursive(item) for item in data]
+        return data
+
+    return dereference(main_schema)
