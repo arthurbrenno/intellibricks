@@ -3108,7 +3108,6 @@ class ThoughtDetail(msgspec.Struct, frozen=True):
     detail: Annotated[
         str,
         msgspec.Meta(
-            title="Thought Detail",
             description="A granular explanation of a specific aspect of the reasoning step.",
             examples=["First, I added 2 + 3", "Checked if the number is even or odd"],
         ),
@@ -3119,7 +3118,6 @@ class Step(msgspec.Struct, frozen=True):
     step_number: Annotated[
         int,
         msgspec.Meta(
-            title="Step Number",
             description="The position of this step in the overall chain of thought.",
             examples=[1, 2, 3],
         ),
@@ -3127,7 +3125,6 @@ class Step(msgspec.Struct, frozen=True):
     explanation: Annotated[
         str,
         msgspec.Meta(
-            title="Step Explanation",
             description="A concise description of what was done in this step.",
             examples=["Analyze the input statement", "Apply the quadratic formula"],
         ),
@@ -3135,7 +3132,6 @@ class Step(msgspec.Struct, frozen=True):
     details: Annotated[
         Sequence[ThoughtDetail],
         msgspec.Meta(
-            title="Step Details",
             description="A list of specific details for each step in the reasoning.",
             examples=[
                 [
@@ -3148,10 +3144,9 @@ class Step(msgspec.Struct, frozen=True):
 
 
 class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True):
-    title: Annotated[
+    general_title: Annotated[
         str,
         msgspec.Meta(
-            title="Chain of Thought Title",
             description="A brief label or description that identifies the purpose of the reasoning.",
             examples=["Sum of two numbers", "Logical problem solving"],
         ),
@@ -3159,7 +3154,6 @@ class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True):
     steps: Annotated[
         Sequence[Step],
         msgspec.Meta(
-            title="Reasoning Steps",
             description="The sequence of steps that make up the full reasoning process.",
             examples=[
                 [
@@ -3185,7 +3179,6 @@ class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True):
     final_answer: Annotated[
         _T,
         msgspec.Meta(
-            title="Final Answer",
             description="The conclusion or result after all the reasoning steps.",
         ),
     ]

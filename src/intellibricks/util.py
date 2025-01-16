@@ -854,9 +854,12 @@ def get_file_extension(url: str) -> FileExtension:
     return cast(FileExtension, extension)
 
 
-def ms_type_to_schema(struct: type[msgspec.Struct]) -> dict[str, Any]:
+def ms_type_to_schema(
+    struct: type[msgspec.Struct], remove_parameters: Optional[list[str]] = None
+) -> dict[str, Any]:
     """Generates a fully dereferenced JSON schema for a given msgspec Struct type,
-    handling recursive structures."""
+    handling recursive structures, with the option to remove specific parameters.
+    """
 
     schemas, components = msgspec.json.schema_components([struct])
     main_schema = schemas[0]
@@ -889,10 +892,14 @@ def ms_type_to_schema(struct: type[msgspec.Struct]) -> dict[str, Any]:
                 return dereference(cast(dict[str, Any], data))
             new_data = {}
             for key, value in data.items():
+                if remove_parameters and key in remove_parameters:
+                    continue  # Skip this parameter
                 new_data[key] = _dereference_recursive(value)
             return new_data
         elif isinstance(data, list):
             return [_dereference_recursive(item) for item in data]
         return data
 
-    return dereference(main_schema)
+    dereferenced = dereference(main_schema)
+    print(dereferenced)
+    return dereferenced

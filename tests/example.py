@@ -8,7 +8,9 @@ from intellibricks import (
 )
 import msgspec
 
-synapse = Synapse.of("google/genai/gemini-2.0-flash-exp")
+synapse = Synapse.of(
+    "google/genai/gemini-2.0-flash-exp",
+)
 
 messages = (
     DeveloperMessage.from_text("You are a helpful assistant."),
@@ -19,29 +21,22 @@ messages = (
 
 
 class CreatorInfo(msgspec.Struct):
-    name: Annotated[
-        str, msgspec.Meta(title="Name", description="Here you can enter your name.")
-    ]
+    name: Annotated[str, msgspec.Meta(description="Here you can enter your name.")]
 
     is_human: Annotated[
         bool,
         msgspec.Meta(
-            title="Is Human",
             description="Here you can specify whether the creator is a human or not.",
         ),
     ]
 
 
 class ModelInfo(msgspec.Struct):
-    name: Annotated[
-        str, msgspec.Meta(title="Name", description="Here you can enter your name.")
-    ]
+    name: Annotated[str, msgspec.Meta(description="Here you can enter your name.")]
 
     creator: Annotated[
-        str,
-        msgspec.Meta(
-            title="Creator", description="Here you can enter the creator's name."
-        ),
+        CreatorInfo,
+        msgspec.Meta(description="Here you can enter the creator's name."),
     ]
 
 

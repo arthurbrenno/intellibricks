@@ -221,7 +221,15 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                         response_mime_type="application/json"
                         if response_model
                         else None,
-                        response_schema=ms_type_to_schema(response_model)
+                        response_schema=ms_type_to_schema(
+                            response_model,
+                            remove_parameters=[
+                                "title",
+                                "min_length",
+                                "max_length",
+                                "examples",
+                            ],
+                        )
                         if response_model
                         else None,
                         safety_settings=[
