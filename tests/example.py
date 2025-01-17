@@ -14,7 +14,7 @@ from intellibricks import (
 load_dotenv()
 
 synapse = Synapse.of(
-    "google/genai/gemini-2.0-flash-exp",
+    "cerebras/api/llama-3.3-70b",
 )
 
 messages = (
