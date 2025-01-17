@@ -17,12 +17,13 @@ from typing import (
 from urllib.parse import urlparse
 
 import msgspec
-from architecture.logging import LoggerFactory
+from architecture import log
 from typing_extensions import TypedDict
 
 from intellibricks.llms.types import FileExtension
+import logging
 
-logger = LoggerFactory.create(__name__)
+debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 class CallerInfo(TypedDict):
@@ -789,10 +790,10 @@ def fix_broken_json(
                 parsed_obj = decoder.decode(fixed_content)
                 return parsed_obj
             except (msgspec.DecodeError, ValueError) as e:
-                logger.error(
+                debug_logger.error(
                     f"Failed to parse JSON string after applying fix: {fix_func.__name__}"
                 )
-                logger.error(f"Exception: {e}")
+                debug_logger.error(f"Exception: {e}")
                 continue  # Try next fix function
         # If parsing fails for this substring, continue to next
         continue
@@ -933,7 +934,7 @@ def ms_type_to_schema(
             new_data: dict[str, Any] = {}
             for key, value in data.items():
                 if remove_parameters and key in remove_parameters:
-                    logger.warning(
+                    debug_logger.warning(
                         f"WARNING: REMOVING PARAMETER: {key} BECAUSE THE PROVIDER DOES NOT SUPPORT IT IN JSON SCHEMAS!"
                     )
                     continue  # Skip this parameter
@@ -946,5 +947,5 @@ def ms_type_to_schema(
         return data
 
     dereferenced_schema = dereference(main_schema)
-    logger.debug(f"Dereferenced schema: {dereferenced_schema}")
+    debug_logger.debug(f"Dereferenced schema: {dereferenced_schema}")
     return dereferenced_schema

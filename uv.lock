@@ -105,7 +105,7 @@ wheels = [
 
 [[package]]
 name = "architecture"
-version = "0.5.15"
+version = "0.5.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiocache" },
@@ -113,9 +113,9 @@ dependencies = [
     { name = "msgspec" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/f1/444a41c37471aabf2b9a7bd26a7d773598d5e57c40a455f1db7bf647de0c/architecture-0.5.15.tar.gz", hash = "sha256:270a4d61a415e2346dbe4d0234a0fc4e5839016eae516f789c2979d920ca5fa1", size = 54768 }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/a3/280403b5293c2e03a66cdda29055c76d32b2fc88ddf57e95e550e5996b1d/architecture-0.5.19.tar.gz", hash = "sha256:0b763fb333c9c07036a2fc27aab2b94d975000538f075649b1d4584bdebdfffb", size = 54778 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/67/9b09eb61c3eb3a6dc14ec17022ce4cdead250857316c624f175b34f937fd/architecture-0.5.15-py3-none-any.whl", hash = "sha256:1954aa0d6184c7b994a7413d489c30f961327166282789692defc1befb40cd43", size = 31620 },
+    { url = "https://files.pythonhosted.org/packages/4c/11/e722c032f6226e427a50c69e30eb27c7c1feeb9d865dd3f7316105c2e716/architecture-0.5.19-py3-none-any.whl", hash = "sha256:269be0eb2a57dc386db713ec8b65e8586e8efc06f10ddc7ae69aad41d29ac8b7", size = 31606 },
 ]
 
 [[package]]
@@ -693,6 +693,7 @@ cerebras = [
 ]
 files = [
     { name = "markitdown" },
+    { name = "pypdf" },
 ]
 
 [package.dev-dependencies]
@@ -737,6 +738,7 @@ requires-dist = [
     { name = "msgspec", git = "https://github.com/jcrist/msgspec.git?rev=main" },
     { name = "mypy", specifier = ">=1.14.1" },
     { name = "openai", specifier = ">=1.54.3" },
+    { name = "pypdf", marker = "extra == 'files'", specifier = ">=5.1.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
 ]
 

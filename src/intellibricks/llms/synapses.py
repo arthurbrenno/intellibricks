@@ -7,6 +7,7 @@ Welcome to the synapses
 
 from __future__ import annotations
 
+import logging
 import random
 import uuid
 from typing import (
@@ -20,8 +21,8 @@ from typing import (
 )
 
 import msgspec
+from architecture import log
 from architecture.extensions import Maybe
-from architecture.logging import LoggerFactory
 from architecture.utils import run_sync
 from architecture.utils.functions import fire_and_forget
 from langfuse import Langfuse
@@ -56,7 +57,8 @@ from .schema import (
 )
 from .types import AIModel, TranscriptionModelType
 
-logger = LoggerFactory.create(__name__)
+debug_logger = log.create_logger(__name__, level=logging.DEBUG)
+error_logger = log.create_logger(__name__, level=logging.ERROR)
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
@@ -426,7 +428,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
-        logger.debug("Entering __achat method.")
+        debug_logger.debug("Entering __achat method.")
 
         trace_params = trace_params or {
             "name": "chat_completion",
@@ -440,21 +442,21 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
         trace_params["input"] = messages
 
-        logger.debug("Generating completion ID.")
+        debug_logger.debug("Generating completion ID.")
         completion_id: uuid.UUID = uuid.uuid4()
 
-        logger.debug("Initializing Langfuse trace (if available).")
+        debug_logger.debug("Initializing Langfuse trace (if available).")
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
             lambda langfuse: langfuse.trace(**trace_params)  # type: ignore
         )
 
         ai_model: AIModel = self.model or "google/genai/gemini-2.0-flash-exp"
-        logger.debug(f"Using AI model: {ai_model}")
+        debug_logger.debug(f"Using AI model: {ai_model}")
 
         max_retries = max_retries or 2
-        logger.debug(f"Maximum retries set to: {max_retries}")
+        debug_logger.debug(f"Maximum retries set to: {max_retries}")
 
-        logger.debug("Creating Langfuse span (if trace is available).")
+        debug_logger.debug("Creating Langfuse span (if trace is available).")
         maybe_span: Maybe[StatefulSpanClient] = Maybe(
             trace.map(
                 lambda trace: trace.span(  # type: ignore
@@ -464,7 +466,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 )
             ).unwrap()
         )
-        logger.debug("Creating Langfuse generation (if span is available).")
+        debug_logger.debug("Creating Langfuse generation (if span is available).")
         generation: Maybe[StatefulGenerationClient] = maybe_span.map(
             lambda span: span.generation(  # type: ignore
                 model=ai_model,
@@ -476,7 +478,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             )
         )
 
-        logger.debug("Creating Language Model instance.")
+        debug_logger.debug("Creating Language Model instance.")
         chat_model: LanguageModel = LanguageModelFactory.create(
             model=ai_model,
             params={
@@ -489,10 +491,10 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 "location": self.cloud_location,
             },
         )
-        logger.debug("Language Model instance created.")
+        debug_logger.debug("Language Model instance created.")
 
         try:
-            logger.info("CALLING THE AI MODEL.")
+            debug_logger.debug("CALLING THE AI MODEL.")
             completion = await chat_model.chat_async(
                 messages=messages,
                 response_model=response_model,
@@ -506,30 +508,30 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 timeout=timeout,
             )
 
-            logger.debug("chat_async method call completed successfully.")
+            debug_logger.debug("chat_async method call completed successfully.")
 
             fire_and_forget(
                 self.__end_observability_logic, generation, maybe_span, completion
             )
-            logger.debug("Returning completion object.")
+            debug_logger.debug("Returning completion object.")
             return completion
 
         except Exception as e:
-            logger.error(
+            error_logger.error(
                 f"An error occurred during chat completion: {e}", exc_info=True
             )
-            logger.debug("Ending Langfuse span due to error.")
+            debug_logger.debug("Ending Langfuse span due to error.")
             maybe_span.end(output={})
-            logger.debug("Updating Langfuse span status due to error.")
+            debug_logger.debug("Updating Langfuse span status due to error.")
             maybe_span.update(status_message="Error in completion", level="ERROR")
-            logger.debug("Scoring Langfuse span as failure due to error.")
+            debug_logger.debug("Scoring Langfuse span as failure due to error.")
             maybe_span.score(
                 id=f"sc-{maybe_span.unwrap()}",
                 name="Sucess",
                 value=0.0,
                 comment=f"Error while generating choices: {e}",
             )
-            logger.debug("Langfuse span error handling completed.")
+            debug_logger.debug("Langfuse span error handling completed.")
             raise e
 
     async def __end_observability_logic(
@@ -538,13 +540,13 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         maybe_span: Maybe[StatefulSpanClient],
         completion: ChatCompletion[S] | ChatCompletion[RawResponse],
     ) -> None:
-        logger.debug("Ending Langfuse generation.")
+        debug_logger.debug("Ending Langfuse generation.")
         generation.end(
             output=completion.message,
         )
-        logger.debug("Langfuse generation ended.")
+        debug_logger.debug("Langfuse generation ended.")
 
-        logger.debug("Updating Langfuse generation usage.")
+        debug_logger.debug("Updating Langfuse generation usage.")
         generation.update(
             usage=ModelUsage(
                 unit="TOKENS",
@@ -562,16 +564,16 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 total_cost=completion.usage.total_cost or 0.0,
             )
         )
-        logger.debug("Langfuse generation usage updated.")
+        debug_logger.debug("Langfuse generation usage updated.")
 
-        logger.debug("Scoring Langfuse span as successful.")
+        debug_logger.debug("Scoring Langfuse span as successful.")
         maybe_span.score(
             id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
             name="Success",
             value=1.0,
             comment="Choices generated successfully!",
         )
-        logger.debug("Langfuse span scored successfully.")
+        debug_logger.debug("Langfuse span scored successfully.")
 
 
 class SynapseCascade(msgspec.Struct, frozen=True):
@@ -644,7 +646,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse failed on complete: {e}")
+                debug_logger.warning(f"Synapse failed on complete: {e}")
                 last_exception = e
                 continue
         if last_exception:
@@ -700,7 +702,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse failed on chat: {e}")
+                debug_logger.warning(f"Synapse failed on chat: {e}")
                 last_exception = e
                 continue
         if last_exception:
@@ -758,7 +760,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse failed on complete_async: {e}")
+                debug_logger.warning(f"Synapse failed on complete_async: {e}")
                 last_exception = e
                 continue
         if last_exception:
@@ -814,7 +816,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     timeout=timeout,
                 )
             except Exception as e:
-                logger.warning(f"Synapse failed on chat_async: {e}")
+                debug_logger.warning(f"Synapse failed on chat_async: {e}")
                 last_exception = e
                 continue
         if last_exception:
@@ -870,7 +872,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
     ) -> TextTranscriptionOutput:
-        logger.debug("Entering transcribe_async method.")
+        debug_logger.debug("Entering transcribe_async method.")
 
         # Step 1: Initialize Trace Parameters
         trace_params = trace_params or {
@@ -881,17 +883,17 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         trace_params.setdefault("user_id", "not_provided")
         trace_params.setdefault("name", "transcription")
 
-        logger.debug(f"Trace parameters: {trace_params}")
+        debug_logger.debug(f"Trace parameters: {trace_params}")
 
         # Step 2: Generate a unique transcription ID
         transcription_id: uuid.UUID = uuid.uuid4()
-        logger.debug(f"Generated transcription ID: {transcription_id}")
+        debug_logger.debug(f"Generated transcription ID: {transcription_id}")
 
         # Step 3: Initialize Langfuse Trace (if available)
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
             lambda lf: lf.trace(**trace_params)  # type: ignore
         )
-        logger.debug("Initialized Langfuse trace.")
+        debug_logger.debug("Initialized Langfuse trace.")
 
         # Step 4: Create a Span for the transcription process
         span: Maybe[StatefulSpanClient] = trace.map(
@@ -903,7 +905,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 name="Transcription Process",
             )
         )
-        logger.debug("Created Langfuse span for transcription.")
+        debug_logger.debug("Created Langfuse span for transcription.")
 
         # Step 5: Create a Transcription Model instance
         transcription_model: TranscriptionModel = TranscriptionModelFactory.create(
@@ -914,11 +916,15 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 "api_key": self.api_key,
             },
         )
-        logger.debug(f"Created TranscriptionModel instance for model: {self.model}")
+        debug_logger.debug(
+            f"Created TranscriptionModel instance for model: {self.model}"
+        )
 
         try:
             # Step 6: Perform the transcription asynchronously
-            logger.debug("Calling transcribe_async method of the Transcription Model.")
+            debug_logger.debug(
+                "Calling transcribe_async method of the Transcription Model."
+            )
             transcription_result: TextTranscriptionOutput = (
                 await transcription_model.transcribe_async(
                     audio=audio,
@@ -927,17 +933,19 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                     prompt=prompt,
                 )
             )
-            logger.debug("transcribe_async method call completed successfully.")
+            debug_logger.debug("transcribe_async method call completed successfully.")
 
             # Step 7: Fire and forget the observability logic
             fire_and_forget(self.__end_observability_logic, span, transcription_result)
-            logger.debug("Observability logic triggered.")
+            debug_logger.debug("Observability logic triggered.")
 
-            logger.debug("Returning transcription result.")
+            debug_logger.debug("Returning transcription result.")
             return transcription_result
 
         except Exception as e:
-            logger.error(f"An error occurred during transcription: {e}", exc_info=True)
+            debug_logger.error(
+                f"An error occurred during transcription: {e}", exc_info=True
+            )
             # Handle trace/span termination on error
             fire_and_forget(self.__handle_error_observability, span, e)
             raise e
@@ -947,11 +955,11 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         span: Maybe[StatefulSpanClient],
         transcription_result: TextTranscriptionOutput,
     ) -> None:
-        logger.debug("Ending Langfuse span.")
+        debug_logger.debug("Ending Langfuse span.")
         span.map(lambda s: s.end(output={"text": transcription_result.text}))  # type: ignore
-        logger.debug("Langfuse span ended.")
+        debug_logger.debug("Langfuse span ended.")
 
-        logger.debug("Updating Langfuse span usage.")
+        debug_logger.debug("Updating Langfuse span usage.")
         span.map(
             lambda s: s.update(  # type: ignore
                 usage=ModelUsage(
@@ -967,9 +975,9 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 )
             )
         )
-        logger.debug("Langfuse span usage updated.")
+        debug_logger.debug("Langfuse span usage updated.")
 
-        logger.debug("Scoring Langfuse span as successful.")
+        debug_logger.debug("Scoring Langfuse span as successful.")
         span.map(
             lambda s: s.score(  # type: ignore
                 id=f"sc-{s.id}",
@@ -978,29 +986,29 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 comment="Transcription completed successfully!",
             )
         )
-        logger.debug("Langfuse span scored as successful.")
+        debug_logger.debug("Langfuse span scored as successful.")
 
     async def __handle_error_observability(
         self,
         span: Maybe[StatefulSpanClient],
         exception: Exception,
     ) -> None:
-        logger.debug("Handling error in observability logic.")
+        debug_logger.debug("Handling error in observability logic.")
 
-        logger.debug("Ending Langfuse span due to error.")
+        debug_logger.debug("Ending Langfuse span due to error.")
         span.map(lambda s: s.end(output={"error": str(exception)}))  # type: ignore
-        logger.debug("Langfuse span ended with error.")
+        debug_logger.debug("Langfuse span ended with error.")
 
-        logger.debug("Updating Langfuse span status due to error.")
+        debug_logger.debug("Updating Langfuse span status due to error.")
         span.map(
             lambda s: s.update(  # type: ignore
                 status_message="Error in transcription",
                 level="ERROR",
             )
         )
-        logger.debug("Langfuse span status updated to ERROR.")
+        debug_logger.debug("Langfuse span status updated to ERROR.")
 
-        logger.debug("Scoring Langfuse span as failed.")
+        debug_logger.debug("Scoring Langfuse span as failed.")
         span.map(
             lambda s: s.score(  # type: ignore
                 id=f"sc-{s.id}",
@@ -1009,6 +1017,6 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 comment=f"Error during transcription: {exception}",
             )
         )
-        logger.debug("Langfuse span scored as failed.")
+        debug_logger.debug("Langfuse span scored as failed.")
 
-        logger.debug("Error observability logic completed.")
+        debug_logger.debug("Error observability logic completed.")

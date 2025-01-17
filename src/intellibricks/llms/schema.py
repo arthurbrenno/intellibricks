@@ -7,6 +7,7 @@ import base64
 # import dataclasses
 import datetime
 import inspect
+import logging
 import re
 import uuid
 
@@ -19,6 +20,7 @@ from typing import (
     Annotated,
     Any,
     Callable,
+    Generic,
     Iterable,
     Iterator,
     Literal,
@@ -31,13 +33,12 @@ from typing import (
     TypeVar,
     cast,
     get_type_hints,
-    Generic,
     overload,
     override,
 )
 
 import msgspec
-from architecture.logging import LoggerFactory
+from architecture import log
 from architecture.types import NOT_GIVEN, NotGiven
 from architecture.utils.decorators import ensure_module_installed
 
@@ -101,7 +102,6 @@ if TYPE_CHECKING:
     from openai.types.shared_params.function_definition import (
         FunctionDefinition as OpenAIFunctionDefinition,
     )
-
     from PIL.Image import Image
 
     from intellibricks.llms.types import FileExtension
@@ -116,7 +116,7 @@ T = TypeVar("T", default="RawResponse")
 R = TypeVar("R", default=Any)
 _T = TypeVar("_T", default=str)
 
-logger = LoggerFactory.create(__name__)
+warning_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 class GenerationConfig(msgspec.Struct, frozen=True, kw_only=True):
@@ -594,7 +594,7 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                     url=file_data.file_uri, mime_type=MimeType(mime_type)
                 )
             else:
-                logger.warning(
+                warning_logger.warning(
                     f"Unknown file type: {mime_type}, falling back to ImageFilePart."
                 )
                 return ImageFilePart(
