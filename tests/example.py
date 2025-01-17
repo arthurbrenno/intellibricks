@@ -1,15 +1,20 @@
 from typing import Annotated
+
+import msgspec
+from dotenv import load_dotenv
+
 from intellibricks import (
+    AssistantMessage,
+    ChainOfThought,
+    DeveloperMessage,
     Synapse,
     UserMessage,
-    AssistantMessage,
-    DeveloperMessage,
-    ChainOfThought,
 )
-import msgspec
+
+load_dotenv()
 
 synapse = Synapse.of(
-    "openai/api/gpt-4o",
+    "cerebras/api/llama-3.3-70b",
 )
 
 messages = (
@@ -44,4 +49,4 @@ class ModelInfo(msgspec.Struct):
 
 completion = synapse.chat(messages, response_model=ChainOfThought[ModelInfo])
 
-print(completion.parsed)
+print(completion)

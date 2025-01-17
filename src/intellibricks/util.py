@@ -923,4 +923,6 @@ def ms_type_to_schema(
             return [_dereference_recursive(item) for item in data]
         return data
 
-    return dereference(main_schema)
+    dereferenced_schema = dereference(main_schema)
+    logger.info("Schema dereferenced successfully.")
+    return dereferenced_schema

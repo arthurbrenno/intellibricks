@@ -684,6 +684,7 @@ dependencies = [
     { name = "msgspec" },
     { name = "mypy" },
     { name = "openai" },
+    { name = "python-dotenv" },
 ]
 
 [package.optional-dependencies]
@@ -736,6 +737,7 @@ requires-dist = [
     { name = "msgspec", git = "https://github.com/jcrist/msgspec.git?rev=main" },
     { name = "mypy", specifier = ">=1.14.1" },
     { name = "openai", specifier = ">=1.54.3" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
 ]
 
 [package.metadata.requires-dev]
