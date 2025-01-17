@@ -188,7 +188,7 @@ chat_completion_structured = synapse.chat(
 ) # ChatCompletion[ModelInfo]
 
 chat_completion_COT_structured = synapse.chat(
-    messages, response_model=ChainOfThought, trace_params=trace_params
+    messages, response_model=ChainOfThought[str], trace_params=trace_params
 ) # ChatCompletion[ChainOfThought[str]]
 
 chat_completion_COT_structured_model_info = synapse.chat(
