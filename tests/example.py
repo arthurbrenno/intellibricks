@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 import msgspec
 from dotenv import load_dotenv
@@ -41,12 +41,17 @@ class CreatorInfo(msgspec.Struct):
 class ModelInfo(msgspec.Struct):
     name: Annotated[str, msgspec.Meta(description="Here you can enter your name.")]
 
+    random_number: Annotated[
+        Literal["1", "2", "3", "4", "5"],
+        msgspec.Meta(description="Here you can specify a random number."),
+    ]
+
     creator: Annotated[
         CreatorInfo,
         msgspec.Meta(description="Here you can enter the creator's name."),
     ]
 
 
-completion = synapse.chat(messages, response_model=ChainOfThought[str])
+completion = synapse.chat(messages, response_model=ChainOfThought[ModelInfo])
 
 print(completion)

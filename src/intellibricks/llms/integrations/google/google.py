@@ -229,6 +229,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                                 "max_length",
                                 "examples",
                             ],
+                            ensure_str_enum=True,
                         )
                         if response_model
                         else None,

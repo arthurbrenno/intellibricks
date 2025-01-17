@@ -868,15 +868,35 @@ def ms_type_to_schema(
     struct: type[msgspec.Struct],
     remove_parameters: Optional[Sequence[str]] = None,
     openai_like: bool = False,
+    ensure_str_enum: bool = False,
 ) -> dict[str, Any]:
     """Generates a fully dereferenced JSON schema for a given msgspec Struct type,
     handling recursive structures, with the option to remove specific parameters,
-    and adds 'additionalProperties: false' for OpenAI compatibility.
+    adds 'additionalProperties: false' for OpenAI compatibility,
+    and modifies enum fields for Google compatibility.
     """
 
     schemas, components = msgspec.json.schema_components([struct])
     main_schema = schemas[0]
     memo: dict[str, Any] = {}  # To store already dereferenced schemas
+
+    def ensure_enum_string(schema: dict[str, Any]) -> dict[str, Any]:
+        """Modifies enum fields to be compatible with Google's requirements."""
+        if not ensure_str_enum:
+            return schema
+
+        logger.warning(
+            "WARNING: ENSURING ENUMS ARE STRINGS FOR PROVIDER COMPATIBILITY!"
+            "THE PROVIDER MAY NOT SUPPORT ENUMS WITH NON-STRING VALUES!"
+            "IT WILL RETURN AN ENUM WITH STRING VALUES!"
+        )
+        if "enum" in schema:
+            # Ensure type is string for enum fields
+            schema["type"] = "string"
+            # Convert all enum values to strings if they aren't already
+            schema["enum"] = [str(value) for value in schema["enum"]]
+
+        return schema
 
     def dereference(schema: dict[str, Any]) -> dict[str, Any]:
         if "$ref" in schema:
@@ -918,7 +938,9 @@ def ms_type_to_schema(
                     )
                     continue  # Skip this parameter
                 new_data[key] = _dereference_recursive(value)
-            return new_data
+
+            # Apply Google-specific modifications after recursive processing
+            return ensure_enum_string(new_data)
         elif isinstance(data, list):
             return [_dereference_recursive(item) for item in data]
         return data
