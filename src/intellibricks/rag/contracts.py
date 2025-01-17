@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Protocol, runtime_checkable
 
-from intellibricks.files.parsed_document import ParsedDocument
+from intellibricks.files.parsed_files import ParsedFile
 from intellibricks.rag.schema import (
     Context,
     IngestionInfo,
@@ -16,7 +16,7 @@ from .transformations import DocumentTransformer
 class SupportsAsyncIngestion(Protocol):
     async def ingest_async(
         self,
-        document: ParsedDocument,
+        document: ParsedFile,
         transformations: Optional[list[DocumentTransformer]] = None,
     ) -> IngestionInfo: ...
 

@@ -10,7 +10,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from typing_extensions import override
 
-from intellibricks.files import ParsedDocument
+from intellibricks.files import ParsedFile
 from intellibricks.rag.contracts import (
     SupportsAsyncIngestion,
     SupportsContextRetrieval,
@@ -28,7 +28,7 @@ class LangchainVectorDatabaseContextSource(
     @override
     async def ingest_async(
         self,
-        document: ParsedDocument,
+        document: ParsedFile,
         transformations: Optional[list[DocumentTransformer[LangchainDocument]]] = None,
     ) -> IngestionInfo:
         """Stores the document in the database and returns the document ids."""

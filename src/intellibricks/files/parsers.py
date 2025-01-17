@@ -7,10 +7,11 @@ from typing import Optional, TypedDict
 import msgspec
 from architecture.data.files import RawFile
 from architecture.utils.decorators import ensure_module_installed
+from architecture.utils.functions import run_sync
 from openai import OpenAI
 
 from .constants import ParsingStrategy
-from .parsed_document import PageContent, ParsedDocument
+from .parsed_files import PageContent, ParsedFile
 
 
 class LocalSettings(TypedDict):
@@ -25,11 +26,18 @@ class FileParser(msgspec.Struct, frozen=True):
 
     strategy: ParsingStrategy = ParsingStrategy.DEFAULT
 
+    def extract_contents(
+        self,
+        file: RawFile,
+    ) -> ParsedFile:
+        """Extracts content from the file."""
+        return run_sync(self.extract_contents_async, file)
+
     @abc.abstractmethod
     async def extract_contents_async(
         self,
         file: RawFile,
-    ) -> ParsedDocument:
+    ) -> ParsedFile:
         """Extracts content from the file."""
         raise NotImplementedError("This method should be implemented by subclasses.")
 
@@ -40,6 +48,18 @@ class IntellibricksFileParser(FileParser, frozen=True): ...
 class PDFFileParser(IntellibricksFileParser, frozen=True): ...
 
 
+class OfficeFileParser(IntellibricksFileParser, frozen=True): ...
+
+
+class DocxFileParser(OfficeFileParser, frozen=True): ...
+
+
+class PptxFileParser(OfficeFileParser, frozen=True): ...
+
+
+class ExcelFileParser(OfficeFileParser, frozen=True): ...
+
+
 class MarkitdownFileParser(FileParser, frozen=True):
     client: Optional[OpenAI] = None
     model: Optional[str] = None
@@ -48,7 +68,7 @@ class MarkitdownFileParser(FileParser, frozen=True):
     async def extract_contents_async(
         self,
         file: RawFile,
-    ) -> ParsedDocument:
+    ) -> ParsedFile:
         from markitdown import MarkItDown
         from markitdown._markitdown import DocumentConverterResult
 
@@ -78,7 +98,7 @@ class MarkitdownFileParser(FileParser, frozen=True):
                 items=[],
             )
 
-            return ParsedDocument(
+            return ParsedFile(
                 name=file.name,
                 pages=[page_content],
             )

@@ -319,7 +319,7 @@ class Schema(msgspec.Struct, frozen=True):
     ]
 
 
-class ParsedDocument(msgspec.Struct, frozen=True):
+class ParsedFile(msgspec.Struct, frozen=True):
     name: Annotated[
         str,
         msgspec.Meta(

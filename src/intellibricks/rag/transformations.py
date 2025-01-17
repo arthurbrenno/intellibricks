@@ -5,14 +5,14 @@ from typing import Generic, TypeVar
 
 import msgspec
 
-from intellibricks.files.parsed_document import ParsedDocument
+from intellibricks.files.parsed_files import ParsedFile
 
 T = TypeVar("T")
 D = TypeVar("D", bound="DocumentTransformer")
 
 
 class DocumentTransformer[T](msgspec.Struct, frozen=True):
-    document: ParsedDocument
+    document: ParsedFile
 
     def __post_init__(self) -> None:
         if self.__class__ is DocumentTransformer:
@@ -21,7 +21,7 @@ class DocumentTransformer[T](msgspec.Struct, frozen=True):
             )
 
     @classmethod
-    def of(cls: type[D], document: ParsedDocument) -> D:
+    def of(cls: type[D], document: ParsedFile) -> D:
         return cls(document)
 
     @abstractmethod
