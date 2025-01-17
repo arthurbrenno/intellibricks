@@ -7,6 +7,7 @@ Welcome to the synapses
 
 from __future__ import annotations
 
+import logging
 from typing import (
     Literal,
     Optional,
@@ -18,8 +19,8 @@ from typing import (
 )
 
 import msgspec
+from architecture import log
 from architecture.extensions import Maybe
-from architecture.logging import LoggerFactory
 from langfuse import Langfuse
 
 from intellibricks.llms.base import FileContent
@@ -42,7 +43,8 @@ from .schema import (
 )
 from .types import AIModel, TranscriptionModelType
 
-logger = LoggerFactory.create(__name__)
+debug_logger = log.create_logger(__name__, level=logging.DEBUG)
+error_logger = log.create_logger(__name__, level=logging.ERROR)
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 

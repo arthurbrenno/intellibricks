@@ -21,7 +21,10 @@ dependencies = [
 Source = "https://github.com/arthurbrenno/intellibricks"
 
 [project.optional-dependencies]
-files = ["markitdown>=0.0.1a3"]
+files = [
+    "markitdown>=0.0.1a3",
+    "pypdf>=5.1.0",
+]
 cerebras = ["cerebras_cloud_sdk>=1.16.0"]
 
 [build-system]

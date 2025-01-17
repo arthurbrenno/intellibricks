@@ -1,6 +1,7 @@
+import logging
 from typing import Any, Optional
 
-from architecture.logging import LoggerFactory
+from architecture import log
 from architecture.utils.creators import DynamicInstanceCreator
 
 from intellibricks.llms.base import TranscriptionModel
@@ -18,7 +19,7 @@ from intellibricks.llms.integrations.openai import (
 )
 from intellibricks.llms.types import AIModel, TranscriptionModelType
 
-logger = LoggerFactory.create(__name__)
+debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 class LanguageModelFactory:
@@ -26,7 +27,7 @@ class LanguageModelFactory:
     def create(
         cls, model: AIModel, params: Optional[dict[str, Any]] = None
     ) -> LanguageModel:
-        logger.info(f"Creating model: {model}")
+        debug_logger.debug(f"Creating model: {model}")
 
         model_to_model_class: dict[AIModel, type[LanguageModel]] = {
             "google/genai/gemini-2.0-flash-exp": GoogleLanguageModel,
@@ -214,7 +215,7 @@ class TranscriptionModelFactory:
         model: TranscriptionModelType,
         params: Optional[dict[str, Any]] = None,
     ) -> TranscriptionModel:
-        logger.info(f"Creating transcription model: {model}")
+        debug_logger.info(f"Creating transcription model: {model}")
 
         transcription_model_type_to_transcription_model_class: dict[
             TranscriptionModelType, type[TranscriptionModel]
