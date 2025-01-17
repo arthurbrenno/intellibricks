@@ -189,7 +189,7 @@ chat_completion_structured = synapse.chat(
 
 chat_completion_COT_structured = synapse.chat(
     messages, response_model=ChainOfThought, trace_params=trace_params
-) # ChatCompletion[ChainOfThought[str]] # not working with OpenAI yet.
+) # ChatCompletion[ChainOfThought[str]]
 
 chat_completion_COT_structured_model_info = synapse.chat(
     messages, response_model=ChainOfThought[ModelInfo], trace_params=trace_params

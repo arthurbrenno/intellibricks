@@ -47,6 +47,6 @@ class ModelInfo(msgspec.Struct):
     ]
 
 
-completion = synapse.chat(messages, response_model=ChainOfThought[ModelInfo])
+completion = synapse.chat(messages, response_model=ChainOfThought[str])
 
 print(completion)
