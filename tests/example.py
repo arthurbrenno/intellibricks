@@ -1,12 +1,17 @@
 from typing import Annotated
+
+import msgspec
+from dotenv import load_dotenv
+
 from intellibricks import (
+    AssistantMessage,
+    ChainOfThought,
+    DeveloperMessage,
     Synapse,
     UserMessage,
-    AssistantMessage,
-    DeveloperMessage,
-    ChainOfThought,
 )
-import msgspec
+
+load_dotenv()
 
 synapse = Synapse.of(
     "google/genai/gemini-2.0-flash-exp",
@@ -42,6 +47,6 @@ class ModelInfo(msgspec.Struct):
     ]
 
 
-completion = synapse.chat(messages, response_model=ChainOfThought[ModelInfo])
+completion = synapse.chat(messages, response_model=ChainOfThought[str])
 
-print(completion.parsed)
+print(completion)

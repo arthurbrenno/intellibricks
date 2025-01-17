@@ -492,7 +492,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         logger.debug("Language Model instance created.")
 
         try:
-            logger.debug("Calling chat_async method of the Language Model.")
+            logger.info("CALLING THE AI MODEL.")
             completion = await chat_model.chat_async(
                 messages=messages,
                 response_model=response_model,
