@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import struct
 from os import PathLike
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, cast
 
 import msgspec
-from architecture.logging import LoggerFactory
+from architecture import log
 
 from intellibricks.llms.base import FileContent
 from intellibricks.util import fix_broken_json, ms_type_to_schema
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     )
 
 
-logger = LoggerFactory.create(__name__)
+logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 def find_text_part(parts: Sequence[Part]) -> TextPart:

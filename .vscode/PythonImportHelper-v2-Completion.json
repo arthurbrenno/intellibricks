@@ -3505,14 +3505,6 @@
         "documentation": {}
     },
     {
-        "label": "LoggerFactory",
-        "importPath": "architecture.logging",
-        "description": "architecture.logging",
-        "isExtraImport": true,
-        "detail": "architecture.logging",
-        "documentation": {}
-    },
-    {
         "label": "logger",
         "importPath": "architecture.logging",
         "description": "architecture.logging",
@@ -3694,6 +3686,14 @@
         "description": "openai.types.shared_params.response_format_json_schema",
         "isExtraImport": true,
         "detail": "openai.types.shared_params.response_format_json_schema",
+        "documentation": {}
+    },
+    {
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
+        "isExtraImport": true,
+        "detail": "architecture",
         "documentation": {}
     },
     {
@@ -5597,7 +5597,7 @@
         "kind": 5,
         "importPath": "src.intellibricks.llms.util",
         "description": "src.intellibricks.llms.util",
-        "peekOfCode": "logger = LoggerFactory.create(__name__)\ndef find_text_part(parts: Sequence[Part]) -> TextPart:\n    from intellibricks.llms.schema import TextPart\n    text_part: Optional[Part] = next(\n        filter(lambda part: isinstance(part, TextPart), parts), None\n    )\n    if text_part is None:\n        raise ValueError(\"Text part was not found in the provided parts list.\")\n    return cast(TextPart, text_part)\ndef get_parts_llm_described_text(parts: Sequence[PartType]) -> str:",
+        "peekOfCode": "logger = log.create_logger(__name__, level=logging.DEBUG)\ndef find_text_part(parts: Sequence[Part]) -> TextPart:\n    from intellibricks.llms.schema import TextPart\n    text_part: Optional[Part] = next(\n        filter(lambda part: isinstance(part, TextPart), parts), None\n    )\n    if text_part is None:\n        raise ValueError(\"Text part was not found in the provided parts list.\")\n    return cast(TextPart, text_part)\ndef get_parts_llm_described_text(parts: Sequence[PartType]) -> str:",
         "detail": "src.intellibricks.llms.util",
         "documentation": {}
     },
