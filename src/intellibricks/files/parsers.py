@@ -7,6 +7,7 @@ from typing import Optional, TypedDict
 import msgspec
 from architecture.data.files import RawFile
 from architecture.utils.decorators import ensure_module_installed
+from openai import OpenAI
 
 from .constants import ParsingStrategy
 from .parsed_document import PageContent, ParsedDocument
@@ -26,25 +27,31 @@ class FileParser(msgspec.Struct, frozen=True):
     async def extract_contents_async(
         self,
         file: RawFile,
-        parsing_strategy: ParsingStrategy = ParsingStrategy.DEFAULT,
+        strategy: ParsingStrategy = ParsingStrategy.DEFAULT,
         local_settings: Optional[LocalSettings] = None,
     ) -> ParsedDocument:
         """Extracts content from the file."""
         raise NotImplementedError("This method should be implemented by subclasses.")
 
 
+class IntellibricksFileParser(FileParser, frozen=True): ...
+
+
 class MarkitdownFileParser(FileParser, frozen=True):
+    client: Optional[OpenAI] = None
+    model: Optional[str] = None
+
     @ensure_module_installed("markitdown", "intellibricks[files]")
     async def extract_contents_async(
         self,
         file: RawFile,
-        parsing_strategy: ParsingStrategy = ParsingStrategy.DEFAULT,
+        strategy: ParsingStrategy = ParsingStrategy.DEFAULT,
         local_settings: Optional[LocalSettings] = None,
     ) -> ParsedDocument:
         from markitdown import MarkItDown
         from markitdown._markitdown import DocumentConverterResult
 
-        match parsing_strategy:
+        match strategy:
             case ParsingStrategy.DEFAULT:
                 llm_client = None
                 llm_model = None
@@ -55,10 +62,8 @@ class MarkitdownFileParser(FileParser, frozen=True):
                 llm_client = None
                 llm_model = None
             case ParsingStrategy.HIGH:
-                from openai import OpenAI
-
-                llm_client = OpenAI()
-                llm_model = "gpt-4o"
+                llm_client = self.client or OpenAI()
+                llm_model = self.model or "gpt-4o"
 
         with tempfile.NamedTemporaryFile(delete=True) as temp_file:
             temp_file.write(file.contents)
