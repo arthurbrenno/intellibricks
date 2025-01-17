@@ -1455,6 +1455,14 @@
         "documentation": {}
     },
     {
+        "label": "Literal",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "Annotated",
         "importPath": "typing",
         "description": "typing",
@@ -4595,29 +4603,11 @@
         "documentation": {}
     },
     {
-        "label": "IntellibricksFileParser",
-        "kind": 6,
-        "importPath": "src.intellibricks.files.parsers",
-        "description": "src.intellibricks.files.parsers",
-        "peekOfCode": "class IntellibricksFileParser(FileParser, frozen=True): ...\nclass PDFFileParser(IntellibricksFileParser, frozen=True): ...\nclass MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n    ) -> ParsedDocument:",
-        "detail": "src.intellibricks.files.parsers",
-        "documentation": {}
-    },
-    {
-        "label": "PDFFileParser",
-        "kind": 6,
-        "importPath": "src.intellibricks.files.parsers",
-        "description": "src.intellibricks.files.parsers",
-        "peekOfCode": "class PDFFileParser(IntellibricksFileParser, frozen=True): ...\nclass MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n    ) -> ParsedDocument:\n        from markitdown import MarkItDown",
-        "detail": "src.intellibricks.files.parsers",
-        "documentation": {}
-    },
-    {
         "label": "MarkitdownFileParser",
         "kind": 6,
         "importPath": "src.intellibricks.files.parsers",
         "description": "src.intellibricks.files.parsers",
-        "peekOfCode": "class MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n    ) -> ParsedDocument:\n        from markitdown import MarkItDown\n        from markitdown._markitdown import DocumentConverterResult",
+        "peekOfCode": "class MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n        parsing_strategy: ParsingStrategy = ParsingStrategy.DEFAULT,\n        local_settings: Optional[LocalSettings] = None,\n    ) -> ParsedDocument:",
         "detail": "src.intellibricks.files.parsers",
         "documentation": {}
     },
@@ -5868,7 +5858,7 @@
         "kind": 2,
         "importPath": "src.intellibricks.util",
         "description": "src.intellibricks.util",
-        "peekOfCode": "def ms_type_to_schema(\n    struct: type[msgspec.Struct],\n    remove_parameters: Optional[Sequence[str]] = None,\n    openai_like: bool = False,\n) -> dict[str, Any]:\n    \"\"\"Generates a fully dereferenced JSON schema for a given msgspec Struct type,\n    handling recursive structures, with the option to remove specific parameters,\n    and adds 'additionalProperties: false' for OpenAI compatibility.\n    \"\"\"\n    schemas, components = msgspec.json.schema_components([struct])",
+        "peekOfCode": "def ms_type_to_schema(\n    struct: type[msgspec.Struct],\n    remove_parameters: Optional[Sequence[str]] = None,\n    openai_like: bool = False,\n    ensure_str_enum: bool = False,\n) -> dict[str, Any]:\n    \"\"\"Generates a fully dereferenced JSON schema for a given msgspec Struct type,\n    handling recursive structures, with the option to remove specific parameters,\n    adds 'additionalProperties: false' for OpenAI compatibility,\n    and modifies enum fields for Google compatibility.",
         "detail": "src.intellibricks.util",
         "documentation": {}
     },
@@ -5985,7 +5975,7 @@
         "kind": 6,
         "importPath": "tests.example",
         "description": "tests.example",
-        "peekOfCode": "class ModelInfo(msgspec.Struct):\n    name: Annotated[str, msgspec.Meta(description=\"Here you can enter your name.\")]\n    creator: Annotated[\n        CreatorInfo,\n        msgspec.Meta(description=\"Here you can enter the creator's name.\"),\n    ]\ncompletion = synapse.chat(messages, response_model=ChainOfThought[str])\nprint(completion)",
+        "peekOfCode": "class ModelInfo(msgspec.Struct):\n    name: Annotated[str, msgspec.Meta(description=\"Here you can enter your name.\")]\n    random_number: Annotated[\n        Literal[\"1\", \"2\", \"3\", \"4\", \"5\"],\n        msgspec.Meta(description=\"Here you can specify a random number.\"),\n    ]\n    creator: Annotated[\n        CreatorInfo,\n        msgspec.Meta(description=\"Here you can enter the creator's name.\"),\n    ]",
         "detail": "tests.example",
         "documentation": {}
     },
@@ -5994,7 +5984,7 @@
         "kind": 5,
         "importPath": "tests.example",
         "description": "tests.example",
-        "peekOfCode": "synapse = Synapse.of(\n    \"google/genai/gemini-2.0-flash-exp\",\n)\nmessages = (\n    DeveloperMessage.from_text(\"You are a helpful assistant.\"),\n    UserMessage.from_text(\"Hello, how are you?\"),\n    AssistantMessage.from_text(\"I am fine, thank you.\"),\n    UserMessage.from_text(\"What is your name? And who created you?\"),\n)\nprint(messages)",
+        "peekOfCode": "synapse = Synapse.of(\n    \"cerebras/api/llama-3.3-70b\",\n)\nmessages = (\n    DeveloperMessage.from_text(\"You are a helpful assistant.\"),\n    UserMessage.from_text(\"Hello, how are you?\"),\n    AssistantMessage.from_text(\"I am fine, thank you.\"),\n    UserMessage.from_text(\"What is your name? And who created you?\"),\n)\nprint(messages)",
         "detail": "tests.example",
         "documentation": {}
     },
@@ -6012,7 +6002,7 @@
         "kind": 5,
         "importPath": "tests.example",
         "description": "tests.example",
-        "peekOfCode": "completion = synapse.chat(messages, response_model=ChainOfThought[str])\nprint(completion)",
+        "peekOfCode": "completion = synapse.chat(messages, response_model=ChainOfThought[ModelInfo])\nprint(completion)",
         "detail": "tests.example",
         "documentation": {}
     },
