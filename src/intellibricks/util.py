@@ -886,7 +886,7 @@ def ms_type_to_schema(
         if not ensure_str_enum:
             return schema
 
-        logger.warning(
+        debug_logger.warning(
             "WARNING: ENSURING ENUMS ARE STRINGS FOR PROVIDER COMPATIBILITY!"
             "THE PROVIDER MAY NOT SUPPORT ENUMS WITH NON-STRING VALUES!"
             "IT WILL RETURN AN ENUM WITH STRING VALUES!"
