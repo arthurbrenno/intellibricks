@@ -865,10 +865,13 @@ def get_file_extension(url: str) -> FileExtension:
 
 
 def ms_type_to_schema(
-    struct: type[msgspec.Struct], remove_parameters: Optional[Sequence[str]] = None
+    struct: type[msgspec.Struct],
+    remove_parameters: Optional[Sequence[str]] = None,
+    openai_like: bool = False,
 ) -> dict[str, Any]:
     """Generates a fully dereferenced JSON schema for a given msgspec Struct type,
-    handling recursive structures, with the option to remove specific parameters.
+    handling recursive structures, with the option to remove specific parameters,
+    and adds 'additionalProperties: false' for OpenAI compatibility.
     """
 
     schemas, components = msgspec.json.schema_components([struct])
@@ -887,6 +890,12 @@ def ms_type_to_schema(
                 }  # Mark as processing to avoid infinite recursion
                 dereferenced = components[component_name]
                 if isinstance(dereferenced, dict):
+                    if (
+                        openai_like
+                        and "properties" in dereferenced
+                        and "additionalProperties" not in dereferenced
+                    ):
+                        dereferenced["additionalProperties"] = False
                     dereferenced = _dereference_recursive(dereferenced)
                 memo[component_name] = dereferenced
                 return dereferenced
@@ -900,7 +909,8 @@ def ms_type_to_schema(
         if isinstance(data, dict):
             if "$ref" in data:
                 return dereference(cast(dict[str, Any], data))
-            new_data = {}
+
+            new_data: dict[str, Any] = {}
             for key, value in data.items():
                 if remove_parameters and key in remove_parameters:
                     logger.warning(

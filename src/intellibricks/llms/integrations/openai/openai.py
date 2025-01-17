@@ -187,7 +187,7 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
                     name=response_model.__name__,
                     description="Structured response",
                     schema=ms_type_to_schema(
-                        response_model, remove_parameters=["examples"]
+                        response_model, remove_parameters=["examples"], openai_like=True
                     ),
                     strict=True,
                 ),
