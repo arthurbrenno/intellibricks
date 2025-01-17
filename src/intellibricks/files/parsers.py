@@ -29,11 +29,15 @@ class FileParser(msgspec.Struct, frozen=True):
     async def extract_contents_async(
         self,
         file: RawFile,
-        parsing_strategy: ParsingStrategy = ParsingStrategy.DEFAULT,
-        local_settings: Optional[LocalSettings] = None,
     ) -> ParsedDocument:
         """Extracts content from the file."""
         raise NotImplementedError("This method should be implemented by subclasses.")
+
+
+class IntellibricksFileParser(FileParser, frozen=True): ...
+
+
+class PDFFileParser(IntellibricksFileParser, frozen=True): ...
 
 
 class MarkitdownFileParser(FileParser, frozen=True):
@@ -44,20 +48,14 @@ class MarkitdownFileParser(FileParser, frozen=True):
     async def extract_contents_async(
         self,
         file: RawFile,
-        parsing_strategy: ParsingStrategy = ParsingStrategy.DEFAULT,
-        local_settings: Optional[LocalSettings] = None,
     ) -> ParsedDocument:
         from markitdown import MarkItDown
         from markitdown._markitdown import DocumentConverterResult
 
-        match parsing_strategy:
-            case ParsingStrategy.DEFAULT:
-                llm_client = None
-                llm_model = None
-            case ParsingStrategy.FAST:
-                llm_client = None
-                llm_model = None
-            case ParsingStrategy.MEDIUM:
+        match self.strategy:
+            case (
+                ParsingStrategy.DEFAULT | ParsingStrategy.MEDIUM | ParsingStrategy.FAST
+            ):
                 llm_client = None
                 llm_model = None
             case ParsingStrategy.HIGH:

@@ -4603,11 +4603,29 @@
         "documentation": {}
     },
     {
+        "label": "IntellibricksFileParser",
+        "kind": 6,
+        "importPath": "src.intellibricks.files.parsers",
+        "description": "src.intellibricks.files.parsers",
+        "peekOfCode": "class IntellibricksFileParser(FileParser, frozen=True): ...\nclass PDFFileParser(IntellibricksFileParser, frozen=True): ...\nclass MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n    ) -> ParsedDocument:",
+        "detail": "src.intellibricks.files.parsers",
+        "documentation": {}
+    },
+    {
+        "label": "PDFFileParser",
+        "kind": 6,
+        "importPath": "src.intellibricks.files.parsers",
+        "description": "src.intellibricks.files.parsers",
+        "peekOfCode": "class PDFFileParser(IntellibricksFileParser, frozen=True): ...\nclass MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n    ) -> ParsedDocument:\n        from markitdown import MarkItDown",
+        "detail": "src.intellibricks.files.parsers",
+        "documentation": {}
+    },
+    {
         "label": "MarkitdownFileParser",
         "kind": 6,
         "importPath": "src.intellibricks.files.parsers",
         "description": "src.intellibricks.files.parsers",
-        "peekOfCode": "class MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n        parsing_strategy: ParsingStrategy = ParsingStrategy.DEFAULT,\n        local_settings: Optional[LocalSettings] = None,\n    ) -> ParsedDocument:",
+        "peekOfCode": "class MarkitdownFileParser(FileParser, frozen=True):\n    client: Optional[OpenAI] = None\n    model: Optional[str] = None\n    @ensure_module_installed(\"markitdown\", \"intellibricks[files]\")\n    async def extract_contents_async(\n        self,\n        file: RawFile,\n    ) -> ParsedDocument:\n        from markitdown import MarkItDown\n        from markitdown._markitdown import DocumentConverterResult",
         "detail": "src.intellibricks.files.parsers",
         "documentation": {}
     },
