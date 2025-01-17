@@ -37,6 +37,9 @@ class FileParser(msgspec.Struct, frozen=True):
 class IntellibricksFileParser(FileParser, frozen=True): ...
 
 
+class PDFFileParser(IntellibricksFileParser, frozen=True): ...
+
+
 class MarkitdownFileParser(FileParser, frozen=True):
     client: Optional[OpenAI] = None
     model: Optional[str] = None
