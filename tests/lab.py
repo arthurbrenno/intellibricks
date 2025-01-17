@@ -1,6 +1,8 @@
 import msgspec
 from typing import Annotated, TypeVar, Generic, Sequence, Any
-from architecture.logging import logger
+from architecture import log
+
+logger = log.create_logger(__name__)
 
 _T = TypeVar("_T")
 

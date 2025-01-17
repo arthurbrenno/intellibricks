@@ -3497,19 +3497,59 @@
         "documentation": {}
     },
     {
-        "label": "LoggerFactory",
-        "importPath": "architecture.logging",
-        "description": "architecture.logging",
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
         "isExtraImport": true,
-        "detail": "architecture.logging",
+        "detail": "architecture",
         "documentation": {}
     },
     {
-        "label": "logger",
-        "importPath": "architecture.logging",
-        "description": "architecture.logging",
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
         "isExtraImport": true,
-        "detail": "architecture.logging",
+        "detail": "architecture",
+        "documentation": {}
+    },
+    {
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
+        "isExtraImport": true,
+        "detail": "architecture",
+        "documentation": {}
+    },
+    {
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
+        "isExtraImport": true,
+        "detail": "architecture",
+        "documentation": {}
+    },
+    {
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
+        "isExtraImport": true,
+        "detail": "architecture",
+        "documentation": {}
+    },
+    {
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
+        "isExtraImport": true,
+        "detail": "architecture",
+        "documentation": {}
+    },
+    {
+        "label": "log",
+        "importPath": "architecture",
+        "description": "architecture",
+        "isExtraImport": true,
+        "detail": "architecture",
         "documentation": {}
     },
     {
@@ -3686,46 +3726,6 @@
         "description": "openai.types.shared_params.response_format_json_schema",
         "isExtraImport": true,
         "detail": "openai.types.shared_params.response_format_json_schema",
-        "documentation": {}
-    },
-    {
-        "label": "log",
-        "importPath": "architecture",
-        "description": "architecture",
-        "isExtraImport": true,
-        "detail": "architecture",
-        "documentation": {}
-    },
-    {
-        "label": "log",
-        "importPath": "architecture",
-        "description": "architecture",
-        "isExtraImport": true,
-        "detail": "architecture",
-        "documentation": {}
-    },
-    {
-        "label": "log",
-        "importPath": "architecture",
-        "description": "architecture",
-        "isExtraImport": true,
-        "detail": "architecture",
-        "documentation": {}
-    },
-    {
-        "label": "log",
-        "importPath": "architecture",
-        "description": "architecture",
-        "isExtraImport": true,
-        "detail": "architecture",
-        "documentation": {}
-    },
-    {
-        "label": "log",
-        "importPath": "architecture",
-        "description": "architecture",
-        "isExtraImport": true,
-        "detail": "architecture",
         "documentation": {}
     },
     {
@@ -4724,7 +4724,7 @@
         "kind": 5,
         "importPath": "src.intellibricks.llms.integrations.google.google",
         "description": "src.intellibricks.llms.integrations.google.google",
-        "peekOfCode": "logger = LoggerFactory.create(__name__)\nS = TypeVar(\"S\", bound=msgspec.Struct, default=RawResponse)\nMODEL_PRICING = {\n    # Gemini 1.5 Flash and its aliases\n    \"gemini-1.5-flash\": {\n        \"text_input\": 0.00001875 / 1000,\n        \"text_output\": 0.000075 / 1000,\n        \"image_input\": 0.00002,\n        \"audio_input\": 0.00002,\n    },",
+        "peekOfCode": "logger = log.create_logger(__name__)\nS = TypeVar(\"S\", bound=msgspec.Struct, default=RawResponse)\nMODEL_PRICING = {\n    # Gemini 1.5 Flash and its aliases\n    \"gemini-1.5-flash\": {\n        \"text_input\": 0.00001875 / 1000,\n        \"text_output\": 0.000075 / 1000,\n        \"image_input\": 0.00002,\n        \"audio_input\": 0.00002,\n    },",
         "detail": "src.intellibricks.llms.integrations.google.google",
         "documentation": {}
     },
@@ -6066,6 +6066,15 @@
         "importPath": "tests.lab",
         "description": "tests.lab",
         "peekOfCode": "def schema_hook(schema: Any) -> dict[str, Any]:\n    print(schema)\n    return {}\nschema = msgspec.json.schema(ChainOfThought[Response])\nlogger.debug(schema)",
+        "detail": "tests.lab",
+        "documentation": {}
+    },
+    {
+        "label": "logger",
+        "kind": 5,
+        "importPath": "tests.lab",
+        "description": "tests.lab",
+        "peekOfCode": "logger = log.create_logger(__name__)\n_T = TypeVar(\"_T\")\nclass ThoughtDetail(msgspec.Struct, frozen=True):\n    detail: Annotated[\n        str,\n        msgspec.Meta(\n            title=\"Thought Detail\",\n            description=\"A granular explanation of a specific aspect of the reasoning step.\",\n            examples=[\"First, I added 2 + 3\", \"Checked if the number is even or odd\"],\n        ),",
         "detail": "tests.lab",
         "documentation": {}
     },

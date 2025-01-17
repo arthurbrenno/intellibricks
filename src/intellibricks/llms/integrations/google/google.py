@@ -3,7 +3,7 @@ import timeit
 from typing import Any, Literal, Optional, Sequence, TypeVar, cast, overload, override
 import uuid
 
-from architecture.logging import LoggerFactory
+from architecture import log
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 
@@ -32,7 +32,7 @@ from intellibricks.llms.util import (
 )
 from intellibricks.util import ms_type_to_schema
 
-logger = LoggerFactory.create(__name__)
+logger = log.create_logger(__name__)
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
