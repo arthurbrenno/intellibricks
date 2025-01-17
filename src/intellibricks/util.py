@@ -3,7 +3,17 @@ import mimetypes
 import os
 import re
 from pathlib import Path
-from typing import Any, Callable, Literal, Union, Optional, cast, get_args, Mapping
+from typing import (
+    Any,
+    Callable,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+    get_args,
+)
 from urllib.parse import urlparse
 
 import msgspec
@@ -855,7 +865,7 @@ def get_file_extension(url: str) -> FileExtension:
 
 
 def ms_type_to_schema(
-    struct: type[msgspec.Struct], remove_parameters: Optional[list[str]] = None
+    struct: type[msgspec.Struct], remove_parameters: Optional[Sequence[str]] = None
 ) -> dict[str, Any]:
     """Generates a fully dereferenced JSON schema for a given msgspec Struct type,
     handling recursive structures, with the option to remove specific parameters.
