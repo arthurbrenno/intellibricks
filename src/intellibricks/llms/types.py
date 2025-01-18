@@ -3462,7 +3462,7 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
     ]
 
     relationships: Annotated[
-        Optional[list[str]],
+        Optional[Sequence[str]],
         msgspec.Meta(
             title="Element Relationships",
             description="Describe how this element is visually related to other elements in the image. Explain its position relative to others, whether it's connected, overlapping, near, or otherwise associated with them. Be specific about the other elements involved. Examples: 'The arrow points from this box to the next', 'This circle is enclosed within the square', 'The text label is positioned below the diagram element'.",
@@ -3489,7 +3489,7 @@ class ImageStructure(msgspec.Struct, frozen=True):
         ),
     ]
     groupings: Annotated[
-        Optional[list[str]],
+        Optional[Sequence[str]],
         msgspec.Meta(
             title="Significant Groupings of Elements",
             description="Describe any notable groupings or clusters of visual elements that appear to function together or have a shared context. Explain what binds these elements together visually or conceptually. Examples: 'The terms on the left side of the equation', 'The interconnected components of the circuit diagram', 'The set of icons representing different functions'.",
@@ -3536,7 +3536,7 @@ class ImageDescription(msgspec.Struct, frozen=True):
         ),
     ]
     visual_elements: Annotated[
-        Optional[list[VisualElementDescription]],
+        Optional[Sequence[VisualElementDescription]],
         msgspec.Meta(
             title="Detailed Visual Element Descriptions",
             description="A list of individual visual elements identified within the image, each with its own detailed description. For each element, provide its type, specific visual details, its role or function within the image's context, and its relationships to other elements. The goal is to break down the image into its fundamental visual components and describe them comprehensively. This applies to all types of images, from tangible objects in photographs to symbols in diagrams or strokes in abstract art. Focus on discrete, meaningful visual components. For a formula, each term or symbol could be an element. For a diagram, each shape or arrow. For abstract art, significant areas of color or lines.",
@@ -3550,7 +3550,7 @@ class ImageDescription(msgspec.Struct, frozen=True):
         ),
     ]
     dominant_visual_features: Annotated[
-        Optional[list[str]],
+        Optional[Sequence[str]],
         msgspec.Meta(
             title="Dominant Visual Features",
             description="A list of the most striking visual features of the image that contribute significantly to its overall appearance and impact. This could include dominant colors, recurring patterns, distinctive shapes, lines, textures (if visually apparent), or any other salient visual characteristics. Be specific and descriptive. Examples: 'Bold, contrasting colors', 'Repetitive geometric patterns', 'Strong diagonal lines', 'Textured brushstrokes', 'Symmetrical arrangement'.",
