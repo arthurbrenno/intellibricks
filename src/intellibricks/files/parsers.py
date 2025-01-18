@@ -60,12 +60,27 @@ class PDFFileParser(IntellibricksFileParser, frozen=True):
             file.save_to_file(file_path)
 
             reader = PdfReader(file_path)
-            for page in reader.pages:
+            page_contents: list[PageContent] = []
+            for page_num, page in enumerate(reader.pages):
                 page_images: Sequence[Image] = [
                     Image(contents=image.data, name=image.name) for image in page.images
                 ]
 
                 page_text = page.extract_text()
+
+                page_content = PageContent(
+                    page=page_num + 1,
+                    text=page_text,
+                    images=page_images,
+                )
+
+                page_contents.append(page_content)
+
+            file_name = file.name
+            return ParsedFile(
+                name=file_name,
+                pages=page_contents,
+            )
 
         raise NotImplementedError("TODO")
 
