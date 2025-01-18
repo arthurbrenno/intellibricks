@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     Literal,
-    TypeAlias,
     Optional,
     Sequence,
     TypedDict,
@@ -227,7 +226,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         2) `run_async` call
         3) Post-run steps
         """
-        _input = [UserMessage.from_text(inp)] if isinstance(inp, str) else inp
+        _input = self._transform_input(inp)
 
         self._before_run(_input, trace_params=trace_params)
         response = self._run_logic(_input, trace_params=trace_params)
@@ -245,7 +244,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         2) `run_logic_async`
         3) Post-run steps
         """
-        _input = [UserMessage.from_text(inp)] if isinstance(inp, str) else inp
+        _input = self._transform_input(inp)
         await self._before_run_async(_input, trace_params=trace_params)
         response = await self._run_logic_async(_input, trace_params=trace_params)
         await self._after_run_async(_input, response, trace_params=trace_params)
@@ -411,7 +410,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         return app
 
     def _run_logic(
-        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: Sequence[Message], trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         return run_sync(self._run_logic_async, inp)
 
@@ -442,7 +441,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         pass
 
     async def _run_logic_async(
-        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: Sequence[Message], trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         message_sequence = MessageSequence(inp)
         context_sequence: ContextSourceSequence = ContextSourceSequence(
@@ -534,16 +533,21 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             tool_calls=tool_call_sequence.sequence,
         )
 
-    def _inp_to_message_sequence(inp: AgentInput) -> Sequence[Message]:
-        match AgentInput:
-            case str():
-                return [UserMessage.from_text(inp)]
-            case PartType():
-                return [UserMessage.from_part(inp)]
-            case _
-                if isinstance(inp[0], Message):
-                    return inp
-                return [UserMessage(contents=inp)]
+    def _transform_input(self, inp: AgentInput) -> Sequence[MessageType]:
+        """
+        Transforms the input, which was made like this to make it easier for users,
+        into a Sequence of MessageType, so developers can work with it more
+        easily and expect one type of input only.
+        """
+        if isinstance(inp, str):
+            return [UserMessage.from_text(inp)]
+        elif isinstance(inp, PartType):
+            return [UserMessage.from_part(inp)]
+        else:
+            if inp and isinstance(inp[0], Message):
+                return cast(Sequence[MessageType], inp)
+
+            return [UserMessage(contents=cast(Sequence[PartType], inp))]
 
 
 class Maestro[S: msgspec.Struct = RawResponse](Agent[S], frozen=True):
