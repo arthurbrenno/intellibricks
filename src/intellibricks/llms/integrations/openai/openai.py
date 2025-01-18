@@ -12,7 +12,7 @@ from intellibricks.llms.base import (
     TranscriptionModel,
 )
 from intellibricks.llms.constants import FinishReason
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     CalledFunction,
     ChatCompletion,
     CompletionTokensDetails,

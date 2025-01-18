@@ -12,13 +12,13 @@ from typing import (
     Sequence,
     Union,
     cast,
+    TypedDict,
     get_args,
 )
 from urllib.parse import urlparse
 
 import msgspec
 from architecture import log
-from typing_extensions import TypedDict
 
 from intellibricks.llms.types import FileExtension
 import logging

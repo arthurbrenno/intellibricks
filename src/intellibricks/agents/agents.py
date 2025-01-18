@@ -20,7 +20,7 @@ from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms import Synapse
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     ChatCompletion,
     DeveloperMessage,
     GenerationConfig,
@@ -41,7 +41,7 @@ from intellibricks.rag.schema import ContextSourceSequence, Query
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
-    from Litestar import Litestar
+    from litestar import Litestar
     from litestar.handlers import HTTPRouteHandler
 
 
@@ -142,7 +142,8 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         Optional[Synapse | SynapseCascade],
         msgspec.Meta(
             title="Tool Synapse",
-            description="The synapse to use for the tools.",
+            description="The synapse to use for the tools calls."
+            "If not provided, the agent's synapse will be used.",
         ),
     ] = msgspec.field(default=None)
 
@@ -528,7 +529,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
 
         return AgentResponse(
             agent=self,
-            content=cast(ChatCompletion[S], final_completion),
+            content=final_completion,
             tool_calls=tool_call_sequence.sequence,
         )
 

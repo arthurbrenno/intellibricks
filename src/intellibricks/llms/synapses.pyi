@@ -30,7 +30,7 @@ from intellibricks.llms.general_web_search import WebSearchable
 from .constants import (
     Language,
 )
-from .schema import (
+from .types import (
     CacheConfig,
     ChatCompletion,
     Message,

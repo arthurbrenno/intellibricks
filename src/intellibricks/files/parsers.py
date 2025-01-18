@@ -10,6 +10,9 @@ from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.functions import run_sync
 from openai import OpenAI
 
+from intellibricks.agents import Agent
+from intellibricks.llms.types import ChainOfThought, ImageDescription
+
 from .constants import ParsingStrategy
 from .parsed_files import PageContent, ParsedFile
 
@@ -42,7 +45,8 @@ class FileParser(msgspec.Struct, frozen=True):
         raise NotImplementedError("This method should be implemented by subclasses.")
 
 
-class IntellibricksFileParser(FileParser, frozen=True): ...
+class IntellibricksFileParser(FileParser, frozen=True):
+    image_caption_agent: Optional[Agent[ChainOfThought[ImageDescription]]] = None
 
 
 class PDFFileParser(IntellibricksFileParser, frozen=True): ...

@@ -9,7 +9,7 @@ from architecture.utils.decorators import ensure_module_installed
 
 from google.genai.types import GenerateContentResponseUsageMetadata
 from intellibricks.llms.base.contracts import LanguageModel
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     GeneratedAssistantMessage,
     ChatCompletion,
     Function,

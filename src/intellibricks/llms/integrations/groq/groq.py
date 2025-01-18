@@ -23,7 +23,7 @@ from intellibricks.llms.base import (
 )
 
 from intellibricks.llms.constants import FinishReason
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     GeneratedAssistantMessage,
     CalledFunction,
     TextTranscriptionOutput,
@@ -302,13 +302,13 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         )
 
         audio_duration = get_audio_duration(audio)
-        
+
         # AI Model	Speed Factor	Price
         # (Per Hour Transcribed)
         # Whisper V3 Large	189x	$0.111*
         # Whisper Large v3 Turbo	216x	$0.04*
         # Distil-Whisper	250x	$0.02*
-        #TODO(arthur)
+        # TODO(arthur)
 
         return TextTranscriptionOutput(
             elapsed_time=timeit.default_timer() - now,

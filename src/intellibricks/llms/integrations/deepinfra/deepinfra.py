@@ -17,7 +17,7 @@ from langfuse.client import os
 
 from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     GeneratedAssistantMessage,
     CalledFunction,
     ChatCompletion,

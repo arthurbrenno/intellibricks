@@ -8,7 +8,7 @@ from architecture.utils import run_sync
 from .types import FileContent, Language
 
 if TYPE_CHECKING:
-    from intellibricks.llms.schema import (
+    from intellibricks.llms.types import (
         ChatCompletion,
         Message,
         PartType,
@@ -174,7 +174,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
-        from intellibricks.llms.schema import (
+        from intellibricks.llms.types import (
             DeveloperMessage,
             UserMessage,
             Part,

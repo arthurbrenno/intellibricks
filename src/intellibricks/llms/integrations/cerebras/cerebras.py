@@ -17,7 +17,7 @@ from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     GeneratedAssistantMessage,
     CalledFunction,
     ChatCompletion,
@@ -253,7 +253,7 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
 # import msgspec
 
 # from intellibricks.llms.constants import FinishReason
-# from intellibricks.llms.schema import (
+# from intellibricks.llms.types import (
 #     GeneratedAssistantMessage,
 #     CalledFunction,
 #     ChatCompletion,

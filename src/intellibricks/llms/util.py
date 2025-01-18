@@ -14,7 +14,7 @@ from intellibricks.util import fix_broken_json, ms_type_to_schema
 
 if TYPE_CHECKING:
     from intellibricks.llms.constants import Language
-    from intellibricks.llms.schema import (
+    from intellibricks.llms.types import (
         Function,
         Message,
         Part,
@@ -28,7 +28,7 @@ logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 def find_text_part(parts: Sequence[Part]) -> TextPart:
-    from intellibricks.llms.schema import TextPart
+    from intellibricks.llms.types import TextPart
 
     text_part: Optional[Part] = next(
         filter(lambda part: isinstance(part, TextPart), parts), None
@@ -108,7 +108,7 @@ def get_new_messages_with_response_format_instructions[S: msgspec.Struct](
     DeveloperMessage, if present. Otherwise, prepend a new DeveloperMessage with the instructions.
     """
     from intellibricks.llms.constants import Language
-    from intellibricks.llms.schema import DeveloperMessage, TextPart
+    from intellibricks.llms.types import DeveloperMessage, TextPart
 
     if not messages:
         raise ValueError("Empty messages list")
