@@ -529,7 +529,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
 
         return AgentResponse(
             agent=self,
-            content=final_completion,
+            content=final_completion, # type: ignore
             tool_calls=tool_call_sequence.sequence,
         )
 

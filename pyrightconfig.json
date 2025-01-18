@@ -16,6 +16,10 @@
         {
             "root": "src/intellibricks/llms",
             "reportUnnecessaryTypeIgnoreComment": "none"
+        },
+        {
+            "root": "src/intellibricks/agents",
+            "reportUnnecessaryTypeIgnoreComment": "none"
         }
     ]
 }
