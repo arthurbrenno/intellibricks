@@ -458,6 +458,110 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True):
             )
 
 
+class AnimatedImageFileParser(IntellibricksFileParser, frozen=True):
+    """
+    Parses animated GIF files by splitting them into 3 equally sized segments
+    (or fewer if total frames < 3).
+    Each selected frame is turned into a PNG in memory and, if strategy == HIGH,
+    sent to image_description_agent for a textual description.
+
+    Returns a ParsedFile with up to 3 PageContent items, each page representing
+    one of the frames chosen from the animation.
+    """
+
+    @override
+    async def extract_contents_async(
+        self,
+        file: RawFile,
+    ) -> ParsedFile:
+        from PIL import Image as PILImage
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = f"{temp_dir}/{file.name}"
+            file.save_to_file(file_path)
+
+            # Safety check: only proceed if it's a .gif
+            # or you can attempt detection based on file headers
+            extension = file.extension.value.lower()
+            if extension not in {"gif"}:
+                raise ValueError("AnimatedImageFileParser only supports .gif files.")
+
+            # --- 1. Load all frames from the GIF ---
+            frames: list[PILImage.Image] = []
+            with PILImage.open(file_path) as gif_img:
+                try:
+                    while True:
+                        frames.append(gif_img.copy())
+                        gif_img.seek(gif_img.tell() + 1)
+                except EOFError:
+                    pass  # we've reached the end of the animation
+
+            num_frames = len(frames)
+            if num_frames == 0:
+                # No frames => no content
+                return ParsedFile(name=file.name, pages=[])
+
+            # --- 2. Pick up to 3 frames, splitting the GIF into 3 segments ---
+            # If there are fewer than 3 frames, just use them all.
+            # If more than 3, pick three frames spaced across the animation.
+
+            if num_frames <= 3:
+                selected_frames = frames
+            else:
+                # Example approach: pick near 1/3, 2/3, end
+                idx1 = max(0, (num_frames // 3) - 1)
+                idx2 = max(0, (2 * num_frames // 3) - 1)
+                idx3 = num_frames - 1
+                # Ensure distinct indexes
+                unique_indexes = sorted(set([idx1, idx2, idx3]))
+                selected_frames = [frames[i] for i in unique_indexes]
+
+            # --- 3. Convert each selected frame to PNG and (optionally) describe it ---
+            pages: list[PageContent] = []
+            for i, frame in enumerate(selected_frames, start=1):
+                # Convert frame to PNG in-memory
+                png_buffer = io.BytesIO()
+                # Convert to RGBA if needed
+                if frame.mode not in ("RGB", "RGBA"):
+                    frame = frame.convert("RGBA")
+                frame.save(png_buffer, format="PNG")
+                png_bytes = png_buffer.getvalue()
+
+                # Create an Image object
+                frame_image = Image(
+                    name=f"{file.name}-frame{i}.png", contents=png_bytes
+                )
+
+                # If strategy is HIGH, pass the frame to the agent
+                text_description = ""
+                if (
+                    self.image_description_agent
+                    and self.strategy == ParsingStrategy.HIGH
+                ):
+                    agent_input = ImageFilePart(
+                        mime_type=MimeType.image_png,
+                        data=png_bytes,
+                    )
+                    agent_response = await self.image_description_agent.run_async(
+                        agent_input
+                    )
+                    text_description = agent_response.parsed.final_answer.md
+
+                # Each frame is its own "page" in the final doc
+                page_content = PageContent(
+                    page=i,
+                    text=text_description,
+                    images=[frame_image],
+                )
+                pages.append(page_content)
+
+            # --- 4. Return the multi-page ParsedFile ---
+            return ParsedFile(
+                name=file.name,
+                pages=pages,
+            )
+
+
 # ['doc', 'docx', 'txt', 'pdf', 'xlsx', 'xls', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp', 'png', 'PNG', 'gif', 'ppt', 'pptx', 'pptm', 'pkt', 'alg', 'pkz', 'rar', 'zip', 'dwg']
 
 
