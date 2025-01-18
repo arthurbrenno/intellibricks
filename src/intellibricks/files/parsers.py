@@ -368,19 +368,6 @@ class PKTFileParser(IntellibricksFileParser, frozen=True):
 
         return xml_data
 
-
-# [
-#     "doc", "docx", "txt",
-#     "pdf", "xlsx", "xls",
-#     "jpg", "jpeg", "tif",
-#     "tiff", "bmp", "png",
-#     "PNG", "gif", "ppt",
-#     "pptx", "pptm", "pkt",
-#     "alg", "pkz", "rar",
-#     "zip", "dwg", "xml",
-# ]
-
-
 class AlgFileParser(IntellibricksFileParser, frozen=True):
     """ALG Files can be treated as text files, so we'll use TxtFileParser to extract content."""
 
