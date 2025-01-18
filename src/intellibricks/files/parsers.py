@@ -57,45 +57,86 @@ class IntellibricksFileParser(FileParser, frozen=True):
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         match file.extension:
+            # Word files
+            case FileExtension.DOC | FileExtension.DOCX:
+                return await OfficeFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+
+            # PowerPoint
+            case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
+                return await OfficeFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+
+            # Excel
+            case FileExtension.XLS | FileExtension.XLSX:
+                return await OfficeFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+
+            case FileExtension.TXT:
+                return await TxtFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+
+            # Treat XML as plain text for now
+            case FileExtension.XML:
+                return await TxtFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+
             case FileExtension.PDF:
                 return await PDFFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
-            case FileExtension.DOCX | FileExtension.PPTX | FileExtension.XLSX:
-                return await OfficeFileParser(
-                    strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
-                ).extract_contents_async(file)
-            case FileExtension.TXT:
-                return await TxtFileParser().extract_contents_async(file)
-            case FileExtension.PNG | FileExtension.JPEG | FileExtension.TIFF:
+
+            # Static images (PNG, JPG, TIFF, BMP)
+            case FileExtension.JPEG | FileExtension.PNG | FileExtension.TIFF | FileExtension.BMP:
                 return await StaticImageFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
+
             case FileExtension.GIF:
                 return await AnimatedImageFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
+
             case FileExtension.PKT:
                 return await PKTFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
-            case FileExtension.ZIP | FileExtension.RAR | FileExtension.PKZ:
-                return CompressedFileParser(  # TODO: Implement CompressedFileParser
+
+            case FileExtension.ALG:
+                return await AlgFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
-                ).extract_contents(file)
+                ).extract_contents_async(file)
+
+            case FileExtension.ZIP | FileExtension.RAR | FileExtension.PKZ:
+                return await CompressedFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+
             case FileExtension.DWG:
                 return await DWGFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
+
             case _:
                 raise ValueError(f"Unsupported file extension: {file.extension}")
+
 
 
 class CompressedFileParser(IntellibricksFileParser, frozen=True):
@@ -205,22 +246,29 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True):
         # Try to match the suffix to our known FileExtension members
         # You can expand/adjust this mapping as needed:
         mapping = {
-            "pdf": FileExtension.PDF,
+            "doc": FileExtension.DOC,
             "docx": FileExtension.DOCX,
-            "pptx": FileExtension.PPTX,
-            "xlsx": FileExtension.XLSX,
             "txt": FileExtension.TXT,
-            "png": FileExtension.PNG,
-            "jpeg": FileExtension.JPEG,
+            "pdf": FileExtension.PDF,
+            "xlsx": FileExtension.XLSX,
+            "xls": FileExtension.XLS,
             "jpg": FileExtension.JPEG,
-            "gif": FileExtension.GIF,
+            "jpeg": FileExtension.JPEG,
             "tif": FileExtension.TIFF,
             "tiff": FileExtension.TIFF,
+            "bmp": FileExtension.BMP,
+            "png": FileExtension.PNG,
+            "gif": FileExtension.GIF,
+            "ppt": FileExtension.PPT,
+            "pptx": FileExtension.PPTX,
+            "pptm": FileExtension.PPTM,
             "pkt": FileExtension.PKT,
+            "alg": FileExtension.ALG,
             "pkz": FileExtension.PKZ,
-            "zip": FileExtension.ZIP,
             "rar": FileExtension.RAR,
+            "zip": FileExtension.ZIP,
             "dwg": FileExtension.DWG,
+            "xml": FileExtension.XML,
         }
 
         if suffix in mapping:
@@ -367,6 +415,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True):
         xml_data = zlib.decompress(out[4:])
 
         return xml_data
+
 
 class AlgFileParser(IntellibricksFileParser, frozen=True):
     """ALG Files can be treated as text files, so we'll use TxtFileParser to extract content."""
