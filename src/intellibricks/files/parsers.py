@@ -381,6 +381,16 @@ class PKTFileParser(IntellibricksFileParser, frozen=True):
 # ]
 
 
+class AlgFileParser(IntellibricksFileParser, frozen=True):
+    """ALG Files can be treated as text files, so we'll use TxtFileParser to extract content."""
+
+    @override
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        return await TxtFileParser(
+            strategy=self.strategy, image_description_agent=self.image_description_agent
+        ).extract_contents_async(file)
+
+
 class PDFFileParser(IntellibricksFileParser, frozen=True):
     @ensure_module_installed("pypdf", "intellibricks[files]")
     @override
