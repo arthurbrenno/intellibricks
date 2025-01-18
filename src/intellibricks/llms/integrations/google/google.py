@@ -30,7 +30,7 @@ from intellibricks.llms.util import (
     create_function_mapping_by_tools,
     get_parsed_response,
 )
-from intellibricks.util import ms_type_to_schema
+from intellibricks.llms.util import ms_type_to_schema
 
 logger = log.create_logger(__name__)
 

@@ -27,6 +27,7 @@ from typing import (
     Never,
     Optional,
     Sequence,
+    get_args,
     Type,
     TypeAlias,
     TypedDict,
@@ -45,11 +46,6 @@ from architecture.utils.decorators import ensure_module_installed
 from intellibricks.llms.util import (
     get_parts_llm_described_text,
     get_parts_raw_text,
-)
-from intellibricks.util import (
-    get_file_extension,
-    is_file_url,
-    is_url,
 )
 
 from .constants import FinishReason, Language
@@ -632,6 +628,8 @@ class WebsiteUrl(msgspec.Struct, frozen=True):
     url: str
 
     def __post_init__(self) -> None:
+        from intellibricks.llms.util import is_url
+
         if not is_url(self.url):
             raise ValueError(f"Invalid URL ({self.url})")
 
@@ -642,9 +640,17 @@ class FileUrl(msgspec.Struct, frozen=True):
     def get_extension(
         self,
     ) -> FileExtension:
-        return get_file_extension(self.url)
+        return (
+            cast(FileExtension, extension)
+            if (extension := self.url[self.url.rfind(".") :]) in get_args(FileExtension)
+            else (_ for _ in ()).throw(
+                ValueError(f"Unsupported file extension: {extension}")
+            )
+        )
 
     def __post_init__(self) -> None:
+        from intellibricks.llms.util import is_url, is_file_url
+
         if not is_url(self.url):
             raise ValueError(f"Invalid URL ({self.url})")
 
@@ -706,13 +712,21 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     def from_url(cls, url: str | WebsiteUrl | FileUrl) -> WebsitePart | FilePart:
         match url:
             case str():
+                from intellibricks.llms.util import is_url, is_file_url
+
                 if not is_url(url):
                     raise ValueError(f"Invalid URL ({url})")
 
                 # Check if the URL is a website URL or a file URL
                 if is_file_url(url):
                     return FilePart.from_extension(
-                        url=url, extension=get_file_extension(url)
+                        url=url,
+                        extension=cast(FileExtension, extension)
+                        if (extension := url[url.rfind(".") :])
+                        in get_args(FileExtension)
+                        else (_ for _ in ()).throw(
+                            ValueError(f"Unsupported file extension: {extension}")
+                        ),
                     )
 
                 return WebsitePart(url=url)
@@ -728,6 +742,8 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     def from_input_audio(
         cls, data_or_url: str, mime_type: Literal["audio/mp3"]
     ) -> AudioFilePart:
+        from intellibricks.llms.util import is_url
+
         if is_url(data_or_url):
             return AudioFilePart(url=data_or_url, mime_type=MimeType(mime_type))
 
@@ -739,6 +755,8 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     def from_openai_part(
         cls, openai_part: OpenAIChatCompletionContentPartParam
     ) -> Part:
+        from intellibricks.llms.util import is_url
+
         match openai_part["type"]:
             case "text":
                 return TextPart(text=openai_part["text"])  # type: ignore
@@ -930,6 +948,8 @@ class WebsitePart(Part, frozen=True, tag="website"):
     url: str
 
     def __post_init__(self) -> None:
+        from intellibricks.llms.util import is_url
+
         if not is_url(self.url):
             raise ValueError(f"Invalid URL ({self.url})")
 

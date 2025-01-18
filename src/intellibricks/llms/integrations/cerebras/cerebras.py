@@ -271,8 +271,6 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
 #     _get_function_name,
 #     get_parsed_response,
 # )
-# from intellibricks.util import flatten_msgspec_schema
-
 # from ...base import LanguageModel
 
 # T = TypeVar("T", bound=msgspec.Struct, default=RawResponse)
