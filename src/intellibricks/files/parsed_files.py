@@ -130,12 +130,12 @@ class TablePageItem(PageItem):
     ] = False
 
 
-class PageContent(msgspec.Struct, frozen=True):
-    page: Annotated[
+class SectionContent(msgspec.Struct, frozen=True):
+    number: Annotated[
         int,
         msgspec.Meta(
-            title="Page",
-            description="Page number",
+            title="Number",
+            description="Section number",
         ),
     ]
 
@@ -151,7 +151,7 @@ class PageContent(msgspec.Struct, frozen=True):
         Optional[str],
         msgspec.Meta(
             title="Markdown Representation",
-            description="Markdown representation of the page.",
+            description="Markdown representation of the section.",
         ),
     ] = None
 
@@ -159,7 +159,7 @@ class PageContent(msgspec.Struct, frozen=True):
         Sequence[Image],
         msgspec.Meta(
             title="Images",
-            description="Images present in the page",
+            description="Images present in the section",
         ),
     ] = msgspec.field(default_factory=list)
 
@@ -172,7 +172,7 @@ class PageContent(msgspec.Struct, frozen=True):
     ] = msgspec.field(default_factory=list)
 
     def get_id(self) -> str:
-        return f"page_{self.page}"
+        return f"page_{self.number}"
 
 
 class JobMetadata(msgspec.Struct, frozen=True):
@@ -328,8 +328,8 @@ class ParsedFile(msgspec.Struct, frozen=True):
         ),
     ]
 
-    pages: Annotated[
-        Sequence[PageContent],
+    sections: Annotated[
+        Sequence[SectionContent],
         msgspec.Meta(
             title="Pages",
             description="Pages of the document",
@@ -338,7 +338,7 @@ class ParsedFile(msgspec.Struct, frozen=True):
 
     @property
     def md(self) -> str:
-        return "\n".join([page.md or "" for page in self.pages])
+        return "\n".join([sec.md or "" for sec in self.sections])
 
     def get_schema(self, synapse: Synapse) -> Schema:
         return run_sync(self.get_schema_async, synapse)
@@ -353,7 +353,7 @@ class ParsedFile(msgspec.Struct, frozen=True):
         _trace_params.update(cast(dict[str, Any], trace_params) or {})
 
         output = await synapse.complete_async(
-            prompt=f"<document> {[page.text for page in self.pages]} </document>",
+            prompt=f"<document> {[sec.text for sec in self.sections]} </document>",
             system_prompt="You are an AI assistant who is an expert in natural"
             "language processing and especially named entity recognition.",
             response_model=Schema,
@@ -370,9 +370,9 @@ class ParsedFile(msgspec.Struct, frozen=True):
         adapted_docs: list[LlamaIndexDocument] = []
 
         filename: str = self.name
-        for page in self.pages:
-            page_number: int = page.page or 0
-            images: Sequence[Image] = page.images
+        for sec in self.sections:
+            page_number: int = sec.number or 0
+            images: Sequence[Image] = sec.images
 
             metadata = {
                 "page_number": page_number,
@@ -380,7 +380,7 @@ class ParsedFile(msgspec.Struct, frozen=True):
                 "source": filename,
             }
 
-            content: str = page.md or ""
+            content: str = sec.md or ""
             adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))
 
         return adapted_docs
@@ -396,12 +396,12 @@ class ParsedFile(msgspec.Struct, frozen=True):
         # Each page, initially, will be a document.
         documents: list[LangchainDocument] = [
             LangchainDocument(
-                page_content=page.md or "",
+                page_content=sec.md or "",
                 metadata={
                     "source": self.name,
                 },
             )
-            for page in self.pages
+            for sec in self.sections
         ]
 
         return documents
