@@ -4,20 +4,12 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Optional, Sequence, cast
+from typing import Annotated, Any, Optional, Sequence, cast
 
 import msgspec
 from architecture.utils import run_sync
-from architecture.utils.decorators import ensure_module_installed
-from architecture.utils.structs import dictify
 
 from intellibricks import ChainOfThought, Synapse, TraceParams
-
-if TYPE_CHECKING:
-    from langchain_core.documents import Document as LangchainDocument
-    from llama_index.core.schema import Document as LlamaIndexDocument
-
-    from intellibricks.rag.transformations import DocumentTransformer
 
 
 class Image(msgspec.Struct, frozen=True):
@@ -394,46 +386,3 @@ class ParsedFile(msgspec.Struct, frozen=True):
         )
 
         return output.parsed.final_answer
-
-    @ensure_module_installed("llama_index.core.schema", "llama-index")
-    def as_llamaindex_documents(self) -> Sequence[LlamaIndexDocument]:
-        from llama_index.core.schema import Document as LlamaIndexDocument
-
-        adapted_docs: list[LlamaIndexDocument] = []
-
-        filename: str = self.name
-        for sec in self.sections:
-            page_number: int = sec.number or 0
-            images: Sequence[Image] = sec.images
-
-            metadata = {
-                "page_number": page_number,
-                "images": [dictify(image) for image in images] or [],
-                "source": filename,
-            }
-
-            content: str = sec.md or ""
-            adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))
-
-        return adapted_docs
-
-    @ensure_module_installed("langchain_core", "langchain")
-    def as_langchain_documents(
-        self,
-        transformations: Optional[list[DocumentTransformer[LangchainDocument]]] = None,
-    ) -> list[LangchainDocument]:
-        """Converts itself representation to a List of Langchain Document"""
-        from langchain_core.documents import Document as LangchainDocument
-
-        # Each page, initially, will be a document.
-        documents: list[LangchainDocument] = [
-            LangchainDocument(
-                page_content=sec.md or "",
-                metadata={
-                    "source": self.name,
-                },
-            )
-            for sec in self.sections
-        ]
-
-        return documents

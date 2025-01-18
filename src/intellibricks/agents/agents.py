@@ -37,7 +37,7 @@ from intellibricks.llms.types import (
     UserMessage,
 )
 from intellibricks.rag.contracts import SupportsContextRetrieval
-from intellibricks.rag.schema import ContextSourceSequence, Query
+from intellibricks.rag.types import ContextSourceSequence, Query
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
