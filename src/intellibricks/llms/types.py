@@ -3474,6 +3474,18 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
         ),
     ]
 
+    def md(self, indent_level: int = 0) -> str:
+        indent = "  " * indent_level
+        md_str = f"{indent}**Element Type**: {self.type}\n"
+        md_str += f"{indent}**Element Details**: {self.details}\n"
+        if self.role:
+            md_str += f"{indent}**Role/Function**: {self.role}\n"
+        if self.relationships:
+            md_str += f"{indent}**Relationships**:\n"
+            for rel in self.relationships:
+                md_str += f"{indent}  - {rel}\n"
+        return md_str
+
 
 class ImageStructure(msgspec.Struct, frozen=True):
     layout: Annotated[
@@ -3512,6 +3524,19 @@ class ImageStructure(msgspec.Struct, frozen=True):
             ],
         ),
     ]
+
+    def md(self, indent_level: int = 1) -> str:
+        indent = "  " * indent_level
+        md_str = ""
+        if self.layout:
+            md_str += f"{indent}**Overall Layout and Organization**: {self.layout}\n"
+        if self.groupings:
+            md_str += f"{indent}**Significant Groupings of Elements**:\n"
+            for group in self.groupings:
+                md_str += f"{indent}  - {group}\n"
+        if self.focal_point:
+            md_str += f"{indent}**Primary Focal Point**: {self.focal_point}\n"
+        return md_str
 
 
 class ImageDescription(msgspec.Struct, frozen=True):
@@ -3574,3 +3599,28 @@ class ImageDescription(msgspec.Struct, frozen=True):
             ],
         ),
     ]
+
+    @property
+    def md(self) -> str:
+        md_str = f"## Overall Image Description\n{self.overall_description}\n\n"
+        md_str += f"## Content Type\n{self.content_type}\n\n"
+
+        if self.visual_elements:
+            md_str += "## Detailed Visual Element Descriptions\n"
+            for element in self.visual_elements:
+                md_str += element.md(indent_level=0) + "\n"
+
+        if self.structure:
+            md_str += "## Image Structure and Organization\n"
+            md_str += self.structure.md(indent_level=1) + "\n"
+
+        if self.dominant_visual_features:
+            md_str += "## Dominant Visual Features\n"
+            for feature in self.dominant_visual_features:
+                md_str += f"- {feature}\n"
+            md_str += "\n"
+
+        if self.intended_purpose:
+            md_str += f"## Intended Purpose or Meaning\n{self.intended_purpose}\n\n"
+
+        return md_str

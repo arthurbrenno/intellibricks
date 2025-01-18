@@ -5,13 +5,18 @@ import tempfile
 from typing import Optional, Sequence, TypedDict, override
 
 import msgspec
-from architecture.data.files import RawFile
+from architecture.data.files import RawFile, FileExtension
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.functions import run_sync
 from openai import OpenAI
 
 from intellibricks.agents import Agent
-from intellibricks.llms.types import ChainOfThought, ImageDescription
+from intellibricks.llms.types import (
+    ChainOfThought,
+    ImageDescription,
+    ImageFilePart,
+    MimeType,
+)
 
 from .constants import ParsingStrategy
 from .parsed_files import Image, PageContent, ParsedFile
@@ -46,7 +51,7 @@ class FileParser(msgspec.Struct, frozen=True):
 
 
 class IntellibricksFileParser(FileParser, frozen=True):
-    image_caption_agent: Optional[Agent[ChainOfThought[ImageDescription]]] = None
+    image_description_agent: Optional[Agent[ChainOfThought[ImageDescription]]] = None
 
 
 class PDFFileParser(IntellibricksFileParser, frozen=True):
@@ -66,11 +71,28 @@ class PDFFileParser(IntellibricksFileParser, frozen=True):
                     Image(contents=image.data, name=image.name) for image in page.images
                 ]
 
-                page_text = page.extract_text()
+                image_descriptions: list[str] = []
+                if (
+                    self.image_description_agent
+                    and self.strategy == ParsingStrategy.HIGH
+                ):
+                    for image_num, image in enumerate(page_images):
+                        agent_input = ImageFilePart(
+                            mime_type=MimeType.image_png, data=image.contents
+                        )
+                        agent_response = await self.image_description_agent.run_async(
+                            agent_input
+                        )
+                        image_md: str = agent_response.parsed.final_answer.md
+                        image_descriptions.append(
+                            f"Page Image {image_num + 1}: {image_md}"
+                        )
+
+                page_text = [page.extract_text(), "".join(image_descriptions)]
 
                 page_content = PageContent(
                     page=page_num + 1,
-                    text=page_text,
+                    text="".join(page_text),
                     images=page_images,
                 )
 
@@ -82,10 +104,30 @@ class PDFFileParser(IntellibricksFileParser, frozen=True):
                 pages=page_contents,
             )
 
-        raise NotImplementedError("TODO")
 
+class OfficeFileParser(IntellibricksFileParser, frozen=True):
+    """
+    This class actually delegates the parsing to the appropriate parser based on the file extension.
+    This class is a Facade for the different Office file parsers.
+    """
 
-class OfficeFileParser(IntellibricksFileParser, frozen=True): ...
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        extension = file.extension
+        match extension:
+            case FileExtension.DOCX:
+                return await DocxFileParser(
+                    strategy=self.strategy
+                ).extract_contents_async(file)
+            case FileExtension.PPTX:
+                return await PptxFileParser(
+                    strategy=self.strategy
+                ).extract_contents_async(file)
+            case FileExtension.XLSX:
+                return await ExcelFileParser(
+                    strategy=self.strategy
+                ).extract_contents_async(file)
+            case _:
+                raise ValueError(f"Unsupported file extension: {extension}")
 
 
 class DocxFileParser(OfficeFileParser, frozen=True): ...
