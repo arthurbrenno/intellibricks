@@ -59,11 +59,13 @@ class IntellibricksFileParser(FileParser, frozen=True):
         match file.extension:
             case FileExtension.PDF:
                 return await PDFFileParser(
-                    strategy=self.strategy
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
             case FileExtension.DOCX | FileExtension.PPTX | FileExtension.XLSX:
                 return await OfficeFileParser(
-                    strategy=self.strategy
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
             case FileExtension.TXT:
                 return await TxtFileParser().extract_contents_async(file)
@@ -77,63 +79,295 @@ class IntellibricksFileParser(FileParser, frozen=True):
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
-            # case FileExtension.DWG:
-            # return await DWGFileParser(
-            #     strategy=self.strategy
-            #     image_description_agent=self.image_description_agent
-            # ).extract_contents_async(file)
+            case FileExtension.PKT:
+                return await PKTFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+            case FileExtension.ZIP | FileExtension.RAR | FileExtension.PKZ:
+                return CompressedFileParser(  # TODO: Implement CompressedFileParser
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents(file)
+            case FileExtension.DWG:
+                return await DWGFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
             case _:
                 raise ValueError(f"Unsupported file extension: {file.extension}")
 
 
-# Here is how you can load the DWG FILE and convert it to PDF, and take a screenshot of each page of the PDF
-# Load an existing DWG file
-# image = cad.Image.load(file_path)
+class CompressedFileParser(IntellibricksFileParser, frozen=True):
+    """
+    Parses compressed files (ZIP, RAR, PKZ) by extracting each file within the archive,
+    delegating to the appropriate parser, and merging the results.
+    """
 
-# # Specify PDF Options
-# pdfOptions = cad.imageoptions.PdfOptions()
+    @override
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        import tempfile
+        import rarfile
+        import zipfile
 
-# output_path = f"{temp_dir}/output.pdf"
+        # We'll accumulate ParsedFile objects from each extracted child file
+        parsed_files: list[ParsedFile] = []
 
-# # Save as PDF
-# image.save(output_path, pdfOptions)
-# raw_files = [
-#     RawFile.from_bytes(
-#         data=img, name=f"{filename}_{i}.png", extension=FileExtension.PNG
-#     )
-#     for i, img in enumerate(image_bytes_list)
-# ]
+        # Write the compressed file to a temporary location
+        with tempfile.NamedTemporaryFile(delete=True) as tmp:
+            tmp.write(file.contents)
+            tmp.flush()
 
-# parsed_files = [await parser.extract_contents_async(f) for f in raw_files]
+            # Decide how to open the archive based on extension
+            match file.extension:
+                case FileExtension.ZIP | FileExtension.PKZ:
+                    # Treat PKZ exactly like ZIP for demo purposes
+                    with zipfile.ZipFile(tmp.name, "r") as zip_ref:
+                        # Iterate over files inside the archive
+                        for info in zip_ref.infolist():
+                            # Directories have filename ending with "/"
+                            if info.is_dir():
+                                continue
 
-# def pdf_to_images(pdf_path: str) -> Sequence[bytes]:
-#     """Converts each page of a PDF to image bytes.
+                            # Read raw bytes of the child file
+                            child_data = zip_ref.read(info)
+                            child_name = info.filename
+                            child_ext = self._guess_extension(child_name)
 
-#     Args:
-#         pdf_path (str): The path to the PDF file.
+                            # Turn that child file into a RawFile
+                            child_raw_file = RawFile.from_bytes(
+                                data=child_data,
+                                name=child_name,
+                                extension=child_ext,
+                            )
 
-#     Returns:
-#         Sequence[bytes]: A list of bytes objects, each containing a PNG image of a PDF page.
-#     """
-#     image_bytes_list = []
-#     doc = pymupdf.open(pdf_path)
+                            # Parse using our IntellibricksFileParser façade
+                            # (re-using the same strategy/image_description_agent)
+                            parser = IntellibricksFileParser(
+                                strategy=self.strategy,
+                                image_description_agent=self.image_description_agent,
+                            )
+                            child_parsed = await parser.extract_contents_async(
+                                child_raw_file
+                            )
+                            parsed_files.append(child_parsed)
 
-#     try:
-#         for page_num in range(len(doc)):
-#             page = doc.load_page(page_num)
-#             pix = page.get_pixmap()
+                case FileExtension.RAR:
+                    with rarfile.RarFile(tmp.name, "r") as rar_ref:
+                        for info in rar_ref.infolist():
+                            """Type of "isdir" is unknownPylancereportUnknownMemberType"""
+                            if info.isdir():  # type: ignore
+                                continue
 
-#             # Create a bytes buffer and save the image into it
-#             buffer = io.BytesIO()
-#             pix.save(buffer, "png")
-#             image_bytes = buffer.getvalue()
+                            child_data = rar_ref.read(info)  # type: ignore
 
-#             image_bytes_list.append(image_bytes)
+                            child_name = info.filename  # type: ignore
 
-#     finally:
-#         doc.close()
+                            child_ext = self._guess_extension(child_name)  # type: ignore
 
-#     return image_bytes_list
+                            child_raw_file = RawFile.from_bytes(
+                                data=child_data,  # type: ignore
+                                name=child_name,  # type: ignore
+                                extension=child_ext,
+                            )
+
+                            parser = IntellibricksFileParser(
+                                strategy=self.strategy,
+                                image_description_agent=self.image_description_agent,
+                            )
+                            child_parsed = await parser.extract_contents_async(
+                                child_raw_file
+                            )
+                            parsed_files.append(child_parsed)
+
+                case _:
+                    # Fallback if something else accidentally calls this parser
+                    raise ValueError(
+                        f"CompressedFileParser does not handle extension: {file.extension}"
+                    )
+
+        # Merge all the parsed files into a single ParsedFile
+        return ParsedFile.from_parsed_files(parsed_files)
+
+    def _guess_extension(self, filename: str) -> FileExtension:
+        """
+        Attempt to guess the FileExtension enum from a filename suffix.
+        If unknown or unsupported, this raises a ValueError (you could also return TXT, etc.).
+        """
+        from architecture.data.files import FileExtension
+        from pathlib import Path
+
+        suffix = Path(filename).suffix.lower().lstrip(".")  # e.g. "pdf", "docx", etc.
+        if not suffix:
+            # No extension found; you can decide to default to TXT or raise an error
+            raise ValueError(f"No recognizable extension in: {filename}")
+
+        # Try to match the suffix to our known FileExtension members
+        # You can expand/adjust this mapping as needed:
+        mapping = {
+            "pdf": FileExtension.PDF,
+            "docx": FileExtension.DOCX,
+            "pptx": FileExtension.PPTX,
+            "xlsx": FileExtension.XLSX,
+            "txt": FileExtension.TXT,
+            "png": FileExtension.PNG,
+            "jpeg": FileExtension.JPEG,
+            "jpg": FileExtension.JPEG,
+            "gif": FileExtension.GIF,
+            "tif": FileExtension.TIFF,
+            "tiff": FileExtension.TIFF,
+            "pkt": FileExtension.PKT,
+            "pkz": FileExtension.PKZ,
+            "zip": FileExtension.ZIP,
+            "rar": FileExtension.RAR,
+            "dwg": FileExtension.DWG,
+        }
+
+        if suffix in mapping:
+            return mapping[suffix]
+
+        raise ValueError(f"Unsupported file extension in compressed archive: {suffix}")
+
+
+class DWGFileParser(IntellibricksFileParser, frozen=True):
+    @ensure_module_installed("aspose-cad", "intellibricks[files]")
+    @override
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        """
+        DWG files are kind of tricky. To parse them, Intellibricks converts them to PDF first,
+        then takes a "screenshot" of each page of the PDF and uses GenAI to describe the images.
+        """
+        import platform
+
+        if platform.machine() == "arm64":
+            raise ValueError("ARM architecture is not supported by aspose-cad")
+
+        import aspose.cad as cad  # type: ignore
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = f"{temp_dir}/{file.name}"
+            file.save_to_file(file_path)
+
+            # Load the DWG file
+            image = cad.Image.load(file_path)  # type: ignore
+
+            # Specify PDF Options
+            pdfOptions = cad.imageoptions.PdfOptions()  # type: ignore
+
+            output_path = f"{temp_dir}/output.pdf"
+
+            # Save as PDF
+            image.save(output_path, pdfOptions)  # type: ignore
+
+            image_bytes_list = self.__pdf_to_images(output_path)
+
+            raw_files = [
+                RawFile.from_bytes(
+                    data=img, name=f"{file.name}_{i}.png", extension=FileExtension.PNG
+                )
+                for i, img in enumerate(image_bytes_list)
+            ]
+
+            parser = StaticImageFileParser(
+                strategy=self.strategy,
+                image_description_agent=self.image_description_agent,
+            )
+
+            parsed_files = [await parser.extract_contents_async(f) for f in raw_files]
+            sections = [
+                section
+                for parsed_file in parsed_files
+                for section in parsed_file.sections
+            ]
+
+            return ParsedFile.from_sections(file.name, sections)
+
+    def __pdf_to_images(self, pdf_path: str) -> Sequence[bytes]:
+        """Converts each page of a PDF to image bytes.
+
+        Args:
+            pdf_path (str): The path to the PDF file.
+
+        Returns:
+            Sequence[bytes]: A list of bytes objects, each containing a PNG image of a PDF page.
+        """
+        import pymupdf
+
+        image_bytes_list: list[bytes] = []
+        doc = pymupdf.open(pdf_path)
+
+        try:
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)  # type: ignore
+                pix = page.get_pixmap()  # type: ignore
+
+                # Create a bytes buffer and save the image into it
+                buffer = io.BytesIO()
+                pix.save(buffer, "png")  # type: ignore
+                image_bytes = buffer.getvalue()
+
+                image_bytes_list.append(image_bytes)
+
+        finally:
+            doc.close()
+
+        return image_bytes_list
+
+
+class PKTFileParser(IntellibricksFileParser, frozen=True):
+    @override
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = f"{temp_dir}/{file.name}"
+            file.save_to_file(file_path)
+
+            xml_bytes = self.pkt_to_xml_bytes(file_path)
+
+            # For now, we'll just return the XML content as a single page
+            xml_text = xml_bytes.decode("utf-8")
+
+            page_content = SectionContent(
+                number=1,
+                text=xml_text,
+                md=xml_text,
+                images=[],
+                items=[],
+            )
+
+            return ParsedFile(
+                name=file.name,
+                sections=[page_content],
+            )
+
+    def pkt_to_xml_bytes(self, pkt_file: str) -> bytes:
+        """
+        Convert a Packet Tracer file (.pkt/.pka) to its XML representation as bytes.
+
+        :param pkt_file: Path to the input .pkt or .pka file.
+        :return: The uncompressed XML content as bytes.
+        """
+        import zlib
+
+        with open(pkt_file, "rb") as f:
+            in_data = bytearray(f.read())
+
+        i_size = len(in_data)
+        out = bytearray()
+
+        # Decrypt each byte with decreasing file length
+        for byte in in_data:
+            out.append(byte ^ i_size)
+            i_size -= 1
+
+        # The first 4 bytes (big-endian) represent the size of the XML when uncompressed
+        # (This value is not needed for the actual return, but we parse it for completeness.)
+        _uncompressed_size = int.from_bytes(out[:4], byteorder="big")
+
+        # Decompress the data after the first 4 bytes
+        xml_data = zlib.decompress(out[4:])
+
+        return xml_data
+
 
 # [
 #     "doc", "docx", "txt",

@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Optional, Sequence, cast, Any
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Sequence, cast
 
 import msgspec
 from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.structs import dictify
 
-from intellibricks import Synapse, TraceParams
+from intellibricks import ChainOfThought, Synapse, TraceParams
 
 if TYPE_CHECKING:
     from langchain_core.documents import Document as LangchainDocument
@@ -173,6 +173,17 @@ class SectionContent(msgspec.Struct, frozen=True):
 
     def get_id(self) -> str:
         return f"page_{self.number}"
+
+    def __add__(self, other: SectionContent) -> SectionContent:
+        from itertools import chain
+
+        return SectionContent(
+            number=self.number,
+            text=self.text + other.text,
+            md=(self.md or "") + (other.md or ""),
+            images=list(chain(self.images, other.images)),
+            items=list(chain(self.items, other.items)),
+        )
 
 
 class JobMetadata(msgspec.Struct, frozen=True):
@@ -336,6 +347,27 @@ class ParsedFile(msgspec.Struct, frozen=True):
         ),
     ]
 
+    def merge_all(self, others: Sequence[ParsedFile]) -> ParsedFile:
+        from itertools import chain
+
+        return ParsedFile(
+            name=self.name,
+            sections=list(chain(self.sections, *[other.sections for other in others])),
+        )
+
+    @classmethod
+    def from_sections(cls, name: str, sections: Sequence[SectionContent]) -> ParsedFile:
+        return cls(name=name, sections=sections)
+
+    @classmethod
+    def from_parsed_files(cls, files: Sequence[ParsedFile]) -> ParsedFile:
+        from itertools import chain
+
+        return ParsedFile(
+            name="MergedFile",
+            sections=list(chain(*[file.sections for file in files])),
+        )
+
     @property
     def md(self) -> str:
         return "\n".join([sec.md or "" for sec in self.sections])
@@ -356,12 +388,12 @@ class ParsedFile(msgspec.Struct, frozen=True):
             prompt=f"<document> {[sec.text for sec in self.sections]} </document>",
             system_prompt="You are an AI assistant who is an expert in natural"
             "language processing and especially named entity recognition.",
-            response_model=Schema,
+            response_model=ChainOfThought[Schema],
             temperature=1,
             trace_params=cast(TraceParams, _trace_params),
         )
 
-        return output.parsed
+        return output.parsed.final_answer
 
     @ensure_module_installed("llama_index.core.schema", "llama-index")
     def as_llamaindex_documents(self) -> Sequence[LlamaIndexDocument]:
