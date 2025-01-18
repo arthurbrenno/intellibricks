@@ -529,12 +529,12 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
 
         return AgentResponse(
             agent=self,
-            content=final_completion, # type: ignore
+            content=final_completion,  # type: ignore
             tool_calls=tool_call_sequence.sequence,
         )
 
 
-class DirectorAgent[S: msgspec.Struct = RawResponse](Agent[S], frozen=True):
+class Maestro[S: msgspec.Struct = RawResponse](Agent[S], frozen=True):
     actors: Sequence[Agent[S]]
 
     async def _run_logic_async(
