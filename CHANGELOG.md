@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.21
+## v0.4.0
 
 - feat: new (experimental) IntellibricksFileParser.
 - refactor: changed ParsedDocument class to ParsedFile, which represents a more generalized way to represent "non-document" files, like images.
