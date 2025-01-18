@@ -54,6 +54,98 @@ class FileParser(msgspec.Struct, frozen=True):
 class IntellibricksFileParser(FileParser, frozen=True):
     image_description_agent: Optional[Agent[ChainOfThought[ImageDescription]]] = None
 
+    @override
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        match file.extension:
+            case FileExtension.PDF:
+                return await PDFFileParser(
+                    strategy=self.strategy
+                ).extract_contents_async(file)
+            case FileExtension.DOCX | FileExtension.PPTX | FileExtension.XLSX:
+                return await OfficeFileParser(
+                    strategy=self.strategy
+                ).extract_contents_async(file)
+            case FileExtension.TXT:
+                return await TxtFileParser().extract_contents_async(file)
+            case FileExtension.PNG | FileExtension.JPEG | FileExtension.TIFF:
+                return await StaticImageFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+            case FileExtension.GIF:
+                return await AnimatedImageFileParser(
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
+                ).extract_contents_async(file)
+            # case FileExtension.DWG:
+            # return await DWGFileParser(
+            #     strategy=self.strategy
+            #     image_description_agent=self.image_description_agent
+            # ).extract_contents_async(file)
+            case _:
+                raise ValueError(f"Unsupported file extension: {file.extension}")
+
+
+# Here is how you can load the DWG FILE and convert it to PDF, and take a screenshot of each page of the PDF
+# Load an existing DWG file
+# image = cad.Image.load(file_path)
+
+# # Specify PDF Options
+# pdfOptions = cad.imageoptions.PdfOptions()
+
+# output_path = f"{temp_dir}/output.pdf"
+
+# # Save as PDF
+# image.save(output_path, pdfOptions)
+# raw_files = [
+#     RawFile.from_bytes(
+#         data=img, name=f"{filename}_{i}.png", extension=FileExtension.PNG
+#     )
+#     for i, img in enumerate(image_bytes_list)
+# ]
+
+# parsed_files = [await parser.extract_contents_async(f) for f in raw_files]
+
+# def pdf_to_images(pdf_path: str) -> Sequence[bytes]:
+#     """Converts each page of a PDF to image bytes.
+
+#     Args:
+#         pdf_path (str): The path to the PDF file.
+
+#     Returns:
+#         Sequence[bytes]: A list of bytes objects, each containing a PNG image of a PDF page.
+#     """
+#     image_bytes_list = []
+#     doc = pymupdf.open(pdf_path)
+
+#     try:
+#         for page_num in range(len(doc)):
+#             page = doc.load_page(page_num)
+#             pix = page.get_pixmap()
+
+#             # Create a bytes buffer and save the image into it
+#             buffer = io.BytesIO()
+#             pix.save(buffer, "png")
+#             image_bytes = buffer.getvalue()
+
+#             image_bytes_list.append(image_bytes)
+
+#     finally:
+#         doc.close()
+
+#     return image_bytes_list
+
+# [
+#     "doc", "docx", "txt",
+#     "pdf", "xlsx", "xls",
+#     "jpg", "jpeg", "tif",
+#     "tiff", "bmp", "png",
+#     "PNG", "gif", "ppt",
+#     "pptx", "pptm", "pkt",
+#     "alg", "pkz", "rar",
+#     "zip", "dwg", "xml",
+# ]
+
 
 class PDFFileParser(IntellibricksFileParser, frozen=True):
     @ensure_module_installed("pypdf", "intellibricks[files]")
@@ -560,9 +652,6 @@ class AnimatedImageFileParser(IntellibricksFileParser, frozen=True):
                 name=file.name,
                 sections=pages,
             )
-
-
-# ['doc', 'docx', 'txt', 'pdf', 'xlsx', 'xls', 'jpg', 'jpeg', 'tif', 'tiff', 'bmp', 'png', 'PNG', 'gif', 'ppt', 'pptx', 'pptm', 'pkt', 'alg', 'pkz', 'rar', 'zip', 'dwg']
 
 
 class MarkitdownFileParser(FileParser, frozen=True):

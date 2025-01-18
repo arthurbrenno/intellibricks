@@ -105,7 +105,7 @@ wheels = [
 
 [[package]]
 name = "architecture"
-version = "0.5.20"
+version = "0.5.23"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiocache" },
@@ -113,9 +113,9 @@ dependencies = [
     { name = "msgspec" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/c5/7ba24c1bff30741ecbe33c34a41ec8e8a5b6387bb0575051fe3c8f49c70e/architecture-0.5.20.tar.gz", hash = "sha256:a520a87fc00453aa9f22a2e4f5e1d47e72f425b8721f2a0bf7c214bd8c73b02a", size = 54819 }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/bf/19fefa4813fe6dd7b8bc9756667383e00d1dfae9e121f35fda3feda5436b/architecture-0.5.23.tar.gz", hash = "sha256:3edfab52cb1bebefb79885b952e564dffa81926f8cb86d1c7edea6f66a58b983", size = 54843 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/e1/c1689576669ef36b144b39badd13376e827cd153775b4b499a59a0ff5026/architecture-0.5.20-py3-none-any.whl", hash = "sha256:a69c9c89d88ee81fdcf75b5c6f96586f98495afc80668cc98223a213e3aeb6be", size = 31642 },
+    { url = "https://files.pythonhosted.org/packages/4f/c6/6a7b21a0b5eca04aefaa2f38744a305d454ebab77646a920979bf7933219/architecture-0.5.23-py3-none-any.whl", hash = "sha256:aac0c8c9017fa28a1601d200487bc792e6a806ca2f5934dd1e2c40b4cf9afd3c", size = 31667 },
 ]
 
 [[package]]
