@@ -30,20 +30,20 @@ class Image(msgspec.Struct, frozen=True):
     ]
 
     height: Annotated[
-        float,
+        Optional[float],
         msgspec.Meta(
             title="Height",
             description="Height of the image in pixels.",
         ),
-    ]
+    ] = None
 
     width: Annotated[
-        float,
+        Optional[float],
         msgspec.Meta(
             title="Width",
             description="Width of the image in pixels.",
         ),
-    ]
+    ] = None
 
     name: Annotated[
         Optional[str],

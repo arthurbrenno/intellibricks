@@ -7,19 +7,20 @@ from typing import (
     Any,
     Callable,
     Literal,
+    TypeAlias,
     Optional,
     Sequence,
-    TypeVar,
     TypedDict,
+    TypeVar,
     cast,
 )
 
-from architecture.extensions import Maybe
 import msgspec
+from architecture.extensions import Maybe
 from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 
-from intellibricks.llms import Synapse
+from intellibricks.llms import Synapse, SynapseCascade
 from intellibricks.llms.types import (
     ChatCompletion,
     DeveloperMessage,
@@ -28,6 +29,7 @@ from intellibricks.llms.types import (
     MessageFactory,
     MessageSequence,
     MessageType,
+    PartType,
     RawResponse,
     Tool,
     ToolCall,
@@ -35,7 +37,6 @@ from intellibricks.llms.types import (
     TraceParams,
     UserMessage,
 )
-from intellibricks.llms.synapses import SynapseCascade
 from intellibricks.rag.contracts import SupportsContextRetrieval
 from intellibricks.rag.schema import ContextSourceSequence, Query
 
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
     from litestar.handlers import HTTPRouteHandler
 
 
-type AgentInput = Sequence[MessageType]
+type AgentInput = str | Sequence[MessageType] | Sequence[PartType] | PartType
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 
@@ -215,7 +216,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         )
 
     def run(
-        self, inp: str | AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         """
         Public synchronous method for running this agent.
@@ -234,7 +235,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         return response
 
     async def run_async(
-        self, inp: str | AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         """
         Public asynchronous entry-point.
@@ -532,6 +533,17 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             content=final_completion,  # type: ignore
             tool_calls=tool_call_sequence.sequence,
         )
+
+    def _inp_to_message_sequence(inp: AgentInput) -> Sequence[Message]:
+        match AgentInput:
+            case str():
+                return [UserMessage.from_text(inp)]
+            case PartType():
+                return [UserMessage.from_part(inp)]
+            case _
+                if isinstance(inp[0], Message):
+                    return inp
+                return [UserMessage(contents=inp)]
 
 
 class Maestro[S: msgspec.Struct = RawResponse](Agent[S], frozen=True):

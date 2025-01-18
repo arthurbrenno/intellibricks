@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import abc
 import tempfile
-from typing import Optional, TypedDict
+from typing import Optional, Sequence, TypedDict, override
 
 import msgspec
 from architecture.data.files import RawFile
@@ -14,7 +14,7 @@ from intellibricks.agents import Agent
 from intellibricks.llms.types import ChainOfThought, ImageDescription
 
 from .constants import ParsingStrategy
-from .parsed_files import PageContent, ParsedFile
+from .parsed_files import Image, PageContent, ParsedFile
 
 
 class LocalSettings(TypedDict):
@@ -49,7 +49,25 @@ class IntellibricksFileParser(FileParser, frozen=True):
     image_caption_agent: Optional[Agent[ChainOfThought[ImageDescription]]] = None
 
 
-class PDFFileParser(IntellibricksFileParser, frozen=True): ...
+class PDFFileParser(IntellibricksFileParser, frozen=True):
+    @ensure_module_installed("pypdf", "intellibricks[files]")
+    @override
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        from pypdf import PdfReader
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = f"{temp_dir}/{file.name}"
+            file.save_to_file(file_path)
+
+            reader = PdfReader(file_path)
+            for page in reader.pages:
+                page_images: Sequence[Image] = [
+                    Image(contents=image.data, name=image.name) for image in page.images
+                ]
+
+                page_text = page.extract_text()
+
+        raise NotImplementedError("TODO")
 
 
 class OfficeFileParser(IntellibricksFileParser, frozen=True): ...
