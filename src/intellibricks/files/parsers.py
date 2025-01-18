@@ -98,7 +98,12 @@ class IntellibricksFileParser(FileParser, frozen=True):
                 ).extract_contents_async(file)
 
             # Static images (PNG, JPG, TIFF, BMP)
-            case FileExtension.JPEG | FileExtension.PNG | FileExtension.TIFF | FileExtension.BMP:
+            case (
+                FileExtension.JPEG
+                | FileExtension.PNG
+                | FileExtension.TIFF
+                | FileExtension.BMP
+            ):
                 return await StaticImageFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
@@ -136,7 +141,6 @@ class IntellibricksFileParser(FileParser, frozen=True):
 
             case _:
                 raise ValueError(f"Unsupported file extension: {file.extension}")
-
 
 
 class CompressedFileParser(IntellibricksFileParser, frozen=True):
@@ -512,7 +516,6 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True):
                 raise ValueError(f"Unsupported Office extension: {extension}")
 
 
-
 class DocxFileParser(OfficeFileParser, frozen=True):
     @ensure_module_installed("python-docx", "intellibricks[files]")
     @override
@@ -803,7 +806,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True):
                 image_bytes = file.contents
 
                 # For demonstration, pick your MIME by extension
-                if extension in {"png"}:
+                if extension in {"png", "bmp"}:
                     current_mime_type = MimeType.image_png
                 elif extension in {"jpg", "jpeg"}:
                     current_mime_type = MimeType.image_jpeg
