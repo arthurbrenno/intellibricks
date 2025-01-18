@@ -487,20 +487,30 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True):
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         extension = file.extension
         match extension:
-            case FileExtension.DOCX:
+            # Word
+            case FileExtension.DOC | FileExtension.DOCX:
                 return await DocxFileParser(
-                    strategy=self.strategy
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
-            case FileExtension.PPTX:
+
+            # PowerPoint (including .ppt, .pptx, .pptm)
+            case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
                 return await PptxFileParser(
-                    strategy=self.strategy
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
-            case FileExtension.XLSX:
+
+            # Excel (including .xls, .xlsx)
+            case FileExtension.XLS | FileExtension.XLSX:
                 return await ExcelFileParser(
-                    strategy=self.strategy
+                    strategy=self.strategy,
+                    image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
+
             case _:
-                raise ValueError(f"Unsupported file extension: {extension}")
+                raise ValueError(f"Unsupported Office extension: {extension}")
+
 
 
 class DocxFileParser(OfficeFileParser, frozen=True):
