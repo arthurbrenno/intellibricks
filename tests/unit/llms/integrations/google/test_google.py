@@ -2,7 +2,7 @@ import msgspec
 import pytest
 
 from intellibricks.llms.integrations.google import GoogleLanguageModel
-from intellibricks.llms.schema import DeveloperMessage, UserMessage
+from intellibricks.llms.types import DeveloperMessage, UserMessage
 
 
 @pytest.fixture

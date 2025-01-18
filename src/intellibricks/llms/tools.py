@@ -1,7 +1,7 @@
 from typing import Literal
 from dataclasses import field
 
-from intellibricks.llms.schema import Tool
+from intellibricks.llms.types import Tool
 
 
 class DuckDuckGoTool(Tool, frozen=True):

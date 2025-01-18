@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Any, Callable
-from intellibricks.llms.schema import Tool
+from intellibricks.llms.types import Tool
 
 if TYPE_CHECKING:
     from google.genai.types import Tool as GenAITool

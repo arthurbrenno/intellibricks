@@ -9,18 +9,18 @@ from typing import (
     Literal,
     Optional,
     Sequence,
-    TypeVar,
     TypedDict,
+    TypeVar,
     cast,
 )
 
-from architecture.extensions import Maybe
 import msgspec
+from architecture.extensions import Maybe
 from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 
-from intellibricks.llms import Synapse
-from intellibricks.llms.schema import (
+from intellibricks.llms import Synapse, SynapseCascade
+from intellibricks.llms.types import (
     ChatCompletion,
     DeveloperMessage,
     GenerationConfig,
@@ -28,6 +28,7 @@ from intellibricks.llms.schema import (
     MessageFactory,
     MessageSequence,
     MessageType,
+    PartType,
     RawResponse,
     Tool,
     ToolCall,
@@ -35,17 +36,16 @@ from intellibricks.llms.schema import (
     TraceParams,
     UserMessage,
 )
-from intellibricks.llms.synapses import SynapseCascade
 from intellibricks.rag.contracts import SupportsContextRetrieval
-from intellibricks.rag.schema import ContextSourceSequence, Query
+from intellibricks.rag.types import ContextSourceSequence, Query
 
 if TYPE_CHECKING:
     from fastapi import APIRouter, FastAPI
-    from Litestar import Litestar
+    from litestar import Litestar
     from litestar.handlers import HTTPRouteHandler
 
 
-type AgentInput = Sequence[MessageType]
+type AgentInput = str | Sequence[MessageType] | Sequence[PartType] | PartType
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 
@@ -142,7 +142,8 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         Optional[Synapse | SynapseCascade],
         msgspec.Meta(
             title="Tool Synapse",
-            description="The synapse to use for the tools.",
+            description="The synapse to use for the tools calls."
+            "If not provided, the agent's synapse will be used.",
         ),
     ] = msgspec.field(default=None)
 
@@ -214,7 +215,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         )
 
     def run(
-        self, inp: str | AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         """
         Public synchronous method for running this agent.
@@ -225,7 +226,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         2) `run_async` call
         3) Post-run steps
         """
-        _input = [UserMessage.from_text(inp)] if isinstance(inp, str) else inp
+        _input = self._transform_input(inp)
 
         self._before_run(_input, trace_params=trace_params)
         response = self._run_logic(_input, trace_params=trace_params)
@@ -233,7 +234,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         return response
 
     async def run_async(
-        self, inp: str | AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         """
         Public asynchronous entry-point.
@@ -243,7 +244,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         2) `run_logic_async`
         3) Post-run steps
         """
-        _input = [UserMessage.from_text(inp)] if isinstance(inp, str) else inp
+        _input = self._transform_input(inp)
         await self._before_run_async(_input, trace_params=trace_params)
         response = await self._run_logic_async(_input, trace_params=trace_params)
         await self._after_run_async(_input, response, trace_params=trace_params)
@@ -409,7 +410,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         return app
 
     def _run_logic(
-        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: Sequence[Message], trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         return run_sync(self._run_logic_async, inp)
 
@@ -440,7 +441,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         pass
 
     async def _run_logic_async(
-        self, inp: AgentInput, trace_params: Optional[TraceParams] = None
+        self, inp: Sequence[Message], trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
         message_sequence = MessageSequence(inp)
         context_sequence: ContextSourceSequence = ContextSourceSequence(
@@ -528,12 +529,28 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
 
         return AgentResponse(
             agent=self,
-            content=cast(ChatCompletion[S], final_completion),
+            content=final_completion,  # type: ignore
             tool_calls=tool_call_sequence.sequence,
         )
 
+    def _transform_input(self, inp: AgentInput) -> Sequence[MessageType]:
+        """
+        Transforms the input, which was made like this to make it easier for users,
+        into a Sequence of MessageType, so developers can work with it more
+        easily and expect one type of input only.
+        """
+        if isinstance(inp, str):
+            return [UserMessage.from_text(inp)]
+        elif isinstance(inp, PartType):
+            return [UserMessage.from_part(inp)]
+        else:
+            if inp and isinstance(inp[0], Message):
+                return cast(Sequence[MessageType], inp)
 
-class DirectorAgent[S: msgspec.Struct = RawResponse](Agent[S], frozen=True):
+            return [UserMessage(contents=cast(Sequence[PartType], inp))]
+
+
+class Maestro[S: msgspec.Struct = RawResponse](Agent[S], frozen=True):
     actors: Sequence[Agent[S]]
 
     async def _run_logic_async(

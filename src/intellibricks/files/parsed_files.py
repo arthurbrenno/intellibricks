@@ -4,20 +4,12 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Optional, Sequence, cast, Any
+from typing import Annotated, Any, Optional, Sequence, cast
 
 import msgspec
 from architecture.utils import run_sync
-from architecture.utils.decorators import ensure_module_installed
-from architecture.utils.structs import dictify
 
-from intellibricks import Synapse, TraceParams
-
-if TYPE_CHECKING:
-    from langchain_core.documents import Document as LangchainDocument
-    from llama_index.core.schema import Document as LlamaIndexDocument
-
-    from intellibricks.rag.transformations import DocumentTransformer
+from intellibricks import ChainOfThought, Synapse, TraceParams
 
 
 class Image(msgspec.Struct, frozen=True):
@@ -30,20 +22,20 @@ class Image(msgspec.Struct, frozen=True):
     ]
 
     height: Annotated[
-        float,
+        Optional[float],
         msgspec.Meta(
             title="Height",
             description="Height of the image in pixels.",
         ),
-    ]
+    ] = None
 
     width: Annotated[
-        float,
+        Optional[float],
         msgspec.Meta(
             title="Width",
             description="Width of the image in pixels.",
         ),
-    ]
+    ] = None
 
     name: Annotated[
         Optional[str],
@@ -130,12 +122,12 @@ class TablePageItem(PageItem):
     ] = False
 
 
-class PageContent(msgspec.Struct, frozen=True):
-    page: Annotated[
+class SectionContent(msgspec.Struct, frozen=True):
+    number: Annotated[
         int,
         msgspec.Meta(
-            title="Page",
-            description="Page number",
+            title="Number",
+            description="Section number",
         ),
     ]
 
@@ -151,7 +143,7 @@ class PageContent(msgspec.Struct, frozen=True):
         Optional[str],
         msgspec.Meta(
             title="Markdown Representation",
-            description="Markdown representation of the page.",
+            description="Markdown representation of the section.",
         ),
     ] = None
 
@@ -159,7 +151,7 @@ class PageContent(msgspec.Struct, frozen=True):
         Sequence[Image],
         msgspec.Meta(
             title="Images",
-            description="Images present in the page",
+            description="Images present in the section",
         ),
     ] = msgspec.field(default_factory=list)
 
@@ -172,7 +164,18 @@ class PageContent(msgspec.Struct, frozen=True):
     ] = msgspec.field(default_factory=list)
 
     def get_id(self) -> str:
-        return f"page_{self.page}"
+        return f"page_{self.number}"
+
+    def __add__(self, other: SectionContent) -> SectionContent:
+        from itertools import chain
+
+        return SectionContent(
+            number=self.number,
+            text=self.text + other.text,
+            md=(self.md or "") + (other.md or ""),
+            images=list(chain(self.images, other.images)),
+            items=list(chain(self.items, other.items)),
+        )
 
 
 class JobMetadata(msgspec.Struct, frozen=True):
@@ -328,17 +331,38 @@ class ParsedFile(msgspec.Struct, frozen=True):
         ),
     ]
 
-    pages: Annotated[
-        Sequence[PageContent],
+    sections: Annotated[
+        Sequence[SectionContent],
         msgspec.Meta(
             title="Pages",
             description="Pages of the document",
         ),
     ]
 
+    def merge_all(self, others: Sequence[ParsedFile]) -> ParsedFile:
+        from itertools import chain
+
+        return ParsedFile(
+            name=self.name,
+            sections=list(chain(self.sections, *[other.sections for other in others])),
+        )
+
+    @classmethod
+    def from_sections(cls, name: str, sections: Sequence[SectionContent]) -> ParsedFile:
+        return cls(name=name, sections=sections)
+
+    @classmethod
+    def from_parsed_files(cls, files: Sequence[ParsedFile]) -> ParsedFile:
+        from itertools import chain
+
+        return ParsedFile(
+            name="MergedFile",
+            sections=list(chain(*[file.sections for file in files])),
+        )
+
     @property
     def md(self) -> str:
-        return "\n".join([page.md or "" for page in self.pages])
+        return "\n".join([sec.md or "" for sec in self.sections])
 
     def get_schema(self, synapse: Synapse) -> Schema:
         return run_sync(self.get_schema_async, synapse)
@@ -353,55 +377,12 @@ class ParsedFile(msgspec.Struct, frozen=True):
         _trace_params.update(cast(dict[str, Any], trace_params) or {})
 
         output = await synapse.complete_async(
-            prompt=f"<document> {[page.text for page in self.pages]} </document>",
+            prompt=f"<document> {[sec.text for sec in self.sections]} </document>",
             system_prompt="You are an AI assistant who is an expert in natural"
             "language processing and especially named entity recognition.",
-            response_model=Schema,
+            response_model=ChainOfThought[Schema],
             temperature=1,
             trace_params=cast(TraceParams, _trace_params),
         )
 
-        return output.parsed
-
-    @ensure_module_installed("llama_index.core.schema", "llama-index")
-    def as_llamaindex_documents(self) -> Sequence[LlamaIndexDocument]:
-        from llama_index.core.schema import Document as LlamaIndexDocument
-
-        adapted_docs: list[LlamaIndexDocument] = []
-
-        filename: str = self.name
-        for page in self.pages:
-            page_number: int = page.page or 0
-            images: Sequence[Image] = page.images
-
-            metadata = {
-                "page_number": page_number,
-                "images": [dictify(image) for image in images] or [],
-                "source": filename,
-            }
-
-            content: str = page.md or ""
-            adapted_docs.append(LlamaIndexDocument(text=content, metadata=metadata))
-
-        return adapted_docs
-
-    @ensure_module_installed("langchain_core", "langchain")
-    def as_langchain_documents(
-        self,
-        transformations: Optional[list[DocumentTransformer[LangchainDocument]]] = None,
-    ) -> list[LangchainDocument]:
-        """Converts itself representation to a List of Langchain Document"""
-        from langchain_core.documents import Document as LangchainDocument
-
-        # Each page, initially, will be a document.
-        documents: list[LangchainDocument] = [
-            LangchainDocument(
-                page_content=page.md or "",
-                metadata={
-                    "source": self.name,
-                },
-            )
-            for page in self.pages
-        ]
-
-        return documents
+        return output.parsed.final_answer

@@ -17,7 +17,7 @@ from langfuse.client import os
 
 from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.constants import FinishReason
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     GeneratedAssistantMessage,
     CalledFunction,
     ChatCompletion,
@@ -38,7 +38,7 @@ from intellibricks.llms.util import (
     create_function_mapping_by_tools,
     get_parsed_response,
 )
-from intellibricks.util import ms_type_to_schema
+from intellibricks.llms.util import ms_type_to_schema
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 

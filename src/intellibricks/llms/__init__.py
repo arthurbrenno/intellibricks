@@ -1,4 +1,4 @@
-from .schema import (
+from .types import (
     AssistantMessage,
     CacheConfig,
     ChatCompletion,

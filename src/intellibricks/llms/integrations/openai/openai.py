@@ -12,7 +12,7 @@ from intellibricks.llms.base import (
     TranscriptionModel,
 )
 from intellibricks.llms.constants import FinishReason
-from intellibricks.llms.schema import (
+from intellibricks.llms.types import (
     CalledFunction,
     ChatCompletion,
     CompletionTokensDetails,
@@ -36,7 +36,7 @@ from intellibricks.llms.util import (
     get_audio_duration,
     get_parsed_response,
 )
-from intellibricks.util import ms_type_to_schema
+from intellibricks.llms.util import ms_type_to_schema
 from openai import NOT_GIVEN, AsyncOpenAI
 from openai.types.chat.chat_completion import (
     ChatCompletion as OpenAIChatCompletion,

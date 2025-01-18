@@ -11,5 +11,15 @@
     "reportAttributeAccessIssue": false,
     "reportUnusedVariable": true,
     "reportUnknownVariableType": false,
-    "reportUnnecessaryTypeIgnoreComment": true
+    "reportUnnecessaryTypeIgnoreComment": true,
+    "executionEnvironments": [
+        {
+            "root": "src/intellibricks/llms",
+            "reportUnnecessaryTypeIgnoreComment": "none"
+        },
+        {
+            "root": "src/intellibricks/agents",
+            "reportUnnecessaryTypeIgnoreComment": "none"
+        }
+    ]
 }

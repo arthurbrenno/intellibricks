@@ -1,7 +1,7 @@
 import msgspec
 import pytest
 from intellibricks.llms.integrations.groq import GroqLanguageModel
-from intellibricks.llms.schema import UserMessage
+from intellibricks.llms.types import UserMessage
 
 
 @pytest.fixture
