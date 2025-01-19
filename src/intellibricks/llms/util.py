@@ -1041,5 +1041,4 @@ def ms_type_to_schema(
         return data
 
     dereferenced_schema = dereference(main_schema)
-    debug_logger.debug(f"Dereferenced schema: {dereferenced_schema}")
     return dereferenced_schema
