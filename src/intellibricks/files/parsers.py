@@ -26,6 +26,7 @@ from .parsed_files import Image, ParsedFile, SectionContent
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
+
 class LocalSettings(TypedDict):
     use_gpu: bool
 
@@ -393,7 +394,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
             xml_bytes = self.pkt_to_xml_bytes(file_path)
 
             # For now, we'll just return the XML content as a single page
-            xml_text = xml_bytes.decode("utf-8")
+            xml_text = xml_bytes.decode("utf-8", errors="replace")
 
             page_content = SectionContent(
                 number=1,
@@ -770,7 +771,7 @@ class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
 
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
-        text_content = file.contents.decode("utf-8")
+        text_content = file.contents.decode("utf-8", errors="replace")
 
         page_content = SectionContent(
             number=1,

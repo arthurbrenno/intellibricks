@@ -685,7 +685,9 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
 
         buffered = BytesIO()
         image.save(buffered, format="JPEG")
-        image_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        image_str = base64.b64encode(buffered.getvalue()).decode(
+            "utf-8", errors="replace"
+        )
         return ImageFilePart(
             data=image_str.encode("utf-8"),
             mime_type=MimeType(
@@ -1295,7 +1297,7 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
 
         return ChatCompletionContentPartInputAudioParam(
             input_audio=InputAudio(
-                data=base64.b64encode(self.data).decode("utf-8"),
+                data=base64.b64encode(self.data).decode("utf-8", errors="replace"),
                 format=cast(Literal["mp3"], self.mime_type.split("/")[1]),
             ),
             type="input_audio",
@@ -1360,7 +1362,7 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
             dict[str, Any],
             ImageBlockParam(
                 source=Source(
-                    data=base64.b64encode(self.data).decode("utf-8"),
+                    data=base64.b64encode(self.data).decode("utf-8", errors="replace"),
                     media_type=cast(
                         Literal["image/jpeg", "image/png", "image/gif", "image/webp"],
                         self.mime_type,
@@ -1381,7 +1383,9 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
 
         if self.data:
             return ChatCompletionContentPartImageParam(
-                image_url=ImageURL(url=base64.b64encode(self.data).decode("utf-8")),
+                image_url=ImageURL(
+                    url=base64.b64encode(self.data).decode("utf-8", errors="replace")
+                ),
                 type="image_url",
             )
 
@@ -1400,7 +1404,9 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
 
         if self.data:
             return ChatCompletionContentPartImageParam(
-                image_url=ImageURL(url=self.data.decode("utf-8"), detail="auto"),
+                image_url=ImageURL(
+                    url=self.data.decode("utf-8", errors="replace"), detail="auto"
+                ),
                 type="image_url",
             )
 
@@ -2165,7 +2171,7 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
                     function=MessageAssistantMessageRequestToolCallFunctionTyped(
                         arguments=msgspec.json.encode(
                             tool_call.called_function.arguments
-                        ).decode("utf-8"),
+                        ).decode("utf-8", errors="replace"),
                         name=tool_call.called_function.function.name,
                     ),
                     type="function",
