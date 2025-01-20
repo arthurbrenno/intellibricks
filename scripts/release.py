@@ -268,9 +268,9 @@ def main():
     new_version = f"v{'.'.join(map(str, parsed_version))}"
     console.print(f"[info]New version calculated: {new_version}[/info]")
 
-    # Git operations (initial commit before tag)
+    # Git operations
     confirm_git_ops = questionary.confirm(
-        "Add, commit initial version changes before releasing?", default=True
+        "Add, commit, and push all changes before releasing?", default=True
     ).unsafe_ask()
     if confirm_git_ops is None:
         console.print("[warning]Prompt was cancelled. Exiting...[/warning]")
@@ -283,10 +283,7 @@ def main():
                 ["git", "commit", "-m", new_version],
                 f"Committing changes with message '{new_version}'",
             ),
-            (
-                ["git", "push"],
-                "Pushing initial changes to repository",
-            ),  # Push before tag
+            (["git", "push"], "Pushing changes to repository"),
         ]
         for cmd, description in commands:
             # For 'git commit', handle the 'nothing to commit' case
@@ -352,6 +349,27 @@ def main():
             with open(changelog_path, "w") as f:
                 f.write(f"# Changelog\n\n## {new_version}\n\n- \n")
 
+    # Git commit and push for changes in pyproject.toml and CHANGELOG.md
+    commands = [
+        (["git", "add", "pyproject.toml", changelog_path], "Staging version changes"),
+        (
+            ["git", "commit", "-m", f"Release {new_version}"],
+            f"Committing version changes with message 'Release {new_version}'",
+        ),
+        (["git", "push"], "Pushing version changes to repository"),
+    ]
+    for cmd, description in commands:
+        # Handle 'git commit' with potential 'nothing to commit' message
+        if cmd[1] == "commit":
+            run_command(
+                cmd,
+                description,
+                acceptable_exit_codes=[0, 1],
+                success_output_patterns=[r"nothing to commit"],
+            )
+        else:
+            run_command(cmd, description)
+
     # Create release using GitHub CLI
     release_title = questionary.text(
         "Enter the release title (this will appear as the heading of the release on GitHub). Leave blank to use the default version tag:",
@@ -387,34 +405,6 @@ def main():
                 style="success",
             )
         )
-
-        # Git commit and push for changes in pyproject.toml and CHANGELOG.md (only if release succeeded)
-        commands = [
-            (
-                ["git", "add", "pyproject.toml", changelog_path],
-                "Staging version changes",
-            ),
-            (
-                ["git", "commit", "-m", f"Release {new_version}"],
-                f"Committing version changes with message 'Release {new_version}'",
-            ),
-            (
-                ["git", "push"],
-                "Pushing version changes and tag to repository",
-            ),  # This pushes the tag created by 'gh release create'
-        ]
-        for cmd, description in commands:
-            # Handle 'git commit' with potential 'nothing to commit' message
-            if cmd[1] == "commit":
-                run_command(
-                    cmd,
-                    description,
-                    acceptable_exit_codes=[0, 1],
-                    success_output_patterns=[r"nothing to commit"],
-                )
-            else:
-                run_command(cmd, description)
-
     except subprocess.CalledProcessError as e:
         console.print(Panel(f"Failed to create release: {e}", style="error"))
 
