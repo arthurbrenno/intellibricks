@@ -1,9 +1,6 @@
 """Schema objects used to file extraction"""
 
 from __future__ import annotations
-
-from abc import ABC
-from dataclasses import dataclass
 from typing import Annotated, Any, Optional, Sequence, cast
 
 import msgspec
@@ -54,8 +51,7 @@ class Image(msgspec.Struct, frozen=True):
     ] = msgspec.field(default=None)
 
 
-@dataclass(frozen=True)
-class PageItem(ABC):
+class PageItem(msgspec.Struct, tag_field="type", frozen=True):
     md: Annotated[
         str,
         msgspec.Meta(
@@ -65,9 +61,8 @@ class PageItem(ABC):
     ]
 
 
-@dataclass(frozen=True)
-class TextPageItem(PageItem):
-    value: Annotated[
+class TextPageItem(PageItem, tag="text", frozen=True):
+    text: Annotated[
         str,
         msgspec.Meta(
             title="Value",
@@ -76,9 +71,8 @@ class TextPageItem(PageItem):
     ]
 
 
-@dataclass(frozen=True)
-class HeadingPageItem(PageItem):
-    value: Annotated[
+class HeadingPageItem(PageItem, tag="heading", frozen=True):
+    heading: Annotated[
         str,
         msgspec.Meta(
             title="Value",
@@ -95,8 +89,7 @@ class HeadingPageItem(PageItem):
     ]
 
 
-@dataclass(frozen=True)
-class TablePageItem(PageItem):
+class TablePageItem(PageItem, tag="table", frozen=True):
     rows: Annotated[
         Sequence[Sequence[str]],
         msgspec.Meta(
@@ -338,6 +331,21 @@ class ParsedFile(msgspec.Struct, frozen=True):
             description="Pages of the document",
         ),
     ]
+
+    @property
+    def llm_described_text(self) -> str:
+        sections = ' '.join(
+            [
+                f"<section_{num}> {section.md} </section_{num}>"
+                for num, section in enumerate(self.sections)
+            ]
+        )
+        return (
+            f"<file>\n\n"
+            f"**name:** {self.name} \n"
+            f"**sections:** {sections}\n\n"
+            f"</file>"
+        )
 
     def merge_all(self, others: Sequence[ParsedFile]) -> ParsedFile:
         from itertools import chain

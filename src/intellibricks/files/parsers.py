@@ -27,7 +27,7 @@ class LocalSettings(TypedDict):
     use_gpu: bool
 
 
-class FileParser(msgspec.Struct, frozen=True):
+class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
     """
     Abstract class for extracting content from files.
     This should be used as a base class for specific file parsers.
@@ -51,7 +51,7 @@ class FileParser(msgspec.Struct, frozen=True):
         raise NotImplementedError("This method should be implemented by subclasses.")
 
 
-class IntellibricksFileParser(FileParser, frozen=True):
+class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
     image_description_agent: Optional[Agent[ChainOfThought[ImageDescription]]] = None
 
     @override
@@ -143,7 +143,7 @@ class IntellibricksFileParser(FileParser, frozen=True):
                 raise ValueError(f"Unsupported file extension: {file.extension}")
 
 
-class CompressedFileParser(IntellibricksFileParser, frozen=True):
+class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed"):
     """
     Parses compressed files (ZIP, RAR, PKZ) by extracting each file within the archive,
     delegating to the appropriate parser, and merging the results.
@@ -281,7 +281,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True):
         raise ValueError(f"Unsupported file extension in compressed archive: {suffix}")
 
 
-class DWGFileParser(IntellibricksFileParser, frozen=True):
+class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
     @ensure_module_installed("aspose-cad", "intellibricks[files]")
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -366,7 +366,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True):
         return image_bytes_list
 
 
-class PKTFileParser(IntellibricksFileParser, frozen=True):
+class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -421,7 +421,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True):
         return xml_data
 
 
-class AlgFileParser(IntellibricksFileParser, frozen=True):
+class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
     """ALG Files can be treated as text files, so we'll use TxtFileParser to extract content."""
 
     @override
@@ -431,7 +431,7 @@ class AlgFileParser(IntellibricksFileParser, frozen=True):
         ).extract_contents_async(file)
 
 
-class PDFFileParser(IntellibricksFileParser, frozen=True):
+class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
     @ensure_module_installed("pypdf", "intellibricks[files]")
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -482,7 +482,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True):
             )
 
 
-class OfficeFileParser(IntellibricksFileParser, frozen=True):
+class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
     """
     This class actually delegates the parsing to the appropriate parser based on the file extension.
     This class is a Facade for the different Office file parsers.
@@ -516,7 +516,7 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True):
                 raise ValueError(f"Unsupported Office extension: {extension}")
 
 
-class DocxFileParser(OfficeFileParser, frozen=True):
+class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
     @ensure_module_installed("python-docx", "intellibricks[files]")
     @override
     async def extract_contents_async(
@@ -581,7 +581,7 @@ class DocxFileParser(OfficeFileParser, frozen=True):
             )
 
 
-class PptxFileParser(OfficeFileParser, frozen=True):
+class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
     @ensure_module_installed("python-pptx", "intellibricks[files]")
     @override
     async def extract_contents_async(
@@ -661,7 +661,7 @@ class PptxFileParser(OfficeFileParser, frozen=True):
             )
 
 
-class ExcelFileParser(OfficeFileParser, frozen=True):
+class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
     @ensure_module_installed("openpyxl", "intellibricks[files]")
     @override
     async def extract_contents_async(
@@ -741,7 +741,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True):
             )
 
 
-class TxtFileParser(IntellibricksFileParser, frozen=True):
+class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
     """
     Parses plain .txt files. Extracts all content as a single page (number=1).
     """
@@ -762,7 +762,7 @@ class TxtFileParser(IntellibricksFileParser, frozen=True):
         )
 
 
-class StaticImageFileParser(IntellibricksFileParser, frozen=True):
+class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_image"):
     """
     Parses static image files (PNG, JPEG, TIFF, etc.) as a single "page" with one image.
     If the image is TIFF, it converts to PNG in-memory for better compatibility.
@@ -843,7 +843,9 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True):
             )
 
 
-class AnimatedImageFileParser(IntellibricksFileParser, frozen=True):
+class AnimatedImageFileParser(
+    IntellibricksFileParser, frozen=True, tag="animated_image"
+):
     """
     Parses animated GIF files by splitting them into 3 equally sized segments
     (or fewer if total frames < 3).
@@ -947,7 +949,7 @@ class AnimatedImageFileParser(IntellibricksFileParser, frozen=True):
             )
 
 
-class MarkitdownFileParser(FileParser, frozen=True):
+class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):
     client: Optional[OpenAI] = None
     model: Optional[str] = None
 
