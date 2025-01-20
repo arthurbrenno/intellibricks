@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := run
 
 run:
-	./.venv/bin/python /Users/arthurbrenno/Documents/Dev/Public/ctx/intellibricks/tests/example.py
+	./.venv/bin/python ./tests/example.py
 
 # Creates a new release in the GitHub repository.
 release:
