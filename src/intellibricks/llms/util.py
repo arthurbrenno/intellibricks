@@ -964,19 +964,37 @@ def ms_type_to_schema(
     remove_parameters: Optional[Sequence[str]] = None,
     openai_like: bool = False,
     ensure_str_enum: bool = False,
+    nullable_style: Optional[
+        Literal[
+            "remove_null",
+            "standard_nullable",
+            "openapi_nullable",
+            "custom_schema_nullable",
+        ]
+    ] = None,
 ) -> dict[str, Any]:
     """Generates a fully dereferenced JSON schema for a given msgspec Struct type,
-    handling recursive structures, with the option to remove specific parameters,
-    adds 'additionalProperties: false' for OpenAI compatibility,
-    and modifies enum fields for Google compatibility.
-    """
+    with enhanced handling of nullable fields for different providers.
 
+    Args:
+        struct: The msgspec Struct type to convert
+        remove_parameters: Optional list of parameters to remove from the schema
+        openai_like: Whether to add OpenAI-specific modifications
+        ensure_str_enum: Whether to ensure enum values are strings
+        nullable_style: How to handle nullable fields:
+            - "remove_null": Remove null types entirely (default)
+            - "standard_nullable": Add standard "nullable": true flag
+            - "openapi_nullable": Add OpenAPI-style "x-nullable": true flag
+            - "custom_schema_nullable": Add custom schema property "schema-nullable": true
+            If None, defaults to "remove_null"
+    """
     schemas, components = msgspec.json.schema_components([struct])
     main_schema = schemas[0]
-    memo: dict[str, Any] = {}  # To store already dereferenced schemas
+    memo: dict[str, Any] = {}
+
+    nullable_style = nullable_style or "standard_nullable"  # Set default if None
 
     def ensure_enum_string(schema: dict[str, Any]) -> dict[str, Any]:
-        """Modifies enum fields to be compatible with Google's requirements."""
         if not ensure_str_enum:
             return schema
 
@@ -986,10 +1004,58 @@ def ms_type_to_schema(
             "IT WILL RETURN AN ENUM WITH STRING VALUES!"
         )
         if "enum" in schema:
-            # Ensure type is string for enum fields
             schema["type"] = "string"
-            # Convert all enum values to strings if they aren't already
             schema["enum"] = [str(value) for value in schema["enum"]]
+        return schema
+
+    def handle_nullable_type(schema: dict[str, Any]) -> dict[str, Any]:
+        """Convert anyOf with null type to appropriate nullable format."""
+        if "anyOf" not in schema:
+            return schema
+
+        # Check if this is a nullable type (has both null and non-null types)
+        null_type = any(
+            isinstance(t, dict) and t.get("type") == "null"  # type: ignore
+            for t in schema["anyOf"]
+        )
+        non_null_types: list[dict[str, Any]] = [
+            t
+            for t in schema["anyOf"]
+            if isinstance(t, dict) and t.get("type") != "null"  # type: ignore
+        ]
+
+        if null_type and len(non_null_types) == 1:
+            base_type = non_null_types[0]
+
+            if nullable_style == "remove_null":
+                # Just use the non-null type
+                return base_type
+
+            # Start with the base type
+            result = base_type.copy()
+
+            # Add appropriate nullable flag
+            if nullable_style == "standard_nullable":
+                result["nullable"] = True
+            elif nullable_style == "openapi_nullable":
+                result["x-nullable"] = True
+            elif nullable_style == "custom_schema_nullable":
+                result["schema-nullable"] = True
+
+            return result
+
+        elif len(non_null_types) > 1:
+            # If multiple non-null types, keep anyOf but handle according to style
+            if nullable_style == "remove_null":
+                schema["anyOf"] = non_null_types
+            else:
+                # Add nullable flag to the anyOf schema itself
+                if nullable_style == "standard_nullable":
+                    schema["nullable"] = True
+                elif nullable_style == "openapi_nullable":
+                    schema["x-nullable"] = True
+                elif nullable_style == "custom_schema_nullable":
+                    schema["schema-nullable"] = True
 
         return schema
 
@@ -1000,9 +1066,7 @@ def ms_type_to_schema(
             if component_name in memo:
                 return memo[component_name]
             elif component_name in components:
-                memo[component_name] = {
-                    "$ref": ref_path
-                }  # Mark as processing to avoid infinite recursion
+                memo[component_name] = {"$ref": ref_path}
                 dereferenced = components[component_name]
                 if isinstance(dereferenced, dict):
                     if (
@@ -1031,11 +1095,36 @@ def ms_type_to_schema(
                     debug_logger.warning(
                         f"WARNING: REMOVING PARAMETER: {key} BECAUSE THE PROVIDER DOES NOT SUPPORT IT IN JSON SCHEMAS!"
                     )
-                    continue  # Skip this parameter
+                    continue
                 new_data[key] = _dereference_recursive(value)
 
-            # Apply Google-specific modifications after recursive processing
-            return ensure_enum_string(new_data)
+            # Apply conversions
+            new_data = ensure_enum_string(new_data)
+            new_data = handle_nullable_type(new_data)
+
+            # Update required fields
+            if "properties" in new_data and "required" in new_data:
+                properties = new_data["properties"]
+                required = new_data["required"]
+                new_required: list[str] = []
+                for prop in required:
+                    if prop in properties:
+                        # Check if property is marked as nullable
+                        prop_schema = properties[prop]
+                        is_nullable = (
+                            prop_schema.get("nullable")
+                            or prop_schema.get("x-nullable")
+                            or prop_schema.get("schema-nullable")
+                        )
+                        if not is_nullable:
+                            new_required.append(prop)
+
+                if new_required:
+                    new_data["required"] = new_required
+                else:
+                    del new_data["required"]
+
+            return new_data
         elif isinstance(data, list):
             return [_dereference_recursive(item) for item in data]
         return data
