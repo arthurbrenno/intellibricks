@@ -403,9 +403,13 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
 class SynapseCascade:
     synapses: Sequence[Synapse | SynapseCascade]
+    """A sequence of Synapse or SynapseCascade objects"""
+
+    shuffle: bool = False
+    """Indicates whether the synapses should be shuffled before trying them"""
 
     @classmethod
-    def of(cls, *synapses: Synapse | SynapseCascade) -> SynapseCascade: ...
+    def of(cls, *synapses: Synapse | SynapseCascade, shuffle: bool = False) -> SynapseCascade: ...
     @overload
     def complete(
         self,
