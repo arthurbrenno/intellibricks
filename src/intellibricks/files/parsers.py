@@ -603,7 +603,7 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
 
 
 class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
-    @ensure_module_installed("python-pptx", "intellibricks[files]")
+    @ensure_module_installed("pptx", "intellibricks[files]")
     @override
     async def extract_contents_async(
         self,
