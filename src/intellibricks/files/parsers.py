@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import abc
 import io
+import logging
 import tempfile
 from typing import Optional, Sequence, TypedDict, cast, override
 
 import msgspec
+from architecture import log
 from architecture.data.files import FileExtension, RawFile
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.functions import run_sync
@@ -22,6 +24,7 @@ from intellibricks.llms.types import (
 from .constants import ParsingStrategy
 from .parsed_files import Image, ParsedFile, SectionContent
 
+debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 class LocalSettings(TypedDict):
     use_gpu: bool
@@ -59,6 +62,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
         match file.extension:
             # Word files
             case FileExtension.DOC | FileExtension.DOCX:
+                debug_logger.debug("Extracting contents from Word file")
                 return await OfficeFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
@@ -66,6 +70,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
 
             # PowerPoint
             case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
+                debug_logger.debug("Extracting contents from PowerPoint file")
                 return await OfficeFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
@@ -73,12 +78,14 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
 
             # Excel
             case FileExtension.XLS | FileExtension.XLSX:
+                debug_logger.debug("Extracting contents from Excel file")
                 return await OfficeFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.TXT:
+                debug_logger.debug("Extracting contents from TXT file")
                 return await TxtFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
@@ -86,12 +93,14 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
 
             # Treat XML as plain text for now
             case FileExtension.XML:
+                debug_logger.debug("Extracting contents from XML file")
                 return await TxtFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.PDF:
+                debug_logger.debug("Extracting contents from PDF file")
                 return await PDFFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
@@ -104,36 +113,42 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 | FileExtension.TIFF
                 | FileExtension.BMP
             ):
+                debug_logger.debug("Extracting contents from static image file")
                 return await StaticImageFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.GIF:
+                debug_logger.debug("Extracting contents from animated image file")
                 return await AnimatedImageFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.PKT:
+                debug_logger.debug("Extracting contents from PKT file")
                 return await PKTFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.ALG:
+                debug_logger.debug("Extracting contents from ALG file")
                 return await AlgFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.ZIP | FileExtension.RAR | FileExtension.PKZ:
+                debug_logger.debug("Extracting contents from compressed file")
                 return await CompressedFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.DWG:
+                debug_logger.debug("Extracting contents from DWG file")
                 return await DWGFileParser(
                     strategy=self.strategy,
                     image_description_agent=self.image_description_agent,
@@ -152,8 +167,9 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         import tempfile
-        import rarfile
         import zipfile
+
+        import rarfile
 
         # We'll accumulate ParsedFile objects from each extracted child file
         parsed_files: list[ParsedFile] = []
@@ -239,8 +255,9 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
         Attempt to guess the FileExtension enum from a filename suffix.
         If unknown or unsupported, this raises a ValueError (you could also return TXT, etc.).
         """
-        from architecture.data.files import FileExtension
         from pathlib import Path
+
+        from architecture.data.files import FileExtension
 
         suffix = Path(filename).suffix.lower().lstrip(".")  # e.g. "pdf", "docx", etc.
         if not suffix:
