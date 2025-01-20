@@ -3485,7 +3485,7 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
                 "Indicates a high value",
             ],
         ),
-    ]
+    ] = msgspec.field(default=None)
 
     relationships: Annotated[
         Optional[Sequence[str]],
@@ -3498,7 +3498,7 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
                 "Part of a larger assembly",
             ],
         ),
-    ]
+    ] = msgspec.field(default=None)
 
     def md(self, indent_level: int = 0) -> str:
         indent = "  " * indent_level
@@ -3525,7 +3525,7 @@ class ImageStructure(msgspec.Struct, frozen=True):
                 "A formula presented on a single line",
             ],
         ),
-    ]
+    ] = msgspec.field(default=None)
     groupings: Annotated[
         Optional[Sequence[str]],
         msgspec.Meta(
@@ -3537,7 +3537,7 @@ class ImageStructure(msgspec.Struct, frozen=True):
                 "The interconnected nodes of the network",
             ],
         ),
-    ]
+    ] = msgspec.field(default=None)
     focal_point: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -3549,7 +3549,7 @@ class ImageStructure(msgspec.Struct, frozen=True):
                 "The main subject of the drawing",
             ],
         ),
-    ]
+    ] = msgspec.field(default=None)
 
     def md(self, indent_level: int = 1) -> str:
         indent = "  " * indent_level
@@ -3592,14 +3592,14 @@ class ImageDescription(msgspec.Struct, frozen=True):
             title="Detailed Visual Element Descriptions",
             description="A list of individual visual elements identified within the image, each with its own detailed description. For each element, provide its type, specific visual details, its role or function within the image's context, and its relationships to other elements. The goal is to break down the image into its fundamental visual components and describe them comprehensively. This applies to all types of images, from tangible objects in photographs to symbols in diagrams or strokes in abstract art. Focus on discrete, meaningful visual components. For a formula, each term or symbol could be an element. For a diagram, each shape or arrow. For abstract art, significant areas of color or lines.",
         ),
-    ]
+    ] = msgspec.field(default=None)
     structure: Annotated[
         Optional[ImageStructure],
         msgspec.Meta(
             title="Image Structure and Organization",
             description="A description of the overall structure and organization of the visual elements within the image. This section focuses on how the different parts are arranged and related to each other. Describe the layout, any significant groupings of elements, and the primary focal point or area of emphasis. This helps to understand the higher-level organization of the image's content.",
         ),
-    ]
+    ] = msgspec.field(default=None)
     dominant_visual_features: Annotated[
         Optional[Sequence[str]],
         msgspec.Meta(
@@ -3611,7 +3611,7 @@ class ImageDescription(msgspec.Struct, frozen=True):
                 "Dominant horizontal lines",
             ],
         ),
-    ]
+    ] = msgspec.field(default=None)
 
     intended_purpose: Annotated[
         Optional[str],
@@ -3624,7 +3624,7 @@ class ImageDescription(msgspec.Struct, frozen=True):
                 "To evoke a sense of calm",
             ],
         ),
-    ]
+    ] = msgspec.field(default=None)
 
     @property
     def md(self) -> str:
