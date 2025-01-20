@@ -537,7 +537,7 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
 
 
 class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
-    @ensure_module_installed("python-docx", "intellibricks[files]")
+    @ensure_module_installed("docx", "intellibricks[files]")
     @override
     async def extract_contents_async(
         self,
