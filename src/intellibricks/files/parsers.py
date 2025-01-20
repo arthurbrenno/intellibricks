@@ -442,7 +442,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
             file.save_to_file(file_path)
 
             reader = PdfReader(file_path)
-            page_contents: list[SectionContent] = []
+            section_contents: list[SectionContent] = []
             for page_num, page in enumerate(reader.pages):
                 page_images: Sequence[Image] = [
                     Image(contents=image.data, name=image.name) for image in page.images
@@ -467,18 +467,20 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
 
                 page_text = [page.extract_text(), "".join(image_descriptions)]
 
-                page_content = SectionContent(
+                md = "".join(page_text)
+                section_content = SectionContent(
                     number=page_num + 1,
-                    text="".join(page_text),
+                    text=md,
+                    md=md,
                     images=page_images,
                 )
 
-                page_contents.append(page_content)
+                section_contents.append(section_content)
 
             file_name = file.name
             return ParsedFile(
                 name=file_name,
-                sections=page_contents,
+                sections=section_contents,
             )
 
 
@@ -569,15 +571,16 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
                     doc_text += "\n\n" + "\n".join(image_descriptions)
 
             # Create a single SectionContent (DOCX has no true "pages" by default)
-            page_content = SectionContent(
+            section_content = SectionContent(
                 number=1,
                 text=doc_text,
+                md=doc_text,
                 images=doc_images,
             )
 
             return ParsedFile(
                 name=file.name,
-                sections=[page_content],
+                sections=[section_content],
             )
 
 
@@ -602,7 +605,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
 
             prs: PptxPresentation = Presentation(file_path)
 
-            pages: list[SectionContent] = []
+            sections: list[SectionContent] = []
 
             for slide_index, slide in enumerate(prs.slides, start=1):
                 # We'll store text from shapes and images
@@ -648,16 +651,17 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
                     if image_descriptions:
                         combined_text += "\n\n" + "\n".join(image_descriptions)
 
-                page_content = SectionContent(
+                section_content = SectionContent(
                     number=slide_index,
                     text=combined_text,
+                    md=combined_text,
                     images=slide_images,
                 )
-                pages.append(page_content)
+                sections.append(section_content)
 
             return ParsedFile(
                 name=file.name,
-                sections=pages,
+                sections=sections,
             )
 
 
@@ -677,7 +681,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
             file.save_to_file(file_path)
 
             wb: Workbook = load_workbook(file_path, data_only=True)
-            pages: list[SectionContent] = []
+            sections: list[SectionContent] = []
 
             for sheet_index, sheet in enumerate(wb.worksheets, start=1):
                 # Gather all text
@@ -728,16 +732,17 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                     if image_descriptions:
                         combined_text += "\n\n" + "\n".join(image_descriptions)
 
-                page_content = SectionContent(
+                section_content = SectionContent(
                     number=sheet_index,
                     text=combined_text,
+                    md=combined_text,
                     images=sheet_images,
                 )
-                pages.append(page_content)
+                sections.append(section_content)
 
             return ParsedFile(
                 name=file.name,
-                sections=pages,
+                sections=sections,
             )
 
 
@@ -834,6 +839,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
             page_content = SectionContent(
                 number=1,
                 text=text_content,
+                md=text_content,
                 images=[image_obj],
             )
 
@@ -938,6 +944,7 @@ class AnimatedImageFileParser(
                 page_content = SectionContent(
                     number=i,
                     text=text_description,
+                    md=text_description,
                     images=[frame_image],
                 )
                 pages.append(page_content)
