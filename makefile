@@ -1,4 +1,9 @@
-.PHONY: help test clean typecheck
+.PHONY: run release test clean typecheck
+
+.DEFAULT_GOAL := run
+
+run:
+	/Users/arthurbrenno/Documents/Dev/Public/ctx/intellibricks/.venv/bin/python /Users/arthurbrenno/Documents/Dev/Public/ctx/intellibricks/tests/example.py
 
 # Creates a new release in the GitHub repository.
 release:
