@@ -426,7 +426,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
 
         # Decrypt each byte with decreasing file length
         for byte in in_data:
-            out.append(byte ^ i_size)
+            out.append(byte ^ (i_size & 0xFF))
             i_size -= 1
 
         # The first 4 bytes (big-endian) represent the size of the XML when uncompressed
