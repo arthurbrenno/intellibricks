@@ -160,21 +160,24 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         ),
     ] = msgspec.field(default=None)
 
-    output_language: Literal[
-        "english",
-        "spanish",
-        "german",
-        "french",
-        "italian",
-        "dutch",
-        "portuguese",
-        "russian",
-        "chinese",
-        "japanese",
-        "korean",
-        "arabic",
-        "turkish",
-    ] = msgspec.field(default_factory=lambda: "english")
+    output_language: Annotated[
+        str
+        | Literal[
+            "en",
+            "es",
+            "fr",
+            "de",
+            "it",
+            "pt",
+            "nl",
+            "pl",
+            "ru",
+            "ja",
+            "ko",
+        ],
+        msgspec.Meta(min_length=2, max_length=2),
+    ] = msgspec.field(default_factory=lambda: "en")
+    """ISO 639-1 language code for the output language of the agent."""
 
     metadata: Annotated[
         AgentMetadata,
