@@ -160,6 +160,22 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
         ),
     ] = msgspec.field(default=None)
 
+    output_language: Literal[
+        "english",
+        "spanish",
+        "german",
+        "french",
+        "italian",
+        "dutch",
+        "portuguese",
+        "russian",
+        "chinese",
+        "japanese",
+        "korean",
+        "arabic",
+        "turkish",
+    ] = msgspec.field(default_factory=lambda: "english")
+
     metadata: Annotated[
         AgentMetadata,
         msgspec.Meta(
@@ -512,13 +528,15 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             "{task}\n\n"
             "AGENT DESCRIPTION:"
             "{description}.\n\n"
-            "Your instructions are: {instructions}.\n"
+            "INSTRUCTIONS: {instructions}.\n"
+            "OUTPUT LANGUAGE: {output_language}\n"
             "{context}"
         ).format(
             name=self.metadata["name"],
             task=self.task,
             description=self.metadata["description"],
             instructions="".join(self.instructions),
+            output_language=self.output_language,
             context=f"The following context was provided by context sources: {context_raw_text}"
             if context_raw_text
             else "",
