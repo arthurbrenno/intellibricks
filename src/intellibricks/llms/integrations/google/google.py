@@ -257,6 +257,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                         ],
                         automatic_function_calling=types.AutomaticFunctionCallingConfig(
                             disable=True,
+                            maximum_remote_calls=None,
                         ),
                     ),
                 ),
