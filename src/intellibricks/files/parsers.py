@@ -7,9 +7,8 @@ import tempfile
 from typing import Never, Optional, Sequence, TypedDict, cast, override
 
 import msgspec
-from architecture import log
+from architecture import dp, log
 from architecture.data.files import FileExtension, RawFile, find_extension
-from architecture import dp
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.functions import run_sync
 from openai import OpenAI
@@ -21,6 +20,7 @@ from intellibricks.llms.types import (
     ChainOfThought,
     ImageFilePart,
     MimeType,
+    VideoFilePart,
     VisualMediaDescription,
 )
 
@@ -1074,7 +1074,30 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
 
 class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
-        return await super().extract_contents_async(file)
+        if self.visual_description_agent is None:
+            raise ValueError("No visual description agent provided.")
+
+        extension = file.extension
+        if extension != FileExtension.MP4:
+            raise ValueError("VideoFileParser only supports .mp4 files.")
+
+        file_contents = file.contents
+        file_part = VideoFilePart(data=file_contents, mime_type=MimeType.video_mp4)
+        visual_media_description = await self.visual_description_agent.run_async(
+            file_part
+        )
+
+        return ParsedFile(
+            name=file.name,
+            sections=[
+                SectionContent(
+                    number=1,
+                    text=visual_media_description.parsed.final_answer.md,
+                    md=visual_media_description.parsed.final_answer.md,
+                    images=[],
+                )
+            ],
+        )
 
 
 class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):

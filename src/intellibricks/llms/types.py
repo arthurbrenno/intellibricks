@@ -3376,6 +3376,7 @@ class VisualMediaDescription(msgspec.Struct, frozen=True):
             ],
         ),
     ]
+
     content_type: Annotated[
         str,
         msgspec.Meta(
@@ -3391,6 +3392,7 @@ class VisualMediaDescription(msgspec.Struct, frozen=True):
             ],
         ),
     ]
+
     visual_elements: Annotated[
         Optional[Sequence[GraphicalElementDescription]],
         msgspec.Meta(
@@ -3398,6 +3400,7 @@ class VisualMediaDescription(msgspec.Struct, frozen=True):
             description="A list of individual elements identified within the media, each with its own detailed description. For each element, provide its type, specific details (visual, auditory, or temporal), its role or function, and its relationships to other elements. The goal is to break down the media into its fundamental components and describe them comprehensively. This applies to all types of visual media, from objects in photographs to symbols in diagrams, shots in a video, or transitions in an animation. Focus on discrete, meaningful components.",
         ),
     ] = msgspec.field(default=None)
+
     structure: Annotated[
         Optional[MediaStructure],
         msgspec.Meta(
@@ -3405,6 +3408,7 @@ class VisualMediaDescription(msgspec.Struct, frozen=True):
             description="A description of the overall structure and organization of the elements within the media. This section focuses on how the different parts are arranged and related to each other, considering both spatial and temporal aspects. Describe the layout, any significant groupings of elements, and the primary focal point or area of emphasis. This helps to understand the higher-level organization of the content.",
         ),
     ] = msgspec.field(default=None)
+
     dominant_features: Annotated[
         Optional[Sequence[str]],
         msgspec.Meta(
