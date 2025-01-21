@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     cast,
 )
+
 import msgspec
 from architecture.extensions import Maybe
 from architecture.utils import run_sync
@@ -20,6 +21,7 @@ from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms import Synapse, SynapseCascade, TextTranscriptionSynapse
 from intellibricks.llms.types import (
+    AudioFilePart,
     ChatCompletion,
     DeveloperMessage,
     GenerationConfig,
@@ -29,13 +31,12 @@ from intellibricks.llms.types import (
     MessageType,
     PartType,
     RawResponse,
+    TextPart,
     Tool,
     ToolCall,
     ToolCallSequence,
     TraceParams,
     UserMessage,
-    TextPart,
-    AudioFilePart,
 )
 from intellibricks.rag.contracts import SupportsContextRetrieval
 from intellibricks.rag.types import ContextSourceSequence, Query
@@ -464,7 +465,6 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             ]
         )
 
-        # Replace the TODO section with this code:
         if (
             self.audio_transcriptions_synapse is not None
             and message_sequence.count_audios() > 1
@@ -474,23 +474,24 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             for message in message_sequence:
                 new_parts: list[PartType] = []
                 for part in message.contents:
-                    if isinstance(part, AudioFilePart):
-                        # Transcribe the audio part
-                        audio_bytes = part.data
-                        transcription = (
-                            await self.audio_transcriptions_synapse.transcribe_async(
-                                audio=audio_bytes
+                    match part:
+                        case AudioFilePart():
+                            # Transcribe the audio part
+                            audio_bytes = part.data
+                            transcription = (
+                                await self.audio_transcriptions_synapse.transcribe_async(
+                                    audio=audio_bytes
+                                )
+                            ).text
+                            # Create text part with transcription wrapped in tags
+                            new_parts.append(
+                                TextPart(
+                                    text=f"<audio_transcription>\n{transcription}\n</audio_transcription>"
+                                )
                             )
-                        ).text
-                        # Create text part with transcription wrapped in tags
-                        new_parts.append(
-                            TextPart(
-                                text=f"<audio_transcription>\n{transcription}\n</audio_transcription>"
-                            )
-                        )
-                    else:
-                        # Keep non-audio parts unchanged
-                        new_parts.append(part)
+                        case _:
+                            # Keep non-audio parts unchanged
+                            new_parts.append(part)
 
                 # Create new message instance with same type but new parts
                 transcribed_messages.append(

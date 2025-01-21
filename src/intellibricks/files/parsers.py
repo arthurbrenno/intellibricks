@@ -1072,7 +1072,9 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             raise RuntimeError()
 
 
-class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"): ...
+class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        return await super().extract_contents_async(file)
 
 
 class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):
