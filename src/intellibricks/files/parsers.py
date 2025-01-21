@@ -37,6 +37,10 @@ debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 exception_logger = log.create_logger(__name__, level=logging.ERROR)
 
 
+class InvalidFileExtension(Exception):
+    """Raised when a file extension is not supported."""
+
+
 class LocalSettings(TypedDict):
     use_gpu: bool
 
@@ -193,7 +197,9 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                     visual_description_agent=self.visual_description_agent,
                 ).extract_contents_async(file)
             case _:
-                raise ValueError(f"Unsupported file extension: {file.extension}")
+                raise InvalidFileExtension(
+                    f"Unsupported file extension: {file.extension}"
+                )
 
 
 class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
