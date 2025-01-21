@@ -134,6 +134,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 | FileExtension.PNG
                 | FileExtension.TIFF
                 | FileExtension.BMP
+                | FileExtension.JPG
             ):
                 debug_logger.debug("Extracting contents from static image file")
                 return await StaticImageFileParser(
