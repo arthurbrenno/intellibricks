@@ -38,10 +38,9 @@ from typing import (
 )
 
 import msgspec
-from architecture import log
+from architecture import dp, log
+from architecture.data.files import FileExtension, find_extension
 from architecture.utils.decorators import ensure_module_installed
-from architecture.data.files import find_extension, FileExtension
-
 
 from intellibricks.llms.util import (
     get_parts_llm_described_text,
@@ -585,6 +584,7 @@ class CacheConfig(msgspec.Struct, frozen=True, kw_only=True):
 """
 
 
+@dp.AbstractFactory
 class Part(msgspec.Struct, tag_field="type", frozen=True):
     """
     Represents a part of a multi-content message. The use-case is for
@@ -978,6 +978,7 @@ class ToolResponsePart(Part, frozen=True, tag="tool_response"):
         )
 
 
+@dp.AbstractFactory
 class FilePart(Part, frozen=True, tag="file"):
     data: bytes
     """bytes file data."""

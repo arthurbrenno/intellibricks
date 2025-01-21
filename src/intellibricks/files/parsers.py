@@ -9,6 +9,7 @@ from typing import Never, Optional, Sequence, TypedDict, cast, override
 import msgspec
 from architecture import log
 from architecture.data.files import FileExtension, RawFile, find_extension
+from architecture import dp
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.functions import run_sync
 from openai import OpenAI
@@ -58,6 +59,7 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
         raise NotImplementedError("This method should be implemented by subclasses.")
 
 
+@dp.Facade
 class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
     visual_description_agent: Optional[
         Agent[ChainOfThought[VisualMediaDescription]]
