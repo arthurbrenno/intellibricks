@@ -179,11 +179,13 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 | FileExtension.WAV
                 | FileExtension.WEBM
             ):
+                debug_logger.debug("Extracting contents from audio file")
                 return await AudioFileParser(
                     strategy=self.strategy,
                     audio_description_agent=self.audio_description_agent,
                 ).extract_contents_async(file)
             case FileExtension.MP4:
+                debug_logger.debug("Extracting contents from video file")
                 return await VideoFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
