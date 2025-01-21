@@ -4,27 +4,30 @@ import abc
 import io
 import logging
 import tempfile
-from typing import Optional, Sequence, TypedDict, cast, override
+from typing import Never, Optional, Sequence, TypedDict, cast, override
 
 import msgspec
 from architecture import log
-from architecture.data.files import FileExtension, RawFile
+from architecture.data.files import FileExtension, RawFile, find_extension
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.functions import run_sync
 from openai import OpenAI
 
 from intellibricks.agents import Agent
 from intellibricks.llms.types import (
+    AudioDescription,
+    AudioFilePart,
     ChainOfThought,
-    ImageDescription,
     ImageFilePart,
     MimeType,
+    VisualMediaDescription,
 )
 
 from .constants import ParsingStrategy
 from .parsed_files import Image, ParsedFile, SectionContent
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
+exception_logger = log.create_logger(__name__, level=logging.ERROR)
 
 
 class LocalSettings(TypedDict):
@@ -56,7 +59,11 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
 
 
 class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
-    image_description_agent: Optional[Agent[ChainOfThought[ImageDescription]]] = None
+    graphical_elements_description_agent: Optional[
+        Agent[ChainOfThought[VisualMediaDescription]]
+    ] = None
+
+    audio_description_agent: Optional[Agent[ChainOfThought[AudioDescription]]] = None
 
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -66,7 +73,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 debug_logger.debug("Extracting contents from Word file")
                 return await OfficeFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             # PowerPoint
@@ -74,7 +81,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 debug_logger.debug("Extracting contents from PowerPoint file")
                 return await OfficeFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             # Excel
@@ -82,14 +89,14 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 debug_logger.debug("Extracting contents from Excel file")
                 return await OfficeFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.TXT:
                 debug_logger.debug("Extracting contents from TXT file")
                 return await TxtFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             # Treat XML as plain text for now
@@ -97,14 +104,14 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 debug_logger.debug("Extracting contents from XML file")
                 return await TxtFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.PDF:
                 debug_logger.debug("Extracting contents from PDF file")
                 return await PDFFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             # Static images (PNG, JPG, TIFF, BMP)
@@ -117,44 +124,62 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 debug_logger.debug("Extracting contents from static image file")
                 return await StaticImageFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.GIF:
                 debug_logger.debug("Extracting contents from animated image file")
                 return await AnimatedImageFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.PKT:
                 debug_logger.debug("Extracting contents from PKT file")
                 return await PKTFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.ALG:
                 debug_logger.debug("Extracting contents from ALG file")
                 return await AlgFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.ZIP | FileExtension.RAR | FileExtension.PKZ:
                 debug_logger.debug("Extracting contents from compressed file")
                 return await CompressedFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case FileExtension.DWG:
                 debug_logger.debug("Extracting contents from DWG file")
                 return await DWGFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
-
+            case (
+                FileExtension.FLAC
+                | FileExtension.MP3
+                | FileExtension.MPEG
+                | FileExtension.MPGA
+                | FileExtension.M4A
+                | FileExtension.OGG
+                | FileExtension.WAV
+                | FileExtension.WEBM
+            ):
+                return await AudioFileParser(
+                    strategy=self.strategy,
+                    audio_description_agent=self.audio_description_agent,
+                ).extract_contents_async(file)
+            case FileExtension.MP4:
+                return await VideoFileParser(
+                    strategy=self.strategy,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
+                ).extract_contents_async(file)
             case _:
                 raise ValueError(f"Unsupported file extension: {file.extension}")
 
@@ -194,7 +219,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
                             # Read raw bytes of the child file
                             child_data = zip_ref.read(info)
                             child_name = info.filename
-                            child_ext = self._guess_extension(child_name)
+                            child_ext = find_extension(filename=child_name)
 
                             # Turn that child file into a RawFile
                             child_raw_file = RawFile.from_bytes(
@@ -204,10 +229,10 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
                             )
 
                             # Parse using our IntellibricksFileParser façade
-                            # (re-using the same strategy/image_description_agent)
+                            # (re-using the same strategy/graphical_elements_description_agent)
                             parser = IntellibricksFileParser(
                                 strategy=self.strategy,
-                                image_description_agent=self.image_description_agent,
+                                graphical_elements_description_agent=self.graphical_elements_description_agent,
                             )
                             child_parsed = await parser.extract_contents_async(
                                 child_raw_file
@@ -225,7 +250,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
 
                             child_name = info.filename  # type: ignore
 
-                            child_ext = self._guess_extension(child_name)  # type: ignore
+                            child_ext = find_extension(filename=child_name)  # type: ignore
 
                             child_raw_file = RawFile.from_bytes(
                                 data=child_data,  # type: ignore
@@ -235,7 +260,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
 
                             parser = IntellibricksFileParser(
                                 strategy=self.strategy,
-                                image_description_agent=self.image_description_agent,
+                                graphical_elements_description_agent=self.graphical_elements_description_agent,
                             )
                             child_parsed = await parser.extract_contents_async(
                                 child_raw_file
@@ -250,53 +275,6 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
 
         # Merge all the parsed files into a single ParsedFile
         return ParsedFile.from_parsed_files(parsed_files)
-
-    def _guess_extension(self, filename: str) -> FileExtension:
-        """
-        Attempt to guess the FileExtension enum from a filename suffix.
-        If unknown or unsupported, this raises a ValueError (you could also return TXT, etc.).
-        """
-        from pathlib import Path
-
-        from architecture.data.files import FileExtension
-
-        suffix = Path(filename).suffix.lower().lstrip(".")  # e.g. "pdf", "docx", etc.
-        if not suffix:
-            # No extension found; you can decide to default to TXT or raise an error
-            raise ValueError(f"No recognizable extension in: {filename}")
-
-        # Try to match the suffix to our known FileExtension members
-        # You can expand/adjust this mapping as needed:
-        mapping = {
-            "doc": FileExtension.DOC,
-            "docx": FileExtension.DOCX,
-            "txt": FileExtension.TXT,
-            "pdf": FileExtension.PDF,
-            "xlsx": FileExtension.XLSX,
-            "xls": FileExtension.XLS,
-            "jpg": FileExtension.JPEG,
-            "jpeg": FileExtension.JPEG,
-            "tif": FileExtension.TIFF,
-            "tiff": FileExtension.TIFF,
-            "bmp": FileExtension.BMP,
-            "png": FileExtension.PNG,
-            "gif": FileExtension.GIF,
-            "ppt": FileExtension.PPT,
-            "pptx": FileExtension.PPTX,
-            "pptm": FileExtension.PPTM,
-            "pkt": FileExtension.PKT,
-            "alg": FileExtension.ALG,
-            "pkz": FileExtension.PKZ,
-            "rar": FileExtension.RAR,
-            "zip": FileExtension.ZIP,
-            "dwg": FileExtension.DWG,
-            "xml": FileExtension.XML,
-        }
-
-        if suffix in mapping:
-            return mapping[suffix]
-
-        raise ValueError(f"Unsupported file extension in compressed archive: {suffix}")
 
 
 class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
@@ -340,7 +318,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
 
             parser = StaticImageFileParser(
                 strategy=self.strategy,
-                image_description_agent=self.image_description_agent,
+                graphical_elements_description_agent=self.graphical_elements_description_agent,
             )
 
             parsed_files = [await parser.extract_contents_async(f) for f in raw_files]
@@ -445,7 +423,8 @@ class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         return await TxtFileParser(
-            strategy=self.strategy, image_description_agent=self.image_description_agent
+            strategy=self.strategy,
+            graphical_elements_description_agent=self.graphical_elements_description_agent,
         ).extract_contents_async(file)
 
 
@@ -468,15 +447,17 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
 
                 image_descriptions: list[str] = []
                 if (
-                    self.image_description_agent
+                    self.graphical_elements_description_agent
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     for image_num, image in enumerate(page_images):
                         agent_input = ImageFilePart(
                             mime_type=MimeType.image_png, data=image.contents
                         )
-                        agent_response = await self.image_description_agent.run_async(
-                            agent_input
+                        agent_response = (
+                            await self.graphical_elements_description_agent.run_async(
+                                agent_input
+                            )
                         )
                         image_md: str = agent_response.parsed.final_answer.md
                         image_descriptions.append(
@@ -515,21 +496,21 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
             case FileExtension.DOC | FileExtension.DOCX:
                 return await DocxFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             # PowerPoint (including .ppt, .pptx, .pptm)
             case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
                 return await PptxFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             # Excel (including .xls, .xlsx)
             case FileExtension.XLS | FileExtension.XLSX:
                 return await ExcelFileParser(
                     strategy=self.strategy,
-                    image_description_agent=self.image_description_agent,
+                    graphical_elements_description_agent=self.graphical_elements_description_agent,
                 ).extract_contents_async(file)
 
             case _:
@@ -572,14 +553,19 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
 
             # If high-level strategy, describe images
             image_descriptions: list[str] = []
-            if self.image_description_agent and self.strategy == ParsingStrategy.HIGH:
+            if (
+                self.graphical_elements_description_agent
+                and self.strategy == ParsingStrategy.HIGH
+            ):
                 for idx, image in enumerate(doc_images, start=1):
                     agent_input = ImageFilePart(
                         mime_type=MimeType.image_png,  # or detect from extension
                         data=image.contents,
                     )
-                    agent_response = await self.image_description_agent.run_async(
-                        agent_input
+                    agent_response = (
+                        await self.graphical_elements_description_agent.run_async(
+                            agent_input
+                        )
                     )
                     image_md = agent_response.parsed.final_answer.md
                     image_descriptions.append(f"Docx Image {idx}: {image_md}")
@@ -649,7 +635,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
 
                 # If strategy is HIGH, we generate image descriptions
                 if (
-                    self.image_description_agent
+                    self.graphical_elements_description_agent
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     image_descriptions: list[str] = []
@@ -658,8 +644,10 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
                             mime_type=MimeType.image_png,
                             data=image_obj.contents,
                         )
-                        agent_response = await self.image_description_agent.run_async(
-                            agent_input
+                        agent_response = (
+                            await self.graphical_elements_description_agent.run_async(
+                                agent_input
+                            )
                         )
                         image_md: str = agent_response.parsed.final_answer.md
                         image_descriptions.append(
@@ -729,9 +717,9 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                                 Image(name=image_name, contents=img_data)
                             )
 
-                # If strategy is HIGH, run image_description_agent
+                # If strategy is HIGH, run graphical_elements_description_agent
                 if (
-                    self.image_description_agent
+                    self.graphical_elements_description_agent
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     image_descriptions: list[str] = []
@@ -740,8 +728,10 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                             mime_type=MimeType.image_png,
                             data=image_obj.contents,
                         )
-                        agent_response = await self.image_description_agent.run_async(
-                            agent_input
+                        agent_response = (
+                            await self.graphical_elements_description_agent.run_async(
+                                agent_input
+                            )
                         )
                         image_md = agent_response.parsed.final_answer.md
                         image_descriptions.append(
@@ -789,7 +779,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
     """
     Parses static image files (PNG, JPEG, TIFF, etc.) as a single "page" with one image.
     If the image is TIFF, it converts to PNG in-memory for better compatibility.
-    If the strategy == HIGH and an image_description_agent is present,
+    If the strategy == HIGH and an graphical_elements_description_agent is present,
     it appends an AI-generated textual description of the image.
     """
 
@@ -842,13 +832,18 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
 
             # Generate a description if we have an agent + HIGH strategy
             text_content = ""
-            if self.image_description_agent and self.strategy == ParsingStrategy.HIGH:
+            if (
+                self.graphical_elements_description_agent
+                and self.strategy == ParsingStrategy.HIGH
+            ):
                 agent_input = ImageFilePart(
                     mime_type=current_mime_type,
                     data=image_bytes,
                 )
-                agent_response = await self.image_description_agent.run_async(
-                    agent_input
+                agent_response = (
+                    await self.graphical_elements_description_agent.run_async(
+                        agent_input
+                    )
                 )
                 description_md = agent_response.parsed.final_answer.md
                 text_content = description_md
@@ -874,7 +869,7 @@ class AnimatedImageFileParser(
     Parses animated GIF files by splitting them into 3 equally sized segments
     (or fewer if total frames < 3).
     Each selected frame is turned into a PNG in memory and, if strategy == HIGH,
-    sent to image_description_agent for a textual description.
+    sent to graphical_elements_description_agent for a textual description.
 
     Returns a ParsedFile with up to 3 SectionContent items, each page representing
     one of the frames chosen from the animation.
@@ -946,15 +941,17 @@ class AnimatedImageFileParser(
                 # If strategy is HIGH, pass the frame to the agent
                 text_description = ""
                 if (
-                    self.image_description_agent
+                    self.graphical_elements_description_agent
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     agent_input = ImageFilePart(
                         mime_type=MimeType.image_png,
                         data=png_bytes,
                     )
-                    agent_response = await self.image_description_agent.run_async(
-                        agent_input
+                    agent_response = (
+                        await self.graphical_elements_description_agent.run_async(
+                            agent_input
+                        )
                     )
                     text_description = agent_response.parsed.final_answer.md
 
@@ -972,6 +969,126 @@ class AnimatedImageFileParser(
                 name=file.name,
                 sections=pages,
             )
+
+
+class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
+    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+        if self.audio_description_agent is None:
+            raise ValueError("No audio description agent provided.")
+
+        file_contents: bytes = file.contents
+        file_extension: FileExtension = file.extension
+
+        if file_extension in {
+            FileExtension.FLAC,
+            FileExtension.MPEG,
+            FileExtension.MPGA,
+            FileExtension.M4A,
+            FileExtension.OGG,
+            FileExtension.WAV,
+            FileExtension.WEBM,
+        }:
+            import asyncio
+            import os
+            import tempfile
+
+            import aiofiles.os as aios
+            from aiofiles import open as aio_open
+
+            self._check_ffmpeg_installed()
+
+            # Generate unique temporary filenames
+            input_temp = os.path.join(
+                tempfile.gettempdir(),
+                f"input_{os.urandom(8).hex()}.{file_extension.value}",
+            )
+            output_temp = os.path.join(
+                tempfile.gettempdir(), f"output_{os.urandom(8).hex()}.mp3"
+            )
+
+            # Write input file asynchronously
+            async with aio_open(input_temp, "wb") as f:
+                await f.write(file_contents)
+
+            # Build FFmpeg command
+            command = [
+                "ffmpeg",
+                "-hide_banner",
+                "-loglevel",
+                "error",  # Suppress unnecessary logs
+                "-y",  # Overwrite output file if exists
+                "-i",
+                input_temp,
+                "-codec:a",
+                "libmp3lame",
+                "-q:a",
+                "2",  # Quality preset (0-9, 0=best)
+                output_temp,
+            ]
+
+            # Execute FFmpeg
+            process = await asyncio.create_subprocess_exec(
+                *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+
+            _, stderr = await process.communicate()
+
+            # Handle conversion errors
+            if process.returncode != 0:
+                await aios.remove(input_temp)
+                if await aios.path.exists(output_temp):
+                    await aios.remove(output_temp)
+                raise RuntimeError(
+                    f"Audio conversion failed: {stderr.decode().strip()}"
+                )
+
+            # Read converted file
+            async with aio_open(output_temp, "rb") as f:
+                file_contents = await f.read()
+
+            # Cleanup temporary files
+            await aios.remove(input_temp)
+            await aios.remove(output_temp)
+
+        transcription = self.audio_description_agent.run(
+            AudioFilePart(data=file_contents, mime_type=MimeType.audio_mp3)
+        )
+
+        return ParsedFile(
+            name=file.name,
+            sections=[
+                SectionContent(
+                    number=1,
+                    text=transcription.raw_transcription
+                    or self._could_not_transcript(),
+                    md=transcription.parsed.final_answer.md,
+                    images=[],
+                )
+            ],
+        )
+
+    def _could_not_transcript(self) -> Never:
+        raise ValueError("Could not transcribe the audio")
+
+    def _check_ffmpeg_installed(self) -> None:
+        import subprocess
+
+        try:
+            result = subprocess.run(
+                ["ffmpeg", "-version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            exception_logger.exception("FFmpeg is not installed or not in PATH.")
+            if result.returncode != 0:
+                raise RuntimeError()
+        except FileNotFoundError:
+            exception_logger.exception("FFmpeg is not installed or not in PATH.")
+            raise RuntimeError()
+
+
+class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"): ...
 
 
 class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):

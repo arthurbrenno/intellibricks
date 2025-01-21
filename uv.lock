@@ -11,6 +11,15 @@ wheels = [
 ]
 
 [[package]]
+name = "aiofiles"
+version = "24.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/03/a88171e277e8caa88a4c77808c20ebb04ba74cc4681bf1e9416c862de237/aiofiles-24.1.0.tar.gz", hash = "sha256:22a075c9e5a3810f0c2e48f3008c94d68c65d763b9b03857924c99e57355166c", size = 30247 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a5/45/30bb92d442636f570cb5651bc661f52b610e2eec3f891a5dc3a4c3667db0/aiofiles-24.1.0-py3-none-any.whl", hash = "sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5", size = 15896 },
+]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.4.4"
 source = { registry = "https://pypi.org/simple" }
@@ -105,7 +114,7 @@ wheels = [
 
 [[package]]
 name = "architecture"
-version = "0.5.32"
+version = "0.5.35"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiocache" },
@@ -113,9 +122,9 @@ dependencies = [
     { name = "msgspec" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/15/ce/5aad50692ea61f1fb2d493d21c4af2244dba46fc6924317a3e95a3522b6e/architecture-0.5.32.tar.gz", hash = "sha256:cd2d2ea17748b58a43c4aa20aa425bb2102e5e135d64bf1a1eadd10cb7d38a78", size = 55515 }
+sdist = { url = "https://files.pythonhosted.org/packages/0c/08/78c248bd9ed7d2e5731f68728ecc75994809d7305125c3afdb40b8f66c63/architecture-0.5.35.tar.gz", hash = "sha256:8def35684985401205471d3afbde24ee1fabf4aece3313effc434ae80906ad74", size = 55822 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/b9/5b365c1d3c12997eed590afe034cd265245d539994e5b93159d2ac2d541d/architecture-0.5.32-py3-none-any.whl", hash = "sha256:f0d07e8e8b0461f7277f038814822ca6b0fb085a07e970dfe868564aec8f9c96", size = 32321 },
+    { url = "https://files.pythonhosted.org/packages/ac/4e/faa75bd6716881c8445f4d0f9382e9ffcb7ac2ec025e148f3523514557a0/architecture-0.5.35-py3-none-any.whl", hash = "sha256:693c87761450517958c165e8d25922ff2e2c261c470ad04ece5eefe6cc1526b0", size = 32628 },
 ]
 
 [[package]]
@@ -672,7 +681,7 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.4.13"
+version = "0.4.14"
 source = { editable = "." }
 dependencies = [
     { name = "architecture" },
@@ -692,6 +701,7 @@ cerebras = [
     { name = "cerebras-cloud-sdk" },
 ]
 files = [
+    { name = "aiofiles" },
     { name = "markitdown" },
     { name = "openpyxl" },
     { name = "pillow" },
@@ -733,6 +743,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiofiles", marker = "extra == 'files'", specifier = ">=24.1.0" },
     { name = "architecture", specifier = ">=0.5.23" },
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
     { name = "cerebras-cloud-sdk", marker = "extra == 'cerebras'", specifier = ">=1.16.0" },

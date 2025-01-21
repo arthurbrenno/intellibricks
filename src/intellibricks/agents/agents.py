@@ -13,13 +13,12 @@ from typing import (
     TypeVar,
     cast,
 )
-
 import msgspec
 from architecture.extensions import Maybe
 from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 
-from intellibricks.llms import Synapse, SynapseCascade
+from intellibricks.llms import Synapse, SynapseCascade, TextTranscriptionSynapse
 from intellibricks.llms.types import (
     ChatCompletion,
     DeveloperMessage,
@@ -35,6 +34,8 @@ from intellibricks.llms.types import (
     ToolCallSequence,
     TraceParams,
     UserMessage,
+    TextPart,
+    AudioFilePart,
 )
 from intellibricks.rag.contracts import SupportsContextRetrieval
 from intellibricks.rag.types import ContextSourceSequence, Query
@@ -75,6 +76,8 @@ class AgentResponse[S: msgspec.Struct = RawResponse](
     """Detailed information about the contents of the Agent completion. Including the contents, metadata, usage, id, etc."""
 
     tool_calls: Sequence[ToolCall] = msgspec.field(default_factory=list)
+
+    raw_transcription: Optional[str] = msgspec.field(default=None)
 
     @property
     def text(self) -> str:
@@ -144,6 +147,14 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             title="Tool Synapse",
             description="The synapse to use for the tools calls."
             "If not provided, the agent's synapse will be used.",
+        ),
+    ] = msgspec.field(default=None)
+
+    audio_transcriptions_synapse: Annotated[
+        Optional[TextTranscriptionSynapse],
+        msgspec.Meta(
+            title="Transcriptions Synapse",
+            description="The synapse to use for the transcriptions.",
         ),
     ] = msgspec.field(default=None)
 
@@ -453,6 +464,44 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             ]
         )
 
+        # Replace the TODO section with this code:
+        if (
+            self.audio_transcriptions_synapse is not None
+            and message_sequence.count_audios() > 1
+        ):
+            # Generate a new MessageSequence with transcribed audio parts
+            transcribed_messages: list[Message] = []
+            for message in message_sequence:
+                new_parts: list[PartType] = []
+                for part in message.contents:
+                    if isinstance(part, AudioFilePart):
+                        # Transcribe the audio part
+                        audio_bytes = part.data
+                        transcription = (
+                            await self.audio_transcriptions_synapse.transcribe_async(
+                                audio=audio_bytes
+                            )
+                        ).text
+                        # Create text part with transcription wrapped in tags
+                        new_parts.append(
+                            TextPart(
+                                text=f"<audio_transcription>\n{transcription}\n</audio_transcription>"
+                            )
+                        )
+                    else:
+                        # Keep non-audio parts unchanged
+                        new_parts.append(part)
+
+                # Create new message instance with same type but new parts
+                transcribed_messages.append(
+                    message.__class__(
+                        contents=new_parts
+                    )  # Preserve original message type
+                )
+
+            # Create new message sequence with transcribed audio
+            message_sequence = MessageSequence(transcribed_messages)
+
         context_raw_text = context_sequence.full_text
         developer_prompt = (
             "AGENT ROLE:"
@@ -533,7 +582,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             tool_calls=tool_call_sequence.sequence,
         )
 
-    def _transform_input(self, inp: AgentInput) -> Sequence[MessageType]:
+    def _transform_input(self, inp: AgentInput) -> Sequence[Message]:
         """
         Transforms the input, which was made like this to make it easier for users,
         into a Sequence of MessageType, so developers can work with it more

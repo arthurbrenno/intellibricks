@@ -27,7 +27,6 @@ from typing import (
     Never,
     Optional,
     Sequence,
-    get_args,
     Type,
     TypeAlias,
     TypedDict,
@@ -40,8 +39,9 @@ from typing import (
 
 import msgspec
 from architecture import log
-from architecture.types import NOT_GIVEN, NotGiven
 from architecture.utils.decorators import ensure_module_installed
+from architecture.data.files import find_extension, FileExtension
+
 
 from intellibricks.llms.util import (
     get_parts_llm_described_text,
@@ -51,6 +51,7 @@ from intellibricks.llms.util import (
 from .constants import FinishReason, Language
 
 if TYPE_CHECKING:
+    from anthropic.types.content_block_param import ContentBlockParam
     from cerebras.cloud.sdk.types.chat.completion_create_params import (
         Message as CerebrasMessage,
     )
@@ -108,19 +109,8 @@ M = TypeVar(
 T = TypeVar("T", default="RawResponse")
 R = TypeVar("R", default=Any)
 _T = TypeVar("_T", default=str)
+_FP = TypeVar("_FP", bound="FilePart")
 
-FileExtension: TypeAlias = Literal[
-    ".jpeg",
-    ".jpg",
-    ".png",
-    ".gif",
-    ".mp3",
-    ".wav",
-    ".mp4",
-    ".avi",
-    ".mov",
-    ".webm",
-]
 GenAIModelType: TypeAlias = Literal[
     "google/genai/gemini-1.5-flash",
     "google/genai/gemini-1.5-flash-8b",
@@ -469,35 +459,6 @@ class MimeType(str, Enum):
     def __str__(self) -> str:
         return self.value
 
-    @classmethod
-    def from_extension(
-        cls,
-        extension: Literal[
-            ".jpeg",
-            ".jpg",
-            ".png",
-            ".gif",
-            ".mp3",
-            ".wav",
-            ".mp4",
-        ],
-    ) -> MimeType:
-        match extension:
-            case ".jpeg":
-                return cls.image_jpeg
-            case ".jpg":
-                return cls.image_jpeg
-            case ".png":
-                return cls.image_png
-            case ".gif":
-                return cls.image_png
-            case ".mp3":
-                return cls.audio_mp3
-            case ".wav":
-                return cls.audio_wav
-            case ".mp4":
-                return cls.video_mp4
-
 
 class RawResponse(msgspec.Struct, frozen=True):
     """Null object for the response from the model."""
@@ -614,51 +575,6 @@ class CacheConfig(msgspec.Struct, frozen=True, kw_only=True):
 
 
 """
-##     ## ########  ##        ######
-##     ## ##     ## ##       ##    ##
-##     ## ##     ## ##       ##
-##     ## ########  ##        ######
-##     ## ##   ##   ##             ##
-##     ## ##    ##  ##       ##    ##
- #######  ##     ## ########  ######
-"""
-
-
-class WebsiteUrl(msgspec.Struct, frozen=True):
-    url: str
-
-    def __post_init__(self) -> None:
-        from intellibricks.llms.util import is_url
-
-        if not is_url(self.url):
-            raise ValueError(f"Invalid URL ({self.url})")
-
-
-class FileUrl(msgspec.Struct, frozen=True):
-    url: str
-
-    def get_extension(
-        self,
-    ) -> FileExtension:
-        return (
-            cast(FileExtension, extension)
-            if (extension := self.url[self.url.rfind(".") :]) in get_args(FileExtension)
-            else (_ for _ in ()).throw(
-                ValueError(f"Unsupported file extension: {extension}")
-            )
-        )
-
-    def __post_init__(self) -> None:
-        from intellibricks.llms.util import is_url, is_file_url
-
-        if not is_url(self.url):
-            raise ValueError(f"Invalid URL ({self.url})")
-
-        if not is_file_url(self.url):
-            raise ValueError(f"Invalid file URL ({self.url})")
-
-
-"""
 ########     ###    ########  ########  ######
 ##     ##   ## ##   ##     ##    ##    ##    ##
 ##     ##  ##   ##  ##     ##    ##    ##
@@ -698,61 +614,6 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
             ),
         )
 
-    @overload
-    @classmethod
-    def from_url(cls, url: WebsiteUrl) -> WebsitePart: ...
-
-    @overload
-    @classmethod
-    def from_url(cls, url: FileUrl) -> FilePart: ...
-
-    @overload
-    @classmethod
-    def from_url(cls, url: str) -> WebsitePart | FilePart: ...
-
-    @classmethod
-    def from_url(cls, url: str | WebsiteUrl | FileUrl) -> WebsitePart | FilePart:
-        match url:
-            case str():
-                from intellibricks.llms.util import is_url, is_file_url
-
-                if not is_url(url):
-                    raise ValueError(f"Invalid URL ({url})")
-
-                # Check if the URL is a website URL or a file URL
-                if is_file_url(url):
-                    return FilePart.from_extension(
-                        url=url,
-                        extension=cast(FileExtension, extension)
-                        if (extension := url[url.rfind(".") :])
-                        in get_args(FileExtension)
-                        else (_ for _ in ()).throw(
-                            ValueError(f"Unsupported file extension: {extension}")
-                        ),
-                    )
-
-                return WebsitePart(url=url)
-
-            case WebsiteUrl():
-                return WebsitePart(url=url.url)
-            case FileUrl():
-                return FilePart.from_extension(
-                    extension=url.get_extension(), url=url.url
-                )
-
-    @classmethod
-    def from_input_audio(
-        cls, data_or_url: str, mime_type: Literal["audio/mp3"]
-    ) -> AudioFilePart:
-        from intellibricks.llms.util import is_url
-
-        if is_url(data_or_url):
-            return AudioFilePart(url=data_or_url, mime_type=MimeType(mime_type))
-
-        return AudioFilePart(
-            data=data_or_url.encode("utf-8"), mime_type=MimeType(mime_type)
-        )
-
     @classmethod
     def from_openai_part(
         cls, openai_part: OpenAIChatCompletionContentPartParam
@@ -765,9 +626,7 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
             case "image_url":
                 url_or_base_64 = openai_part["image_url"]["url"]  # type: ignore
                 if is_url(url_or_base_64):
-                    return ImageFilePart(
-                        url=url_or_base_64, mime_type=MimeType("image/jpeg")
-                    )
+                    return ImageFilePart.from_url(url_or_base_64)
 
                 return ImageFilePart(
                     data=url_or_base_64.encode("utf-8"),
@@ -792,6 +651,7 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
         if file_data is not None:
             if file_data.mime_type is None:
                 raise ValueError("MIME type is required for file parts.")
+
             mime_type = file_data.mime_type.lower()
 
             if not file_data.file_uri:
@@ -800,24 +660,16 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                 )
 
             if mime_type.startswith("image/"):
-                return ImageFilePart(
-                    url=file_data.file_uri, mime_type=MimeType(mime_type)
-                )
+                return ImageFilePart.from_url(file_data.file_uri)
             elif mime_type.startswith("audio/"):
-                return AudioFilePart(
-                    url=file_data.file_uri, mime_type=MimeType(mime_type)
-                )
+                return AudioFilePart.from_url(file_data.file_uri)
             elif mime_type.startswith("video/"):
-                return VideoFilePart(
-                    url=file_data.file_uri, mime_type=MimeType(mime_type)
-                )
+                return VideoFilePart.from_url(file_data.file_uri)
             else:
                 warning_logger.warning(
                     f"Unknown file type: {mime_type}, falling back to ImageFilePart."
                 )
-                return ImageFilePart(
-                    url=file_data.file_uri, mime_type=MimeType(mime_type)
-                )
+                return ImageFilePart.from_url(file_data.file_uri)
 
         # Check inline data
         inline_data: Optional[types.Blob] = google_part.inline_data
@@ -826,23 +678,17 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                 raise ValueError("MIME type is required for inline_data")
             mime_type = inline_data.mime_type.lower()
             data = inline_data.data
+            if data is None:
+                raise ValueError("Data is required for inline_data")
 
             if mime_type.startswith("image/"):
-                return ImageFilePart(
-                    data=data or NOT_GIVEN, mime_type=MimeType(mime_type)
-                )
+                return ImageFilePart(data=data, mime_type=MimeType(mime_type))
             elif mime_type.startswith("audio/"):
-                return AudioFilePart(
-                    data=data or NOT_GIVEN, mime_type=MimeType(mime_type)
-                )
+                return AudioFilePart(data=data, mime_type=MimeType(mime_type))
             elif mime_type.startswith("video/"):
-                return VideoFilePart(
-                    data=data or NOT_GIVEN, mime_type=MimeType(mime_type)
-                )
+                return VideoFilePart(data=data, mime_type=MimeType(mime_type))
             else:
-                return ImageFilePart(
-                    data=data or NOT_GIVEN, mime_type=MimeType(mime_type)
-                )
+                return ImageFilePart(data=data, mime_type=MimeType(mime_type))
 
         function_call = google_part.function_call
         # Check if it's a function call part
@@ -914,7 +760,7 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                 raise ValueError("Not supported yet.")
 
     # @abstractmethod
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         raise NotImplementedError
 
     # @abstractmethod
@@ -975,7 +821,7 @@ class WebsitePart(Part, frozen=True, tag="website"):
 
     @ensure_module_installed("anthropic", "anthropic")
     @override
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         return TextPart(text=self.get_md_contents()).to_anthropic_part()
 
     @ensure_module_installed("openai", "openai")
@@ -1014,11 +860,11 @@ class TextPart(Part, frozen=True, tag="text"):
 
     @ensure_module_installed("anthropic", "anthropic")
     @override
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         ensure_module_installed("anthropic.types.text_block_param", "anthropic")
         from anthropic.types.text_block_param import TextBlockParam
 
-        return cast(dict[str, Any], TextBlockParam(text=self.text, type="text"))
+        return TextBlockParam(text=self.text, type="text")
 
     @ensure_module_installed("openai", "openai")
     @override
@@ -1078,7 +924,7 @@ class ToolResponsePart(Part, frozen=True, tag="tool_response"):
     """The tool response."""
 
     @override
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         raise NotImplementedError("Intellibricks didn't implement this yet.")
 
     @ensure_module_installed("openai", "openai")
@@ -1133,83 +979,56 @@ class ToolResponsePart(Part, frozen=True, tag="tool_response"):
 
 
 class FilePart(Part, frozen=True, tag="file"):
-    mime_type: MimeType
+    data: bytes
+    """bytes file data."""
 
+    mime_type: MimeType
     """The MIME type of the file."""
 
-    url: str | NotGiven = msgspec.field(default_factory=lambda: NOT_GIVEN)
-    """The URL of the file. If located on the web."""
-
-    data: bytes | NotGiven = msgspec.field(default_factory=lambda: NOT_GIVEN)
-    """Base64 encoded file data."""
-
-    @overload
-    @classmethod
-    def from_extension(
-        cls,
-        extension: Literal[".jpeg", ".jpg", ".png", ".gif"],
-        url: Optional[str] = None,
-        data: Optional[bytes] = None,
-    ) -> ImageFilePart: ...
-
-    @overload
-    @classmethod
-    def from_extension(
-        cls,
-        extension: Literal[".mp3", ".wav"],
-        url: Optional[str] = None,
-        data: Optional[bytes] = None,
-    ) -> AudioFilePart: ...
-
-    @overload
-    @classmethod
-    def from_extension(
-        cls,
-        extension: Literal[".mp4", ".avi", ".mov", ".webm"],
-        url: Optional[str] = None,
-        data: Optional[bytes] = None,
-    ) -> VideoFilePart: ...
+    metadata: Optional[dict[str | Literal["url"], Any]] = None
 
     @classmethod
-    def from_extension(
-        cls,
-        extension: FileExtension,
-        url: Optional[str] = None,
-        data: Optional[bytes] = None,
-    ) -> VideoFilePart | AudioFilePart | ImageFilePart:
-        if url is None and data is None:
-            raise ValueError("Either url or data must be provided.")
+    def from_url(cls: type[_FP], url: str) -> _FP:
+        """Create a FilePart from a URL by downloading the file and detecting its type."""
+        import requests
+        from requests.exceptions import RequestException
 
-        if extension in {".jpeg", ".jpg", ".png", ".gif"}:
-            return ImageFilePart(
-                url=url or NOT_GIVEN,
-                data=data or NOT_GIVEN,
-                mime_type=MimeType(f"image/{extension[1:]}"),
-            )
+        # Determine the file extension from the URL
+        try:
+            extension: FileExtension = find_extension(url=url)
+        except ValueError as e:
+            raise ValueError(
+                f"Could not determine file extension from URL: {url}"
+            ) from e
 
-        if extension in {".mp3", ".wav"}:
-            return AudioFilePart(
-                url=url or NOT_GIVEN,
-                data=data or NOT_GIVEN,
-                mime_type=MimeType(f"audio/{extension[1:]}"),
-            )
+        # Convert the extension to its corresponding MIME type
+        try:
+            mime_type_str = extension.as_mime_type()
+        except ValueError as e:
+            raise ValueError(
+                f"Could not determine MIME type for extension {extension}"
+            ) from e
 
-        if extension in {".mp4", ".avi", ".mov", ".webm"}:
-            return VideoFilePart(
-                url=url or NOT_GIVEN,
-                data=data or NOT_GIVEN,
-                mime_type=MimeType(f"video/{extension[1:]}"),
-            )
+        # Validate that the MIME type matches the subclass type
+        if cls is not FilePart:  # When called from concrete subclass
+            expected_prefix = cls.__name__.replace("FilePart", "").lower() + "/"
+            if not mime_type_str.startswith(expected_prefix):
+                raise ValueError(
+                    f"URL contains {mime_type_str} but called from {cls.__name__}. "
+                    f"Use FilePart.from_url() for automatic type detection."
+                )
 
-        return ImageFilePart(
-            url=url or NOT_GIVEN,
-            data=data or NOT_GIVEN,
-            mime_type=MimeType(f"image/{extension[1:]}"),
-        )
+        # Download the file content
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+        except RequestException as e:
+            raise ValueError(f"Failed to download file from URL: {url}") from e
 
-    def __post_init__(self) -> None:
-        if self.data is NotGiven and self.url is NotGiven:
-            raise ValueError("Either data or url must be provided.")
+        data = response.content
+
+        # Instantiate the appropriate subclass
+        return cls(data=data, mime_type=MimeType(mime_type_str), metadata={"url": url})
 
 
 class VideoFilePart(FilePart, frozen=True, tag="video"):
@@ -1218,16 +1037,11 @@ class VideoFilePart(FilePart, frozen=True, tag="video"):
     def to_google_part(self) -> GenAIPart:
         from google.genai.types import Part as GenAIPart
 
-        if self.data:
-            return GenAIPart.from_bytes(data=self.data, mime_type=self.mime_type)
-
-        return GenAIPart.from_uri(
-            file_uri=cast(str, self.url), mime_type=self.mime_type
-        )
+        return GenAIPart.from_bytes(data=self.data, mime_type=self.mime_type)
 
     @ensure_module_installed("anthropic", "anthropic")
     @override
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         raise NotImplementedError(
             "None of the Anthropic models supports video understanding at the moment."
         )
@@ -1262,7 +1076,6 @@ class VideoFilePart(FilePart, frozen=True, tag="video"):
         return (
             f"<|video_part|>\n"
             f"MIME type: {self.mime_type}\n"
-            f"URL: {self.url if self.url else 'N/A'}\n"
             f"Data length: {len(self.data) if self.data else 0}\n"
             f"<|end_video_part|>"
         )
@@ -1274,7 +1087,7 @@ class VideoFilePart(FilePart, frozen=True, tag="video"):
 
 class AudioFilePart(FilePart, frozen=True, tag="audio"):
     @override
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         raise NotImplementedError(
             "None of the Anthropic models supports audio understanding at the moment."
         )
@@ -1315,12 +1128,7 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
     def to_google_part(self) -> GenAIPart:
         from google.genai.types import Part as GenAIPart
 
-        if self.data:
-            return GenAIPart.from_bytes(data=self.data, mime_type=self.mime_type)
-
-        return GenAIPart.from_uri(
-            file_uri=cast(str, self.url), mime_type=self.mime_type
-        )
+        return GenAIPart.from_bytes(data=self.data, mime_type=self.mime_type)
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
     @override
@@ -1338,7 +1146,6 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
         return (
             f"<|audio_part|>\n"
             f"MIME type: {self.mime_type}\n"
-            f"URL: {self.url if self.url else 'N/A'}\n"
             f"Data length: {len(self.data) if self.data else 0}\n"
             f"<|end_audio_part|>"
         )
@@ -1351,26 +1158,23 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
 class ImageFilePart(FilePart, frozen=True, tag="image"):
     @ensure_module_installed("anthropic.types.image_block_param", "anthropic")
     @override
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         ensure_module_installed("anthropic.types.image_block_param", "anthropic")
         from anthropic.types.image_block_param import ImageBlockParam, Source
 
         if not self.data:
             raise ValueError("Image data (bytes) is required.")
 
-        return cast(
-            dict[str, Any],
-            ImageBlockParam(
-                source=Source(
-                    data=base64.b64encode(self.data).decode("utf-8", errors="replace"),
-                    media_type=cast(
-                        Literal["image/jpeg", "image/png", "image/gif", "image/webp"],
-                        self.mime_type,
-                    ),
-                    type="base64",
+        return ImageBlockParam(
+            source=Source(
+                data=base64.b64encode(self.data).decode("utf-8", errors="replace"),
+                media_type=cast(
+                    Literal["image/jpeg", "image/png", "image/gif", "image/webp"],
+                    self.mime_type,
                 ),
-                type="image",
+                type="base64",
             ),
+            type="image",
         )
 
     @ensure_module_installed("groq", "groq")
@@ -1381,16 +1185,10 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
             ImageURL,
         )
 
-        if self.data:
-            return ChatCompletionContentPartImageParam(
-                image_url=ImageURL(
-                    url=base64.b64encode(self.data).decode("utf-8", errors="replace")
-                ),
-                type="image_url",
-            )
-
         return ChatCompletionContentPartImageParam(
-            image_url=ImageURL(url=cast(str, self.url), detail="auto"),
+            image_url=ImageURL(
+                url=base64.b64encode(self.data).decode("utf-8", errors="replace")
+            ),
             type="image_url",
         )
 
@@ -1402,16 +1200,10 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
             ImageURL,
         )
 
-        if self.data:
-            return ChatCompletionContentPartImageParam(
-                image_url=ImageURL(
-                    url=self.data.decode("utf-8", errors="replace"), detail="auto"
-                ),
-                type="image_url",
-            )
-
         return ChatCompletionContentPartImageParam(
-            image_url=ImageURL(url=cast(str, self.url), detail="auto"),
+            image_url=ImageURL(
+                url=self.data.decode("utf-8", errors="replace"), detail="auto"
+            ),
             type="image_url",
         )
 
@@ -1420,12 +1212,7 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
     def to_google_part(self) -> GenAIPart:
         from google.genai.types import Part as GenAIPart
 
-        if self.url:
-            return GenAIPart.from_uri(self.url, mime_type=self.mime_type)
-
-        return GenAIPart.from_bytes(
-            data=cast(bytes, self.data), mime_type=self.mime_type
-        )
+        return GenAIPart.from_bytes(data=self.data, mime_type=self.mime_type)
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
     @override
@@ -1443,7 +1230,6 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
         return (
             f"<|image_part|>\n"
             f"MIME type: {self.mime_type}\n"
-            f"URL: {self.url if self.url else 'N/A'}\n"
             f"Data length: {len(self.data) if self.data else 0}\n"
             f"<|end_image_part|>"
         )
@@ -1459,7 +1245,7 @@ class ToolCallPart(Part, frozen=True, tag="tool_call"):
 
     @ensure_module_installed("anthropic", "anthropic")
     @override
-    def to_anthropic_part(self) -> dict[str, Any]:
+    def to_anthropic_part(self) -> ContentBlockParam:
         return TextPart(str(self)).to_anthropic_part()
 
     @ensure_module_installed("openai", "openai")
@@ -2297,6 +2083,9 @@ class MessageSequence(msgspec.Struct, frozen=True):
 
     def __add__(self, other: MessageSequence) -> MessageSequence:
         return MessageSequence(messages=list(chain(self.messages, other.messages)))
+
+    def __iter__(self) -> Iterator[Message]:
+        return iter(self.messages)
 
 
 MessageType: TypeAlias = (
@@ -3444,18 +3233,19 @@ class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True):
     ]
 
 
-class VisualElementDescription(msgspec.Struct, frozen=True):
+class GraphicalElementDescription(msgspec.Struct, frozen=True):
     type: Annotated[
         str,
         msgspec.Meta(
             title="Element Type",
-            description="The general category of this visual element within the image. This could be a recognizable object, a symbol, a graphical element, a section of text, or any other distinct visual component. Be descriptive but not necessarily tied to real-world objects if the image is abstract or symbolic. Examples: 'Equation term', 'Geometric shape', 'Flowchart symbol', 'Architectural element', 'Brushstroke', 'Data point'.",
+            description="The general category of this visual element within the media. This could be a recognizable object, a symbol, a graphical component, a section of text, or any other distinct visual or temporal component. Be descriptive but not necessarily tied to real-world objects if the media is abstract or symbolic. Examples: 'Equation term', 'Geometric shape', 'Timeline marker', 'Audio waveform segment', 'Brushstroke', 'Data point'.",
             examples=[
                 "Text string",
                 "Geometric shape",
-                "Diagram arrow",
+                "Timeline marker",
                 "Component of a machine",
                 "Area of color",
+                "Video transition",
             ],
         ),
     ]
@@ -3464,11 +3254,13 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
         str,
         msgspec.Meta(
             title="Element Details",
-            description="A detailed description of the visual characteristics and properties of this element. Focus on what is visually apparent. For text, provide the content of the text. For shapes, describe their form, color, and any distinguishing features. For abstract elements, describe their visual properties like color, texture, and form. Be specific and descriptive. Examples: 'The text string 'y = mx + c' in bold font', 'A red circle with a thick black outline', 'A curved blue line with a dotted pattern', 'A metallic grey rectangular prism'.",
+            description="A detailed description of the characteristics and properties of this element. Focus on what is visually or audibly apparent. For text, provide the content. For shapes, describe form, color, and features. For abstract elements, describe visual properties like color, texture, and form, or temporal properties like duration and transitions. Be specific and descriptive. Examples: 'The text string 'y = mx + c' in bold font', 'A red circle with a thick black outline', 'A sudden fade to black', 'A high-pitched tone'.",
             examples=[
                 "The number '3' in the top-left corner",
                 "A thin, dashed black line",
                 "A vibrant green triangular shape",
+                "A slow zoom-in effect",
+                "A burst of static",
             ],
         ),
     ]
@@ -3477,12 +3269,12 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
         Optional[str],
         msgspec.Meta(
             title="Element Role/Function",
-            description="The purpose or function of this element within the context of the image. How does it contribute to the overall meaning or structure? For example, in a formula, describe its mathematical role. In a diagram, explain its function within the diagram. In a drawing, describe its part in representing a larger structure. Examples: 'Represents a variable in the equation', 'Indicates the direction of flow', 'Forms part of the wall of the building', 'Highlights a specific data point'.",
+            description="The purpose or function of this element within the context of the media. How does it contribute to the overall meaning, structure, or flow? For example, in a formula, describe its mathematical role. In a diagram, its function. In a video, its narrative or informational contribution. Examples: 'Represents a variable in the equation', 'Indicates the direction of flow', 'Marks a key event in the timeline', 'Signals a change in scene'.",
             examples=[
                 "Represents the coefficient of x",
                 "Connects two stages in the process",
-                "Shows the location of a door",
-                "Indicates a high value",
+                "Highlights a critical moment",
+                "Provides context for the following scene",
             ],
         ),
     ] = msgspec.field(default=None)
@@ -3491,11 +3283,12 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
         Optional[Sequence[str]],
         msgspec.Meta(
             title="Element Relationships",
-            description="Describe how this element is visually related to other elements in the image. Explain its position relative to others, whether it's connected, overlapping, near, or otherwise associated with them. Be specific about the other elements involved. Examples: 'The arrow points from this box to the next', 'This circle is enclosed within the square', 'The text label is positioned below the diagram element'.",
+            description="Describe how this element is related to other elements in the media. Explain its position relative to others, whether it's connected, overlapping, near, or otherwise associated with them, considering spatial and temporal relationships. Be specific about the other elements involved. Examples: 'The arrow points from this box to the next', 'This circle is enclosed within the square', 'This scene follows the previous one', 'The music swells during this visual element'.",
             examples=[
                 "Located above the main equation",
                 "Connected to the previous step by a line",
                 "Part of a larger assembly",
+                "Occurs immediately after the title card",
             ],
         ),
     ] = msgspec.field(default=None)
@@ -3513,16 +3306,17 @@ class VisualElementDescription(msgspec.Struct, frozen=True):
         return md_str
 
 
-class ImageStructure(msgspec.Struct, frozen=True):
+class MediaStructure(msgspec.Struct, frozen=True):
     layout: Annotated[
         Optional[str],
         msgspec.Meta(
             title="Overall Layout and Organization",
-            description="A description of how the visual elements are arranged and organized within the image. Describe the overall structure, flow, or pattern. Is it linear, grid-based, hierarchical, or something else?  How are the different parts connected or separated? Examples: 'A top-down flowchart', 'A grid of data points', 'A central diagram with surrounding labels', 'A horizontally oriented equation'.",
+            description="A description of how the elements are arranged and organized within the media. Describe the overall structure, flow, or pattern, considering both spatial and temporal aspects. Is it linear, grid-based, hierarchical, sequential, or something else? How are the different parts connected or separated? Examples: 'A top-down flowchart', 'A grid of data points', 'A chronological sequence of scenes', 'A central diagram with surrounding labels'.",
             examples=[
                 "A step-by-step diagram",
                 "A clustered arrangement of shapes",
                 "A formula presented on a single line",
+                "A narrative with distinct acts",
             ],
         ),
     ] = msgspec.field(default=None)
@@ -3530,11 +3324,12 @@ class ImageStructure(msgspec.Struct, frozen=True):
         Optional[Sequence[str]],
         msgspec.Meta(
             title="Significant Groupings of Elements",
-            description="Describe any notable groupings or clusters of visual elements that appear to function together or have a shared context. Explain what binds these elements together visually or conceptually. Examples: 'The terms on the left side of the equation', 'The interconnected components of the circuit diagram', 'The set of icons representing different functions'.",
+            description="Describe any notable groupings or clusters of elements that appear to function together or have a shared context, considering both visual and temporal coherence. Explain what binds these elements together visually, aurally, or conceptually. Examples: 'The terms on the left side of the equation', 'The interconnected components of the circuit diagram', 'A montage of related images', 'A musical theme associated with a character'.",
             examples=[
                 "The main body of the text",
                 "The elements forming the control panel",
                 "The interconnected nodes of the network",
+                "A series of shots depicting the same event",
             ],
         ),
     ] = msgspec.field(default=None)
@@ -3542,11 +3337,12 @@ class ImageStructure(msgspec.Struct, frozen=True):
         Optional[str],
         msgspec.Meta(
             title="Primary Focal Point",
-            description="Identify the most visually prominent or central element or area that draws the viewer's attention. Explain why this element stands out (e.g., size, color, position). If there isn't a clear focal point, describe the distribution of visual emphasis. Examples: 'The main title of the document', 'The central component of the machine', 'The highlighted step in the process'.",
+            description="Identify the most prominent or central element or area that draws attention, considering visual, auditory, and temporal emphasis. Explain why this element stands out (e.g., size, color, position, duration, sound intensity). If there isn't a clear focal point, describe the distribution of emphasis. Examples: 'The main title of the document', 'The central component of the machine', 'The climax of the scene', 'The loudest sound'.",
             examples=[
                 "The large heading at the top",
                 "The brightly colored area in the center",
                 "The main subject of the drawing",
+                "The key moment of impact",
             ],
         ),
     ] = msgspec.field(default=None)
@@ -3565,16 +3361,17 @@ class ImageStructure(msgspec.Struct, frozen=True):
         return md_str
 
 
-class ImageDescription(msgspec.Struct, frozen=True):
+class VisualMediaDescription(msgspec.Struct, frozen=True):
     overall_description: Annotated[
         str,
         msgspec.Meta(
-            title="Overall Image Description",
-            description="Provide a comprehensive and detailed narrative describing the entire image, focusing on its content, structure, and key visual elements. Imagine you are explaining the image to someone who cannot see it, regardless of whether it depicts a real-world scene, a diagram, a formula, or abstract art. Describe the overall purpose or what information the image is conveying. Detail the main components and how they are organized. Use precise language to describe visual characteristics like shapes, colors, patterns, and relationships between elements. For abstract images, focus on describing the visual properties and composition. For technical diagrams or formulas, describe the elements and their arrangement. Think about the key aspects someone needs to understand to grasp the content and structure of the image. Examples: 'The image presents a mathematical formula expressing the relationship between variables a, b, and c. The formula is displayed on a white background with black text. The terms are arranged horizontally, with operators clearly visible.', 'The image is a 3D wireframe model of a house, showing the basic structure and layout of the rooms. Lines indicate the walls, doors, and windows. The perspective is from an elevated viewpoint.', 'The image is an abstract composition featuring swirling lines of blue and green against a black background. The lines vary in thickness and intensity, creating a sense of movement and depth.'",
+            title="Overall Media Description",
+            description="Provide a comprehensive and detailed narrative describing the entire visual media, focusing on its content, structure, and key elements. Imagine you are explaining it to someone who cannot see or hear it. Describe the overall purpose or what information it is conveying. Detail the main components and how they are organized, considering both spatial and temporal aspects. Use precise language to describe visual characteristics like shapes, colors, patterns, and relationships, as well as temporal characteristics like duration, transitions, and pacing. For abstract media, focus on describing the properties and composition. Think about the key aspects someone needs to understand to grasp the content and structure. Examples: 'The video presents a step-by-step tutorial on assembling a device. Text overlays accompany the visual demonstrations.', 'The animated graphic shows the flow of data through a network, with arrows indicating direction and color-coding representing different types of data.', 'The abstract animation features pulsating colors and evolving geometric shapes set to a rhythmic soundtrack.'",
             examples=[
                 "A diagram illustrating the water cycle",
                 "A complex algebraic equation",
                 "An abstract painting with bold colors",
+                "A short film depicting a historical event",
             ],
         ),
     ]
@@ -3582,33 +3379,41 @@ class ImageDescription(msgspec.Struct, frozen=True):
         str,
         msgspec.Meta(
             title="Content Type",
-            description="A general categorization of the image's content. This helps to broadly define what kind of information or visual representation is being presented. Examples: 'Mathematical formula', 'Technical diagram', 'Architectural drawing', 'Abstract art', 'Photograph of a landscape', 'Flowchart', 'Circuit diagram', 'Text document', 'Data visualization'.",
-            examples=["Photograph", "Diagram", "Formula", "Abstract Art"],
+            description="A general categorization of the media's content. This helps to broadly define what kind of information or representation is being presented. Examples: 'Mathematical formula', 'Technical diagram', 'Architectural drawing', 'Abstract art', 'Photograph', 'Video tutorial', 'Animated infographic', 'Data visualization', 'Screencast'.",
+            examples=[
+                "Photograph",
+                "Diagram",
+                "Formula",
+                "Abstract Art",
+                "Video",
+                "Animation",
+            ],
         ),
     ]
     visual_elements: Annotated[
-        Optional[Sequence[VisualElementDescription]],
+        Optional[Sequence[GraphicalElementDescription]],
         msgspec.Meta(
-            title="Detailed Visual Element Descriptions",
-            description="A list of individual visual elements identified within the image, each with its own detailed description. For each element, provide its type, specific visual details, its role or function within the image's context, and its relationships to other elements. The goal is to break down the image into its fundamental visual components and describe them comprehensively. This applies to all types of images, from tangible objects in photographs to symbols in diagrams or strokes in abstract art. Focus on discrete, meaningful visual components. For a formula, each term or symbol could be an element. For a diagram, each shape or arrow. For abstract art, significant areas of color or lines.",
+            title="Detailed Element Descriptions",
+            description="A list of individual elements identified within the media, each with its own detailed description. For each element, provide its type, specific details (visual, auditory, or temporal), its role or function, and its relationships to other elements. The goal is to break down the media into its fundamental components and describe them comprehensively. This applies to all types of visual media, from objects in photographs to symbols in diagrams, shots in a video, or transitions in an animation. Focus on discrete, meaningful components.",
         ),
     ] = msgspec.field(default=None)
     structure: Annotated[
-        Optional[ImageStructure],
+        Optional[MediaStructure],
         msgspec.Meta(
-            title="Image Structure and Organization",
-            description="A description of the overall structure and organization of the visual elements within the image. This section focuses on how the different parts are arranged and related to each other. Describe the layout, any significant groupings of elements, and the primary focal point or area of emphasis. This helps to understand the higher-level organization of the image's content.",
+            title="Media Structure and Organization",
+            description="A description of the overall structure and organization of the elements within the media. This section focuses on how the different parts are arranged and related to each other, considering both spatial and temporal aspects. Describe the layout, any significant groupings of elements, and the primary focal point or area of emphasis. This helps to understand the higher-level organization of the content.",
         ),
     ] = msgspec.field(default=None)
-    dominant_visual_features: Annotated[
+    dominant_features: Annotated[
         Optional[Sequence[str]],
         msgspec.Meta(
-            title="Dominant Visual Features",
-            description="A list of the most striking visual features of the image that contribute significantly to its overall appearance and impact. This could include dominant colors, recurring patterns, distinctive shapes, lines, textures (if visually apparent), or any other salient visual characteristics. Be specific and descriptive. Examples: 'Bold, contrasting colors', 'Repetitive geometric patterns', 'Strong diagonal lines', 'Textured brushstrokes', 'Symmetrical arrangement'.",
+            title="Dominant Features",
+            description="A list of the most striking features of the media that contribute significantly to its overall appearance and impact. This could include dominant colors, recurring patterns, distinctive shapes, lines, textures, pacing, sound design, or any other salient characteristics. Be specific and descriptive. Examples: 'Bold, contrasting colors', 'Repetitive geometric patterns', 'Fast-paced editing', 'Melancholy musical score'.",
             examples=[
                 "Bright contrasting colors",
                 "Repeating circular patterns",
                 "Dominant horizontal lines",
+                "Rapid scene changes",
             ],
         ),
     ] = msgspec.field(default=None)
@@ -3617,32 +3422,245 @@ class ImageDescription(msgspec.Struct, frozen=True):
         Optional[str],
         msgspec.Meta(
             title="Intended Purpose or Meaning",
-            description="An interpretation of the intended purpose or meaning of the image, based on its content and structure. What is the image trying to convey or communicate? For a formula, it might be to express a mathematical relationship. For a diagram, to illustrate a process. For abstract art, to evoke certain emotions or ideas. This is an interpretive field, so focus on reasonable inferences based on the visual evidence. Examples: 'To explain the steps in a manufacturing process', 'To visually represent a complex data set', 'To explore themes of color and form', 'To define a geometric relationship'.",
+            description="An interpretation of the intended purpose or meaning of the media, based on its content and structure. What is it trying to convey or communicate? For a formula, it might be to express a mathematical relationship. For a diagram, to illustrate a process. For abstract art, to evoke certain emotions or ideas. For a video, to inform, entertain, or persuade. This is an interpretive field, so focus on reasonable inferences based on the evidence. Examples: 'To explain the steps in a manufacturing process', 'To visually represent a complex data set', 'To explore themes of color and form', 'To document a historical event'.",
             examples=[
                 "To illustrate a scientific concept",
                 "To present architectural plans",
                 "To evoke a sense of calm",
+                "To tell a compelling story",
             ],
         ),
     ] = msgspec.field(default=None)
 
     @property
     def md(self) -> str:
-        md_str = f"## Overall Image Description\n{self.overall_description}\n\n"
+        md_str = f"## Overall Media Description\n{self.overall_description}\n\n"
         md_str += f"## Content Type\n{self.content_type}\n\n"
 
         if self.visual_elements:
-            md_str += "## Detailed Visual Element Descriptions\n"
+            md_str += "## Detailed Element Descriptions\n"
             for element in self.visual_elements:
                 md_str += element.md(indent_level=0) + "\n"
 
         if self.structure:
-            md_str += "## Image Structure and Organization\n"
+            md_str += "## Media Structure and Organization\n"
             md_str += self.structure.md(indent_level=1) + "\n"
 
-        if self.dominant_visual_features:
-            md_str += "## Dominant Visual Features\n"
-            for feature in self.dominant_visual_features:
+        if self.dominant_features:
+            md_str += "## Dominant Features\n"
+            for feature in self.dominant_features:
+                md_str += f"- {feature}\n"
+            md_str += "\n"
+
+        if self.intended_purpose:
+            md_str += f"## Intended Purpose or Meaning\n{self.intended_purpose}\n\n"
+
+        return md_str
+
+
+class AudioElementDescription(msgspec.Struct, frozen=True):
+    type: Annotated[
+        str,
+        msgspec.Meta(
+            title="Element Type",
+            description="The general category of this audio element within the media. This could be a type of sound, a segment of speech, a musical phrase, or any other distinct auditory component. Examples: 'Speech segment', 'Musical note', 'Sound effect', 'Silence', 'Jingle'.",
+            examples=[
+                "Speech",
+                "Melody",
+                "Footsteps",
+                "Silence",
+            ],
+        ),
+    ]
+
+    details: Annotated[
+        str,
+        msgspec.Meta(
+            title="Element Details",
+            description="A detailed description of the auditory characteristics and properties of this element. For speech, provide the content or a description of the speaker's tone and delivery. For music, describe the melody, harmony, rhythm, and instrumentation. For sound effects, describe the sound and its characteristics. Be specific and descriptive. Examples: 'The spoken phrase 'Hello world' in a clear voice', 'A high-pitched sustained note on a violin', 'The sound of a door slamming shut', 'A brief period of complete silence'.",
+            examples=[
+                "The word 'example' spoken with emphasis",
+                "A low humming sound",
+                "A sharp, percussive beat",
+            ],
+        ),
+    ]
+
+    role: Annotated[
+        Optional[str],
+        msgspec.Meta(
+            title="Element Role/Function",
+            description="The purpose or function of this audio element within the context of the media. How does it contribute to the overall meaning, mood, or structure? For example, in a song, describe its role in the melody or harmony. In a spoken piece, explain its informational or emotional contribution. In a soundscape, its contribution to the atmosphere. Examples: 'Conveys information about the topic', 'Creates a sense of tension', 'Marks the beginning of a new section', 'Provides background ambience'.",
+            examples=[
+                "Introduces the main subject",
+                "Builds suspense",
+                "Signals a transition",
+                "Establishes the setting",
+            ],
+        ),
+    ] = msgspec.field(default=None)
+
+    relationships: Annotated[
+        Optional[Sequence[str]],
+        msgspec.Meta(
+            title="Element Relationships",
+            description="Describe how this audio element is related to other elements in the media. Explain its temporal relationship to others, whether it occurs before, during, or after other sounds, or how it interacts with other auditory elements. Be specific about the other elements involved. Examples: 'This musical phrase follows the introductory melody', 'The sound effect occurs simultaneously with the visual impact', 'The speaker's voice overlaps with the background music'.",
+            examples=[
+                "Occurs after a period of silence",
+                "Plays under the main narration",
+                "A response to the previous sound",
+            ],
+        ),
+    ] = msgspec.field(default=None)
+
+    def md(self, indent_level: int = 0) -> str:
+        indent = "  " * indent_level
+        md_str = f"{indent}**Element Type**: {self.type}\n"
+        md_str += f"{indent}**Element Details**: {self.details}\n"
+        if self.role:
+            md_str += f"{indent}**Role/Function**: {self.role}\n"
+        if self.relationships:
+            md_str += f"{indent}**Relationships**:\n"
+            for rel in self.relationships:
+                md_str += f"{indent}  - {rel}\n"
+        return md_str
+
+
+class AudioStructure(msgspec.Struct, frozen=True):
+    organization: Annotated[
+        Optional[str],
+        msgspec.Meta(
+            title="Overall Organization",
+            description="A description of how the audio elements are arranged and organized within the media. Describe the overall structure, flow, or pattern. Is it linear, cyclical, thematic, or something else? How are the different parts connected or separated? Examples: 'A song with verse-chorus structure', 'A chronological sequence of spoken events', 'A layered soundscape with overlapping elements'.",
+            examples=[
+                "A narrative with a clear beginning, middle, and end",
+                "A repeating musical motif",
+                "A conversation with alternating speakers",
+            ],
+        ),
+    ] = msgspec.field(default=None)
+    groupings: Annotated[
+        Optional[Sequence[str]],
+        msgspec.Meta(
+            title="Significant Groupings of Elements",
+            description="Describe any notable groupings or clusters of audio elements that appear to function together or have a shared context. Explain what binds these elements together aurally or conceptually. Examples: 'The instrumental section of the song', 'A dialogue between two characters', 'A series of related sound effects'.",
+            examples=[
+                "The introduction of the song",
+                "The main argument of the speech",
+                "The sounds of a busy street",
+            ],
+        ),
+    ] = msgspec.field(default=None)
+    focal_point: Annotated[
+        Optional[str],
+        msgspec.Meta(
+            title="Primary Focal Point",
+            description="Identify the most prominent or central audio element or section that draws the listener's attention. Explain why this element stands out (e.g., volume, pitch, prominence of a voice or instrument). If there isn't a clear focal point, describe the distribution of auditory emphasis. Examples: 'The lead vocalist's melody', 'The loudest sound effect', 'The central argument of the speech'.",
+            examples=[
+                "The main theme of the music",
+                "The key statement in the narration",
+                "A sudden loud bang",
+            ],
+        ),
+    ] = msgspec.field(default=None)
+
+    def md(self, indent_level: int = 1) -> str:
+        indent = "  " * indent_level
+        md_str = ""
+        if self.organization:
+            md_str += f"{indent}**Overall Organization**: {self.organization}\n"
+        if self.groupings:
+            md_str += f"{indent}**Significant Groupings of Elements**:\n"
+            for group in self.groupings:
+                md_str += f"{indent}  - {group}\n"
+        if self.focal_point:
+            md_str += f"{indent}**Primary Focal Point**: {self.focal_point}\n"
+        return md_str
+
+
+class AudioDescription(msgspec.Struct, frozen=True):
+    overall_description: Annotated[
+        str,
+        msgspec.Meta(
+            title="Overall Audio Description",
+            description="Provide a comprehensive and detailed narrative describing the entire audio media, focusing on its content, structure, and key auditory elements. Imagine you are explaining the audio to someone who cannot hear it. Describe the overall purpose or what information the audio is conveying or what experience it aims to create. Detail the main components and how they are organized. Use precise language to describe auditory characteristics like pitch, tone, rhythm, tempo, and instrumentation. For abstract audio, focus on describing the sonic properties and composition. Think about the key aspects someone needs to understand to grasp the content and structure of the audio. Examples: 'The audio presents a news report detailing recent events, featuring a clear and professional narration with background music.', 'The audio is a piece of ambient music featuring layered synthesizers and natural soundscapes, creating a calming atmosphere.', 'The audio recording captures a lively conversation between two individuals, with distinct voices and occasional laughter.'",
+            examples=[
+                "A podcast discussing current events",
+                "A musical piece with a strong melody",
+                "A recording of nature sounds",
+            ],
+        ),
+    ]
+
+    content_type: Annotated[
+        str,
+        msgspec.Meta(
+            title="Content Type",
+            description="A general categorization of the audio's content. This helps to broadly define what kind of auditory experience or information is being presented. Examples: 'Podcast', 'Song', 'Speech', 'Sound effects', 'Ambient music', 'Audiobook', 'Interview'.",
+            examples=["Podcast", "Music", "Speech", "Sound Effects"],
+        ),
+    ]
+
+    audio_elements: Annotated[
+        Optional[Sequence[AudioElementDescription]],
+        msgspec.Meta(
+            title="Detailed Audio Element Descriptions",
+            description="A list of individual audio elements identified within the media, each with its own detailed description. For each element, provide its type, specific auditory details, its role or function within the audio's context, and its relationships to other elements. The goal is to break down the audio into its fundamental auditory components and describe them comprehensively. This applies to all types of audio, from spoken words in a podcast to musical notes in a song or distinct sound effects.",
+        ),
+    ] = msgspec.field(default=None)
+
+    structure: Annotated[
+        Optional[AudioStructure],
+        msgspec.Meta(
+            title="Audio Structure and Organization",
+            description="A description of the overall structure and organization of the audio elements within the media. This section focuses on how the different parts are arranged and related to each other. Describe the overall organization, any significant groupings of elements, and the primary focal point or area of emphasis. This helps to understand the higher-level organization of the audio's content.",
+        ),
+    ] = msgspec.field(default=None)
+
+    dominant_auditory_features: Annotated[
+        Optional[Sequence[str]],
+        msgspec.Meta(
+            title="Dominant Auditory Features",
+            description="A list of the most striking auditory features of the audio that contribute significantly to its overall character and impact. This could include dominant melodies, rhythmic patterns, distinctive voices or timbres, recurring sound effects, or any other salient auditory characteristics. Be specific and descriptive. Examples: 'A strong, repetitive beat', 'A high-pitched, clear female voice', 'Frequent use of echo and reverb', 'A melancholic piano melody'.",
+            examples=[
+                "A fast tempo",
+                "A deep bassline",
+                "Clear and articulate speech",
+            ],
+        ),
+    ] = msgspec.field(default=None)
+
+    intended_purpose: Annotated[
+        Optional[str],
+        msgspec.Meta(
+            title="Intended Purpose or Meaning",
+            description="An interpretation of the intended purpose or meaning of the audio, based on its content and structure. What is the audio trying to convey or communicate? For a song, it might be to express emotions. For a podcast, to inform or entertain. For sound effects, to create a specific atmosphere. This is an interpretive field, so focus on reasonable inferences based on the auditory evidence. Examples: 'To tell a story through sound', 'To provide information on a specific topic', 'To create a relaxing and immersive soundscape', 'To evoke feelings of joy and excitement'.",
+            examples=[
+                "To entertain the listener",
+                "To educate on a particular subject",
+                "To create a sense of atmosphere",
+            ],
+        ),
+    ] = msgspec.field(default=None)
+
+    @property
+    def md(self) -> str:
+        md_str = ""
+        md_str += f"## Overall Audio Description\n{self.overall_description}\n\n"
+        md_str += f"## Content Type\n{self.content_type}\n\n"
+
+        if self.audio_elements:
+            md_str += "## Detailed Audio Element Descriptions\n"
+            for element in self.audio_elements:
+                md_str += element.md(indent_level=0) + "\n"
+
+        if self.structure:
+            md_str += "## Audio Structure and Organization\n"
+            md_str += self.structure.md(indent_level=1) + "\n"
+
+        if self.dominant_auditory_features:
+            md_str += "## Dominant Auditory Features\n"
+            for feature in self.dominant_auditory_features:
                 md_str += f"- {feature}\n"
             md_str += "\n"
 

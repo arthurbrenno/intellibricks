@@ -829,7 +829,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
 
     model: TranscriptionModelType
     api_key: Optional[str] = None
-    langfuse: Maybe[Langfuse] = Maybe(None)
+    langfuse: Maybe[Langfuse] = msgspec.field(default_factory=lambda: Maybe(None))
 
     @classmethod
     def of(
