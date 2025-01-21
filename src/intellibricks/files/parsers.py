@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import abc
+import asyncio
 import io
 import logging
+import os
+import subprocess
 import tempfile
+from pathlib import Path
 from typing import Never, Optional, Sequence, TypedDict, cast, override
 
 import msgspec
@@ -64,8 +68,10 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
     visual_description_agent: Optional[
         Agent[ChainOfThought[VisualMediaDescription]]
     ] = None
+    """Agent used for generating textual descriptions of images and videos, if the synapse supports it."""
 
     audio_description_agent: Optional[Agent[ChainOfThought[AudioDescription]]] = None
+    """Agent used for generating textual descriptions of audio files, if the synapse supports it."""
 
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -590,8 +596,6 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
         self,
         file: RawFile,
     ) -> ParsedFile:
-        import tempfile
-
         from pptx import Presentation
         from pptx.enum.shapes import MSO_SHAPE_TYPE
         from pptx.presentation import Presentation as PptxPresentation
@@ -600,7 +604,11 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{file.name}"
-            file.save_to_file(file_path)
+            if file.extension in {FileExtension.PPT, FileExtension.PPTM}:
+                converted_pptx_file = self._convert_to_pptx(file)
+                converted_pptx_file.save_to_file(file_path)
+            else:
+                file.save_to_file(file_path)
 
             prs: PptxPresentation = Presentation(file_path)
 
@@ -663,6 +671,76 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
                 sections=sections,
             )
 
+    def _convert_to_pptx(self, file: RawFile) -> RawFile:
+        """Convert PowerPoint files (.ppt/.pptm) to .pptx format and return as RawFile.
+
+        Args:
+            file: RawFile instance containing the input file data.
+
+        Returns:
+            RawFile instance containing converted content.
+
+        Raises:
+            RuntimeError: If conversion fails or LibreOffice not installed.
+        """
+
+        def _is_libreoffice_installed() -> bool:
+            try:
+                subprocess.run(
+                    ["libreoffice", "--version"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=True,
+                )
+                return True
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                return False
+
+        if not _is_libreoffice_installed():
+            raise RuntimeError("LibreOffice not found in system PATH")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Write input file to temporary directory
+            input_path = os.path.join(temp_dir, file.name)
+            with open(input_path, "wb") as f:
+                f.write(file.contents)
+
+            # Run LibreOffice conversion
+            try:
+                subprocess.run(
+                    [
+                        "libreoffice",
+                        "--headless",
+                        "--convert-to",
+                        "pptx",
+                        "--outdir",
+                        temp_dir,
+                        input_path,
+                    ],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    timeout=60,
+                )
+            except subprocess.CalledProcessError as e:
+                error_msg = e.stderr.decode().strip() if e.stderr else "Unknown error"
+                raise RuntimeError(f"Conversion failed: {error_msg}") from e
+            except subprocess.TimeoutExpired:
+                raise RuntimeError("Conversion timed out after 60 seconds")
+
+            # Determine output file path
+            output_filename = Path(file.name).stem + ".pptx"
+            output_path = os.path.join(temp_dir, output_filename)
+
+            if not os.path.exists(output_path):
+                available_files = os.listdir(temp_dir)
+                raise RuntimeError(
+                    f"Converted file not found at {output_path}. Found files: {available_files}"
+                )
+
+            # Read converted file and return as RawFile
+            return RawFile.from_file_path(output_path)
+
 
 class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
     @ensure_module_installed("openpyxl", "intellibricks[files]")
@@ -671,8 +749,6 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
         self,
         file: RawFile,
     ) -> ParsedFile:
-        import tempfile
-
         from openpyxl import Workbook, load_workbook
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -972,10 +1048,6 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             FileExtension.WAV,
             FileExtension.WEBM,
         }:
-            import asyncio
-            import os
-            import tempfile
-
             import aiofiles.os as aios
             from aiofiles import open as aio_open
 

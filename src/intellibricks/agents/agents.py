@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -455,7 +456,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
     async def _run_logic_async(
         self, inp: Sequence[Message], trace_params: Optional[TraceParams] = None
     ) -> AgentResponse[S]:
-        message_sequence = MessageSequence(inp)
+        message_sequence = MessageSequence(deepcopy(inp))
         context_sequence: ContextSourceSequence = ContextSourceSequence(
             [
                 await source.retrieve_context_async(
