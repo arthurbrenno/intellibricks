@@ -890,9 +890,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
 
                 # Create table page item
                 table_item = TablePageItem(
-                    md=combined_text,
-                    rows=rows,
-                    csv=csv_str,
+                    md=combined_text, rows=rows, csv=csv_str, is_perfect_table=True
                 )
 
                 section_content = SectionContent(
