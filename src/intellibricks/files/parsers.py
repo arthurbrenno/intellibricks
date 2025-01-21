@@ -1082,9 +1082,8 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
             raise ValueError("VideoFileParser only supports .mp4 files.")
 
         file_contents = file.contents
-        file_part = VideoFilePart(data=file_contents, mime_type=MimeType.video_mp4)
         visual_media_description = await self.visual_description_agent.run_async(
-            file_part
+            VideoFilePart(data=file_contents, mime_type=MimeType.video_mp4)
         )
 
         return ParsedFile(

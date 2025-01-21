@@ -334,18 +334,13 @@ class ParsedFile(msgspec.Struct, frozen=True):
 
     @property
     def llm_described_text(self) -> str:
-        sections = ' '.join(
+        sections = " ".join(
             [
                 f"<section_{num}> {section.md} </section_{num}>"
                 for num, section in enumerate(self.sections)
             ]
         )
-        return (
-            f"<file>\n\n"
-            f"**name:** {self.name} \n"
-            f"**sections:** {sections}\n\n"
-            f"</file>"
-        )
+        return f"<file>\n\n**name:** {self.name} \n**sections:** {sections}\n\n</file>"
 
     def merge_all(self, others: Sequence[ParsedFile]) -> ParsedFile:
         from itertools import chain

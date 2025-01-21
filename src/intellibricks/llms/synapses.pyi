@@ -409,7 +409,9 @@ class SynapseCascade:
     """Indicates whether the synapses should be shuffled before trying them"""
 
     @classmethod
-    def of(cls, *synapses: Synapse | SynapseCascade, shuffle: bool = False) -> SynapseCascade: ...
+    def of(
+        cls, *synapses: Synapse | SynapseCascade, shuffle: bool = False
+    ) -> SynapseCascade: ...
     @overload
     def complete(
         self,
