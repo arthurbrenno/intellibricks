@@ -29,7 +29,7 @@ from intellibricks.llms.types import (
 )
 
 from .constants import ParsingStrategy
-from .parsed_files import Image, ParsedFile, SectionContent
+from .parsed_files import Image, TablePageItem, ParsedFile, SectionContent
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 exception_logger = log.create_logger(__name__, level=logging.ERROR)
@@ -751,6 +751,8 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
         self,
         file: RawFile,
     ) -> ParsedFile:
+        import csv
+        import io
         from openpyxl import Workbook, load_workbook
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -761,26 +763,30 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
             sections: list[SectionContent] = []
 
             for sheet_index, sheet in enumerate(wb.worksheets, start=1):
-                # Gather all text
+                # Gather structured data
+                rows: list[list[str]] = []
                 row_texts: list[str] = []
                 for row in sheet.iter_rows(values_only=True):
-                    # row might be a tuple of cell values, some may be None
-                    cell_strs = [str(cell) for cell in row if cell is not None]
-                    if cell_strs:
-                        row_texts.append("\t".join(cell_strs))
+                    # Process cell values
+                    cell_values = [
+                        str(cell) if cell is not None else "" for cell in row
+                    ]
+                    rows.append(cell_values)
+                    row_texts.append("\t".join(cell_values))
 
-                combined_text: str = "\n".join(row_texts)
+                combined_text = "\n".join(row_texts)
 
-                # Gather images (via private _images)
+                # Generate CSV content
+                csv_buffer = io.StringIO()
+                csv_writer = csv.writer(csv_buffer)
+                csv_writer.writerows(rows)
+                csv_str = csv_buffer.getvalue().strip()
+
+                # Process images
                 sheet_images: list[Image] = []
-                # This is a private attribute in openpyxl, so type stubs are nonexistent.
-                # We'll do a "if hasattr(sheet, '_images')" to avoid exceptions.
                 if hasattr(sheet, "_images"):
                     image_list = getattr(sheet, "_images", [])
                     for img_idx, img in enumerate(image_list, start=1):
-                        # openpyxl image objects often have a "ref" attribute, plus a "_data" attribute for bytes
-                        # or ._data is sometimes called .image depending on your openpyxl version
-                        # We can do a cast or just ignore
                         img_data = getattr(img, "_data", None)
                         if img_data is not None:
                             image_name = f"{sheet.title}_img_{img_idx}.png"
@@ -788,7 +794,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                                 Image(name=image_name, contents=img_data)
                             )
 
-                # If strategy is HIGH, run visual_description_agent
+                # Generate image descriptions if needed
                 if (
                     self.visual_description_agent
                     and self.strategy == ParsingStrategy.HIGH
@@ -809,11 +815,19 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                     if image_descriptions:
                         combined_text += "\n\n" + "\n".join(image_descriptions)
 
+                # Create table page item
+                table_item = TablePageItem(
+                    md=combined_text,
+                    rows=rows,
+                    csv=csv_str,
+                )
+
                 section_content = SectionContent(
                     number=sheet_index,
                     text=combined_text,
                     md=combined_text,
                     images=sheet_images,
+                    items=[table_item],
                 )
                 sections.append(section_content)
 
