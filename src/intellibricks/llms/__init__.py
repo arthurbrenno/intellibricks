@@ -16,7 +16,12 @@ from .types import (
     VideoFilePart,
     WebsitePart,
 )
-from .synapses import Synapse, SynapseCascade, TextTranscriptionSynapse
+from .synapses import (
+    Synapse,
+    SynapseCascade,
+    TextTranscriptionSynapse,
+    TextTranscriptionsSynapseCascade,
+)
 
 __all__ = [
     "Synapse",
@@ -38,4 +43,5 @@ __all__ = [
     "AudioFilePart",
     "VideoFilePart",
     "WebsitePart",
+    "TextTranscriptionsSynapseCascade",
 ]

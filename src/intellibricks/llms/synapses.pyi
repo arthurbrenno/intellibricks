@@ -609,3 +609,32 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
     ) -> TextTranscriptionOutput: ...
+
+class TextTranscriptionsSynapseCascade:
+    synapses: Sequence[TextTranscriptionSynapse | TextTranscriptionsSynapseCascade]
+    shuffle: bool
+
+    @classmethod
+    def of(
+        cls,
+        *synapses: TextTranscriptionSynapse | TextTranscriptionsSynapseCascade,
+        shuffle: bool = False,
+    ) -> TextTranscriptionsSynapseCascade: ...
+    def transcribe(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[TranscriptionsLanguage] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput: ...
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[TranscriptionsLanguage] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput: ...

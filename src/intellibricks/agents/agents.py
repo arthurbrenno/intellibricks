@@ -20,7 +20,12 @@ from architecture.extensions import Maybe
 from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 
-from intellibricks.llms import Synapse, SynapseCascade, TextTranscriptionSynapse
+from intellibricks.llms import (
+    Synapse,
+    SynapseCascade,
+    TextTranscriptionSynapse,
+    TextTranscriptionsSynapseCascade,
+)
 from intellibricks.llms.types import (
     AudioFilePart,
     ChatCompletion,
@@ -153,7 +158,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
     ] = msgspec.field(default=None)
 
     audio_transcriptions_synapse: Annotated[
-        Optional[TextTranscriptionSynapse],
+        Optional[TextTranscriptionSynapse | TextTranscriptionsSynapseCascade],
         msgspec.Meta(
             title="Transcriptions Synapse",
             description="The synapse to use for the transcriptions.",
@@ -523,6 +528,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             # Create new message sequence with transcribed audio
             message_sequence = MessageSequence(transcribed_messages)
 
+        # Get the raw text from the context.
         context_raw_text = context_sequence.full_text
         developer_prompt = (
             "AGENT ROLE:"

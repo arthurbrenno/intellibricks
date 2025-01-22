@@ -1020,3 +1020,93 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         debug_logger.debug("Langfuse span scored as failed.")
 
         debug_logger.debug("Error observability logic completed.")
+
+
+class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
+    """If one transcription synapse fails, the next one will be used. Implements
+    the same interface as TextTranscriptionSynapse.
+    """
+
+    synapses: Sequence[TextTranscriptionSynapse | TextTranscriptionsSynapseCascade]
+    """Sequence of transcription synapses or cascades"""
+
+    shuffle: bool = False
+    """Whether to shuffle the synapse order before trying"""
+
+    @classmethod
+    def of(
+        cls,
+        *synapses: TextTranscriptionSynapse | TextTranscriptionsSynapseCascade,
+        shuffle: bool = False,
+    ) -> TextTranscriptionsSynapseCascade:
+        return cls(synapses=synapses, shuffle=shuffle)
+
+    def transcribe(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[TranscriptionsLanguage] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput:
+        last_exception = None
+        synapses = (
+            self.synapses
+            if not self.shuffle
+            else random.sample(self.synapses, len(self.synapses))
+        )
+
+        for synapse in synapses:
+            try:
+                return synapse.transcribe(
+                    audio=audio,
+                    temperature=temperature,
+                    language=language,
+                    prompt=prompt,
+                    trace_params=trace_params,
+                    max_retries=max_retries,
+                )
+            except Exception as e:
+                debug_logger.warning(f"Transcription synapse failed: {e}")
+                last_exception = e
+                continue
+
+        if last_exception:
+            raise last_exception
+        raise RuntimeError("All transcription synapses failed")
+
+    async def transcribe_async(
+        self,
+        audio: FileContent,
+        temperature: Optional[float] = None,
+        language: Optional[TranscriptionsLanguage] = None,
+        prompt: Optional[str] = None,
+        trace_params: Optional[TraceParams] = None,
+        max_retries: int = 1,
+    ) -> TextTranscriptionOutput:
+        last_exception = None
+        synapses = (
+            self.synapses
+            if not self.shuffle
+            else random.sample(self.synapses, len(self.synapses))
+        )
+
+        for synapse in synapses:
+            try:
+                return await synapse.transcribe_async(
+                    audio=audio,
+                    temperature=temperature,
+                    language=language,
+                    prompt=prompt,
+                    trace_params=trace_params,
+                    max_retries=max_retries,
+                )
+            except Exception as e:
+                debug_logger.warning(f"Transcription synapse failed: {e}")
+                last_exception = e
+                continue
+
+        if last_exception:
+            raise last_exception
+        raise RuntimeError("All transcription synapses failed")
