@@ -490,6 +490,8 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             ]
         )
 
+        raw_transcription: Optional[str] = None
+
         if (
             self.audio_transcriptions_synapse is not None
             and message_sequence.count_audios() > 0
@@ -503,7 +505,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
                         case AudioFilePart():
                             # Transcribe the audio part
                             audio_bytes = part.data
-                            transcription = (
+                            raw_transcription = (
                                 await self.audio_transcriptions_synapse.transcribe_async(
                                     audio=audio_bytes
                                 )
@@ -511,7 +513,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
                             # Create text part with transcription wrapped in tags
                             new_parts.append(
                                 TextPart(
-                                    text=f"<audio_transcription>\n{transcription}\n</audio_transcription>"
+                                    text=f"<audio_transcription>\n{raw_transcription}\n</audio_transcription>"
                                 )
                             )
                         case _:
@@ -609,6 +611,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             agent=self,
             content=final_completion,  # type: ignore
             tool_calls=tool_call_sequence.sequence,
+            raw_transcription=raw_transcription,
         )
 
     def _transform_input(self, inp: AgentInput) -> Sequence[Message]:
