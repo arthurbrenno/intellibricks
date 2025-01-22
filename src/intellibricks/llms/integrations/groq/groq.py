@@ -1,7 +1,7 @@
 import copy
 import tempfile
 import timeit
-from os import PathLike
+from pathlib import Path
 from typing import (
     Any,
     Literal,
@@ -299,7 +299,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = write_content_to_file(audio, temp_dir)
             transcription = await client.audio.transcriptions.create(
-                file=cast(PathLike[str], file_path),
+                file=Path(file_path),
                 model=self.model_name,
                 language=language or NOT_GIVEN,
                 temperature=temperature or NOT_GIVEN,
