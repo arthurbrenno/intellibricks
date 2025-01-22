@@ -45,7 +45,7 @@ from intellibricks.llms.util import (
     get_audio_duration,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
-    guess_extension,
+    write_content_to_file,
 )
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
@@ -297,18 +297,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         now = timeit.default_timer()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            extension = guess_extension(audio)
-            if isinstance(audio, bytes):
-                file_path: str = f"{temp_dir}/audio{extension}"
-                with open(file_path, "wb") as f:
-                    f.write(audio)
-            elif hasattr(audio, "read"):
-                file_path = f"{temp_dir}/audio{extension}"
-                with open(file_path, "wb") as f:
-                    f.write(audio.read())  # type: ignore
-            else:
-                file_path = str(audio)
-
+            file_path = write_content_to_file(audio, temp_dir)
             transcription = await client.audio.transcriptions.create(
                 file=cast(PathLike[str], file_path),
                 model=self.model_name,

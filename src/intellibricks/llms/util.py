@@ -1232,3 +1232,24 @@ def guess_extension(
         raise ValueError(f"No suitable extension found for mime type: {mime_type}")
 
     return extension
+
+
+def write_content_to_file(
+    file_content: Union[IO[bytes], bytes, PathLike[str]],
+    output_dir: str,
+    mode: Optional[str] = None,
+) -> str:
+    _mode = mode or "wb"
+    extension = guess_extension(file_content)
+    if isinstance(file_content, bytes):
+        file_path: str = f"{output_dir}/file.{extension}"
+        with open(file_path, _mode) as f:
+            f.write(file_content)
+    elif hasattr(file_content, "read"):
+        file_path = f"{file_content}/file{extension}"
+        with open(file_path, _mode) as f:
+            f.write(file_content.read())  # type: ignore
+    else:
+        file_path = str(file_content)
+
+    return file_path
