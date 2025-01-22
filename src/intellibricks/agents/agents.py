@@ -492,7 +492,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
 
         if (
             self.audio_transcriptions_synapse is not None
-            and message_sequence.count_audios() > 1
+            and message_sequence.count_audios() > 0
         ):
             # Generate a new MessageSequence with transcribed audio parts
             transcribed_messages: list[Message] = []

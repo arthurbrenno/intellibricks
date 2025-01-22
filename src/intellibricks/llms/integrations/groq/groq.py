@@ -1,6 +1,9 @@
 import copy
+import tempfile
 import timeit
+from os import PathLike
 from typing import (
+    Any,
     Literal,
     Optional,
     Sequence,
@@ -9,41 +12,40 @@ from typing import (
     cast,
     overload,
     override,
-    Any,
 )
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms.base import (
-    LanguageModel,
-    TranscriptionModel,
     FileContent,
     Language,
+    LanguageModel,
+    TranscriptionModel,
 )
-
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.types import (
-    GeneratedAssistantMessage,
     CalledFunction,
-    TextTranscriptionOutput,
     ChatCompletion,
     Function,
+    GeneratedAssistantMessage,
+    GroqModelType,
     Message,
     MessageChoice,
     Part,
     RawResponse,
+    TextTranscriptionOutput,
     ToolCall,
     ToolCallSequence,
     ToolInputType,
     Usage,
 )
-from intellibricks.llms.types import GroqModelType
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
     get_audio_duration,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
+    guess_extension,
 )
 
 S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
@@ -293,13 +295,27 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         client = AsyncGroq(api_key=self.api_key, max_retries=self.max_retries)
 
         now = timeit.default_timer()
-        transcription = await client.audio.transcriptions.create(
-            file=audio,
-            model=self.model_name,
-            language=language or NOT_GIVEN,
-            temperature=temperature or NOT_GIVEN,
-            prompt=prompt or NOT_GIVEN,
-        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            extension = guess_extension(audio)
+            if isinstance(audio, bytes):
+                file_path: str = f"{temp_dir}/audio{extension}"
+                with open(file_path, "wb") as f:
+                    f.write(audio)
+            elif hasattr(audio, "read"):
+                file_path = f"{temp_dir}/audio{extension}"
+                with open(file_path, "wb") as f:
+                    f.write(audio.read())  # type: ignore
+            else:
+                file_path = str(audio)
+
+            transcription = await client.audio.transcriptions.create(
+                file=cast(PathLike[str], file_path),
+                model=self.model_name,
+                language=language or NOT_GIVEN,
+                temperature=temperature or NOT_GIVEN,
+                prompt=prompt or NOT_GIVEN,
+            )
 
         audio_duration = get_audio_duration(audio)
 

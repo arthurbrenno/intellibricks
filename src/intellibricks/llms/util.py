@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import logging
 import mimetypes
+import re
 import struct
 from os import PathLike
 from typing import (
+    IO,
     TYPE_CHECKING,
     Any,
     Callable,
@@ -16,7 +18,7 @@ from typing import (
     Union,
     cast,
 )
-import re
+
 import msgspec
 from architecture import log
 
@@ -1131,3 +1133,102 @@ def ms_type_to_schema(
 
     dereferenced_schema = dereference(main_schema)
     return dereferenced_schema
+
+
+def guess_extension(
+    file_content: Union[IO[bytes], bytes, PathLike[str]],
+) -> Union[
+    Literal[
+        "jpeg",
+        "png",
+        "gif",
+        "webp",
+        "bmp",
+        "tiff",
+        "svg",
+        "pdf",
+        "zip",
+        "tar",
+        "gzip",
+        "bz2",
+        "7z",
+        "rar",
+        "txt",
+        "csv",
+        "json",
+        "html",
+        "xml",
+        "mp4",
+        "mov",
+        "avi",
+        "mkv",
+        "mp3",
+        "wav",
+        "ogg",
+        "flac",
+        "aac",
+    ],
+    str,
+]:
+    """
+    Guesses the file extension based on the file content.
+
+    Args:
+        file_content: The file content as bytes, an IO stream, or a file path.
+
+    Returns:
+        The file extension as a string (e.g., "jpg", "png").
+
+    Raises:
+        ValueError: If the file type cannot be determined or no suitable extension is found.
+    """
+    import magic
+
+    try:
+        if isinstance(file_content, (str, PathLike)):
+            mime_type = magic.from_file(str(file_content), mime=True)  # type: ignore
+        elif isinstance(file_content, bytes):
+            mime_type = magic.from_buffer(file_content, mime=True)
+        elif hasattr(file_content, "read"):
+            mime_type = magic.from_buffer(file_content.read(), mime=True)
+        else:
+            raise ValueError("Unsupported file content type")
+    except magic.MagicException as e:
+        raise ValueError(f"Error during file type detection: {e}") from e
+
+    mime_to_ext = {
+        "image/jpeg": "jpeg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "image/webp": "webp",
+        "image/bmp": "bmp",
+        "image/tiff": "tiff",
+        "image/svg+xml": "svg",
+        "application/pdf": "pdf",
+        "application/zip": "zip",
+        "application/x-tar": "tar",
+        "application/gzip": "gzip",
+        "application/x-bzip2": "bz2",
+        "application/x-7z-compressed": "7z",
+        "application/vnd.rar": "rar",
+        "text/plain": "txt",
+        "text/csv": "csv",
+        "application/json": "json",
+        "text/html": "html",
+        "text/xml": "xml",
+        "video/mp4": "mp4",
+        "video/quicktime": "mov",
+        "video/x-msvideo": "avi",
+        "video/x-matroska": "mkv",
+        "audio/mpeg": "mp3",
+        "audio/wav": "wav",
+        "audio/ogg": "ogg",
+        "audio/flac": "flac",
+        "audio/aac": "aac",
+    }
+    extension = mime_to_ext.get(mime_type)
+
+    if extension is None:
+        raise ValueError(f"No suitable extension found for mime type: {mime_type}")
+
+    return extension
