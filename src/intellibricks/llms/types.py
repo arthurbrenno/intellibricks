@@ -645,6 +645,7 @@ class MimeType(str, Enum):
     audio_weba = "audio/webm"
     font_ttf = "font/ttf"
     font_woff2 = "font/woff2"
+    audio_mpeg = "audio/mpeg"
 
     def __str__(self) -> str:
         return self.value
