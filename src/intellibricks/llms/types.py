@@ -120,6 +120,7 @@ from architecture.utils.decorators import ensure_module_installed
 from intellibricks.llms.util import (
     get_parts_llm_described_text,
     get_parts_raw_text,
+    segments_to_srt,
 )
 
 from .constants import FinishReason, Language
@@ -3651,12 +3652,12 @@ class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
     ]
 
     segments: Annotated[
-        Optional[Sequence[SentenceSegment]],
+        Sequence[SentenceSegment],
         msgspec.Meta(
             title="Parts",
             description="The transcribed text broken down into segments.",
         ),
-    ] = None
+    ]
 
     cost: Annotated[
         float,
@@ -3674,27 +3675,13 @@ class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
         ),
     ]
 
-    def to_srt(self) -> str:
-        if self.segments is None:
-            raise ValueError("Segments cannot be None for SRT conversion.")
-
-        def format_time(seconds: float) -> str:
-            hours = int(seconds // 3600)
-            remaining = seconds % 3600
-            minutes = int(remaining // 60)
-            remaining %= 60
-            seconds_int = int(remaining)
-            milliseconds = int((remaining - seconds_int) * 1000)
-            return f"{hours:02}:{minutes:02}:{seconds_int:02},{milliseconds:03}"
-
-        parts: list[str] = []
-        for idx, segment in enumerate(self.segments, start=1):
-            start_time = format_time(segment.start)
-            end_time = format_time(segment.end)
-            part = f"{idx}\n{start_time} --> {end_time}\n{segment.sentence}"
-            parts.append(part)
-
-        return "\n\n".join(parts)
+    srt: Annotated[
+        str,
+        msgspec.Meta(
+            title="SRT",
+            description="The transcribed text in SubRip format.",
+        ),
+    ]
 
     def merge(self, *audio_transcriptions: AudioTranscription) -> AudioTranscription:
         all_transcriptions = [self] + list(audio_transcriptions)
@@ -3705,26 +3692,26 @@ class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
         merged_segments: list[SentenceSegment] = []
         for i, current_transcription in enumerate(all_transcriptions):
             current_offset = sum(t.duration for t in all_transcriptions[:i])
-            if current_transcription.segments is not None:
-                for segment in current_transcription.segments:
-                    new_start = segment.start + current_offset
-                    new_end = segment.end + current_offset
-                    new_id = len(merged_segments)
-                    new_segment = SentenceSegment(
-                        id=new_id,
-                        sentence=segment.sentence,
-                        start=new_start,
-                        end=new_end,
-                        no_speech_prob=segment.no_speech_prob,
-                    )
-                    merged_segments.append(new_segment)
-        merged_segments_final = merged_segments if merged_segments else None
+            for segment in current_transcription.segments:
+                new_start = segment.start + current_offset
+                new_end = segment.end + current_offset
+                new_id = len(merged_segments)
+                new_segment = SentenceSegment(
+                    id=new_id,
+                    sentence=segment.sentence,
+                    start=new_start,
+                    end=new_end,
+                    no_speech_prob=segment.no_speech_prob,
+                )
+                merged_segments.append(new_segment)
+
         return AudioTranscription(
             elapsed_time=merged_elapsed_time,
             text=merged_text,
-            segments=merged_segments_final,
+            segments=merged_segments,
             cost=merged_cost,
             duration=merged_duration,
+            srt=segments_to_srt(merged_segments),
         )
 
 

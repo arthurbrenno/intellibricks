@@ -46,6 +46,7 @@ from intellibricks.llms.util import (
     get_audio_duration,
     get_new_messages_with_response_format_instructions,
     get_parsed_response,
+    segments_to_srt,
     write_content_to_file,
 )
 
@@ -344,20 +345,12 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
                     chunk_transcription = AudioTranscription(
                         elapsed_time=chunk_elapsed_time,
                         text=transcription.text,
-                        segments=segments if segments else None,
+                        segments=segments,
                         cost=0.0,
                         duration=chunk_duration,
+                        srt=segments_to_srt(segments),
                     )
                     audio_transcriptions.append(chunk_transcription)
-
-                if not audio_transcriptions:
-                    return AudioTranscription(
-                        elapsed_time=0.0,
-                        text="",
-                        segments=None,
-                        cost=0.0,
-                        duration=0.0,
-                    )
 
                 merged_transcription = audio_transcriptions[0].merge(
                     *audio_transcriptions[1:]
@@ -391,7 +384,8 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         return AudioTranscription(
             elapsed_time=timeit.default_timer() - now,
             text=transcription.text,
-            segments=segments if segments else None,
+            segments=segments,
             cost=0.0,
             duration=audio_duration,
+            srt=segments_to_srt(segments),
         )

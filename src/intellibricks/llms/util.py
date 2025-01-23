@@ -33,6 +33,7 @@ if TYPE_CHECKING:
         Part,
         PartType,
         TextPart,
+        SentenceSegment,
         ToolInputType,
     )
 
@@ -1193,3 +1194,23 @@ def write_content_to_file(
         file_path = str(file_content)
 
     return file_path
+
+
+def segments_to_srt(segments: Sequence[SentenceSegment]) -> str:
+    def format_time(seconds: float) -> str:
+        hours = int(seconds // 3600)
+        remaining = seconds % 3600
+        minutes = int(remaining // 60)
+        remaining %= 60
+        seconds_int = int(remaining)
+        milliseconds = int((remaining - seconds_int) * 1000)
+        return f"{hours:02}:{minutes:02}:{seconds_int:02},{milliseconds:03}"
+
+    parts: list[str] = []
+    for idx, segment in enumerate(segments, start=1):
+        start_time = format_time(segment.start)
+        end_time = format_time(segment.end)
+        part = f"{idx}\n{start_time} --> {end_time}\n{segment.sentence}"
+        parts.append(part)
+
+    return "\n\n".join(parts)

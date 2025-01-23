@@ -38,6 +38,7 @@ from intellibricks.llms.util import (
     get_audio_duration,
     get_parsed_response,
     ms_type_to_schema,
+    segments_to_srt,
     write_content_to_file,
 )
 from openai import NOT_GIVEN, AsyncOpenAI
@@ -394,20 +395,12 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
                     chunk_transcription = AudioTranscription(
                         elapsed_time=chunk_elapsed_time,
                         text=transcription.text,
-                        segments=segments if segments else None,
+                        segments=segments,
                         cost=0.0,
                         duration=chunk_duration,
+                        srt=segments_to_srt(segments),
                     )
                     audio_transcriptions.append(chunk_transcription)
-
-                if not audio_transcriptions:
-                    return AudioTranscription(
-                        elapsed_time=0.0,
-                        text="",
-                        segments=None,
-                        cost=0.0,
-                        duration=0.0,
-                    )
 
                 merged_transcription = audio_transcriptions[0].merge(
                     *audio_transcriptions[1:]
@@ -443,4 +436,5 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
             segments=segments,
             cost=0.0,
             duration=audio_duration,
+            srt=segments_to_srt(segments),
         )
