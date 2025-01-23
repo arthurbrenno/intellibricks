@@ -34,11 +34,12 @@ from intellibricks.llms.types import (
     MessageChoice,
     Part,
     RawResponse,
-    TextTranscriptionOutput,
+    AudioTranscription,
     ToolCall,
     ToolCallSequence,
     ToolInputType,
     Usage,
+    SentenceSegment,
 )
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
@@ -288,7 +289,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         from groq import AsyncGroq
         from groq._types import NOT_GIVEN
 
@@ -304,13 +305,29 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
                 language=language or NOT_GIVEN,
                 temperature=temperature or NOT_GIVEN,
                 prompt=prompt or NOT_GIVEN,
+                response_format="verbose_json",
             )
 
         audio_duration = get_audio_duration(audio)
 
-        return TextTranscriptionOutput(
+        dict_transcription = transcription.model_dump()
+
+        segments: list[SentenceSegment] = []
+        for segment in dict_transcription.get("segments", []):
+            segments.append(
+                SentenceSegment(
+                    id=segment.get("id"),
+                    sentence=segment.get("text"),
+                    start=segment.get("start"),
+                    end=segment.get("end"),
+                    no_speech_prob=segment.get("no_speech_prob"),
+                )
+            )
+
+        return AudioTranscription(
             elapsed_time=timeit.default_timer() - now,
             text=transcription.text,
+            segments=segments,
             cost=0.0,
             duration=audio_duration,
         )

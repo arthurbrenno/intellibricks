@@ -50,7 +50,7 @@ from .types import (
     PartType,
     Prompt,
     RawResponse,
-    TextTranscriptionOutput,
+    AudioTranscription,
     ToolInputType,
     TraceParams,
     UserMessage,
@@ -852,7 +852,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         return run_sync(
             self.transcribe_async,
             audio=audio,
@@ -871,7 +871,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         debug_logger.debug("Entering transcribe_async method.")
 
         # Step 1: Initialize Trace Parameters
@@ -925,7 +925,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
             debug_logger.debug(
                 "Calling transcribe_async method of the Transcription Model."
             )
-            transcription_result: TextTranscriptionOutput = (
+            transcription_result: AudioTranscription = (
                 await transcription_model.transcribe_async(
                     audio=audio,
                     temperature=temperature,
@@ -953,7 +953,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
     async def __end_observability_logic(
         self,
         span: Maybe[StatefulSpanClient],
-        transcription_result: TextTranscriptionOutput,
+        transcription_result: AudioTranscription,
     ) -> None:
         debug_logger.debug("Ending Langfuse span.")
         span.map(lambda s: s.end(output={"text": transcription_result.text}))  # type: ignore
@@ -1049,7 +1049,7 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         last_exception = None
         synapses = (
             self.synapses
@@ -1084,7 +1084,7 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         last_exception = None
         synapses = (
             self.synapses

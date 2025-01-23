@@ -15,7 +15,7 @@ if TYPE_CHECKING:
         Prompt,
         RawResponse,
         ToolInputType,
-        TextTranscriptionOutput,
+        AudioTranscription,
     )
 
 
@@ -241,7 +241,7 @@ class TranscriptionModel(msgspec.Struct, frozen=True):
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         return run_sync(self.transcribe_async, audio, temperature, language, prompt)
 
     async def transcribe_async(
@@ -250,5 +250,5 @@ class TranscriptionModel(msgspec.Struct, frozen=True):
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         raise NotImplementedError

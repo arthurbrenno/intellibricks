@@ -1203,8 +1203,9 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             sections=[
                 SectionContent(
                     number=1,
-                    text=transcription.raw_transcription
-                    or self._could_not_transcript(),
+                    text=transcription.audio_transcription.text
+                    if transcription.audio_transcription is not None
+                    else self._could_not_transcript(),
                     md=transcription.parsed.final_answer.md,
                     images=[],
                 )

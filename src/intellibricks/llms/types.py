@@ -3110,13 +3110,24 @@ class CalledFunction[R = Any](msgspec.Struct, frozen=True, kw_only=True):
         return self.function.callable(**self.arguments)
 
 
-class WordSegment(msgspec.Struct, frozen=True):
-    word: str
+class SentenceSegment(msgspec.Struct, frozen=True):
+    id: int
+    """The unique identifier of the segment."""
+
+    sentence: str
+    """The transcribed text of the segment."""
+
     start: float
+    """The start time of the segment in seconds."""
+
     end: float
+    """The end time of the segment in seconds."""
+
+    no_speech_prob: float
+    """The probability that there is no speech in the segment."""
 
 
-class TranscriptionOutput(msgspec.Struct, frozen=True, tag_field="type"):
+class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
     """The output of a transcriptions result call."""
 
     elapsed_time: Annotated[
@@ -3126,6 +3137,22 @@ class TranscriptionOutput(msgspec.Struct, frozen=True, tag_field="type"):
             description="The amount of time it took to generate the transcriptions.",
         ),
     ]
+
+    text: Annotated[
+        str,
+        msgspec.Meta(
+            title="Text",
+            description="The transcribed text.",
+        ),
+    ]
+
+    segments: Annotated[
+        Optional[Sequence[SentenceSegment]],
+        msgspec.Meta(
+            title="Parts",
+            description="The transcribed text broken down into segments.",
+        ),
+    ] = None
 
     cost: Annotated[
         float,
@@ -3139,17 +3166,7 @@ class TranscriptionOutput(msgspec.Struct, frozen=True, tag_field="type"):
         float,
         msgspec.Meta(
             title="Duration",
-            description="The duration of the audio file in seconds.",
-        ),
-    ]
-
-
-class TextTranscriptionOutput(TranscriptionOutput, frozen=True, tag="text"):
-    text: Annotated[
-        str,
-        msgspec.Meta(
-            title="Text",
-            description="The transcribed text.",
+            description="The duration of the audio file in seconds. May not be precise.",
         ),
     ]
 

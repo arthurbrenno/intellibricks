@@ -23,12 +23,13 @@ from intellibricks.llms.types import (
     Part,
     PromptTokensDetails,
     RawResponse,
-    TextTranscriptionOutput,
+    AudioTranscription,
     ToolCall,
     ToolCallSequence,
     ToolInputType,
     TypeAlias,
     Usage,
+    SentenceSegment,
 )
 from intellibricks.llms.types import OpenAIModelType
 from intellibricks.llms.util import (
@@ -333,7 +334,7 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
         temperature: Optional[float] = None,
         language: Optional[Language] = None,
         prompt: Optional[str] = None,
-    ) -> TextTranscriptionOutput:
+    ) -> AudioTranscription:
         from openai import AsyncOpenAI
         from openai._types import NOT_GIVEN
 
@@ -346,11 +347,27 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
             language=language or NOT_GIVEN,
             temperature=temperature or NOT_GIVEN,
             prompt=prompt or NOT_GIVEN,
+            response_format="verbose_json",
+            timestamp_granularities=["segment"],
         )
 
-        return TextTranscriptionOutput(
+        dict_transcription = transcription.model_dump()
+        segments: list[SentenceSegment] = []
+        for segment in dict_transcription["segments"]:
+            segments.append(
+                SentenceSegment(
+                    id=segment["id"],
+                    sentence=segment["text"],
+                    start=segment["start"],
+                    end=segment["end"],
+                    no_speech_prob=segment["no_speech_prob"],
+                )
+            )
+
+        return AudioTranscription(
             elapsed_time=timeit.default_timer() - now,
             text=transcription.text,
+            segments=segments,
             cost=0.0,
             duration=get_audio_duration(audio),
         )

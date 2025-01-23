@@ -33,6 +33,7 @@ from intellibricks.llms.types import (
     GenerationConfig,
     Message,
     MessageFactory,
+    AudioTranscription,
     MessageSequence,
     MessageType,
     PartType,
@@ -83,8 +84,10 @@ class AgentResponse[S: msgspec.Struct = RawResponse](
     """Detailed information about the contents of the Agent completion. Including the contents, metadata, usage, id, etc."""
 
     tool_calls: Sequence[ToolCall] = msgspec.field(default_factory=list)
+    """A sequence of tool calls made by the agent."""
 
-    raw_transcription: Optional[str] = msgspec.field(default=None)
+    audio_transcription: Optional[AudioTranscription] = msgspec.field(default=None)
+    """The audio transcription of the input audio, if any."""
 
     @property
     def text(self) -> str:
@@ -490,7 +493,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             ]
         )
 
-        raw_transcription: Optional[str] = None
+        audio_transcription: Optional[AudioTranscription] = None
 
         if (
             self.audio_transcriptions_synapse is not None
@@ -505,15 +508,13 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
                         case AudioFilePart():
                             # Transcribe the audio part
                             audio_bytes = part.data
-                            raw_transcription = (
-                                await self.audio_transcriptions_synapse.transcribe_async(
-                                    audio=audio_bytes
-                                )
-                            ).text
+                            audio_transcription = await self.audio_transcriptions_synapse.transcribe_async(
+                                audio=audio_bytes
+                            )
                             # Create text part with transcription wrapped in tags
                             new_parts.append(
                                 TextPart(
-                                    text=f"<audio_transcription>\n{raw_transcription}\n</audio_transcription>"
+                                    text=f"<audio_transcription>\n{audio_transcription}\n</audio_transcription>"
                                 )
                             )
                         case _:
@@ -611,7 +612,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             agent=self,
             content=final_completion,  # type: ignore
             tool_calls=tool_call_sequence.sequence,
-            raw_transcription=raw_transcription,
+            audio_transcription=audio_transcription,
         )
 
     def _transform_input(self, inp: AgentInput) -> Sequence[Message]:

@@ -37,7 +37,7 @@ from .types import (
     PartType,
     Prompt,
     RawResponse,
-    TextTranscriptionOutput,
+    AudioTranscription,
     ToolInputType,
     TraceParams,
 )
@@ -599,7 +599,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput: ...
+    ) -> AudioTranscription: ...
     async def transcribe_async(
         self,
         audio: FileContent,
@@ -608,7 +608,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput: ...
+    ) -> AudioTranscription: ...
 
 class TextTranscriptionsSynapseCascade:
     synapses: Sequence[TextTranscriptionSynapse | TextTranscriptionsSynapseCascade]
@@ -628,7 +628,7 @@ class TextTranscriptionsSynapseCascade:
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput: ...
+    ) -> AudioTranscription: ...
     async def transcribe_async(
         self,
         audio: FileContent,
@@ -637,4 +637,4 @@ class TextTranscriptionsSynapseCascade:
         prompt: Optional[str] = None,
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
-    ) -> TextTranscriptionOutput: ...
+    ) -> AudioTranscription: ...
