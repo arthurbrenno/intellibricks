@@ -3192,6 +3192,37 @@ class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
 
         return "\n\n".join(parts)
 
+    def merge(self, *audio_transcriptions: AudioTranscription) -> AudioTranscription:
+        all_transcriptions = [self] + list(audio_transcriptions)
+        merged_elapsed_time = sum(t.elapsed_time for t in all_transcriptions)
+        merged_text = " ".join(t.text for t in all_transcriptions)
+        merged_cost = sum(t.cost for t in all_transcriptions)
+        merged_duration = sum(t.duration for t in all_transcriptions)
+        merged_segments: list[SentenceSegment] = []
+        for i, current_transcription in enumerate(all_transcriptions):
+            current_offset = sum(t.duration for t in all_transcriptions[:i])
+            if current_transcription.segments is not None:
+                for segment in current_transcription.segments:
+                    new_start = segment.start + current_offset
+                    new_end = segment.end + current_offset
+                    new_id = len(merged_segments)
+                    new_segment = SentenceSegment(
+                        id=new_id,
+                        sentence=segment.sentence,
+                        start=new_start,
+                        end=new_end,
+                        no_speech_prob=segment.no_speech_prob,
+                    )
+                    merged_segments.append(new_segment)
+        merged_segments_final = merged_segments if merged_segments else None
+        return AudioTranscription(
+            elapsed_time=merged_elapsed_time,
+            text=merged_text,
+            segments=merged_segments_final,
+            cost=merged_cost,
+            duration=merged_duration,
+        )
+
 
 class ThoughtDetail(msgspec.Struct, frozen=True):
     detail: Annotated[
