@@ -1,4 +1,79 @@
-"""llms schemas models"""
+"""
+LLM Schema Definitions and Data Models
+
+This module provides a comprehensive set of schemas and data models for working with Large Language Models (LLMs).
+It enables type-safe interactions with various LLM providers while supporting multimodal inputs, tool calling,
+and response handling across different platforms.
+
+Key Components:
+1. Core Message Structures:
+   - Parts: Fundamental content units (TextPart, ImageFilePart, AudioFilePart, ToolCallPart)
+   - Messages: Conversation components (UserMessage, AssistantMessage, SystemMessage)
+   - Sequences: Ordered collections (MessageSequence, PartSequence)
+
+2. Configuration Models:
+   - GenerationConfig: Controls generation behavior (temperature, max_tokens, tools)
+   - CacheConfig: Manages response caching strategies
+   - TraceParams: Enables request tracing and analytics
+
+3. Provider Compatibility:
+   - Conversion methods for OpenAI, Google GenAI, Anthropic, Groq, and Cerebras formats
+   - Type aliases for different provider models (OpenAIModelType, GoogleModelType, etc.)
+
+4. Advanced Features:
+   - Tool calling infrastructure with function definitions and call handling
+   - Multimodal content handling (images, audio, video, websites)
+   - Structured output parsing with ChainOfThought and GeneratedAssistantMessage
+   - Audio transcription models and processing
+
+5. Utility Classes:
+   - Usage statistics tracking
+   - Cost calculation
+   - Media description models for visual/audio content analysis
+
+Key Features:
+- Strong typing with msgspec for validation and serialization
+- Cross-provider compatibility through format conversion methods
+- Extensible factory patterns for content creation
+- Support for complex LLM interactions including:
+  * Multi-turn conversations
+  * Function/tool calling
+  * Mixed media inputs (text + images + audio)
+  * Response caching and tracing
+  * Structured output generation
+
+Example Usage:
+    >>> from intellibricks.llms.types import (
+    >>>     UserMessage, GenerationConfig,
+    >>>     TextPart, ImageFilePart
+    >>> )
+
+    >>> # Create multimodal message
+    >>> msg = UserMessage(contents=[
+    >>>     TextPart("Analyze this image:"),
+    >>>     ImageFilePart.from_url("https://example.com/image.jpg")
+    >>> ])
+
+    >>> # Configure generation
+    >>> config = GenerationConfig(
+    >>>     temperature=0.7,
+    >>>     max_tokens=500,
+    >>>     tools=[search_web, calculate]
+    >>> )
+
+    >>> # Get completion
+    >>> completion = model.chat([msg])
+    >>> print(completion.choices[0].message.contents)
+
+Provider Support Matrix:
+- OpenAI: Full (messages, tools, images)
+- Google GenAI: Full (messages, tools, multimodal)
+- Anthropic: Messages, basic tools
+- Groq: Messages, basic tools
+- Cerebras: Messages, basic tools
+
+Note: Requires installation of provider-specific SDKs for format conversions
+"""
 
 from __future__ import annotations
 
@@ -303,6 +378,31 @@ warning_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 class GenerationConfig(msgspec.Struct, frozen=True, kw_only=True):
+    """Configuration parameters for controlling LLM generation behavior.
+
+    Attributes:
+        n: Number of completions to generate. Default 1 if not specified.
+        temperature: Controls randomness (0.0=deterministic, 1.0=creative).
+        max_tokens: Maximum number of tokens to generate in response.
+        max_retries: Maximum retry attempts for failed generations (1-5).
+        top_p: Nucleus sampling probability threshold.
+        top_k: Limit sampling to top K probable tokens.
+        stop_sequences: List of strings that stop generation when encountered.
+        cache_config: Configuration for response caching.
+        trace_params: Parameters for request tracing and analytics.
+        tools: List of functions available for tool calling.
+        general_web_search: Whether to enable web search augmentation.
+        language: Output language for localization. Defaults to English.
+        timeout: Maximum time in seconds to wait for completion.
+
+    Example:
+        >>> config = GenerationConfig(
+        ...     temperature=0.7,
+        ...     max_tokens=500,
+        ...     tools=[search_web, calculate]
+        ... )
+    """
+
     n: Annotated[
         Optional[int],
         msgspec.Meta(
@@ -446,6 +546,23 @@ class GenerationConfig(msgspec.Struct, frozen=True, kw_only=True):
 
 
 class MimeType(str, Enum):
+    """Enumeration of supported media MIME types.
+
+    Values:
+        image_jpeg: JPEG image format
+        image_png: PNG image format
+        audio_mp3: MP3 audio format
+        audio_wav: WAV audio format
+        video_mp4: MP4 video format
+        video_avi: AVI video format
+        video_mov: QuickTime video format
+        video_webm: WebM video format
+
+    Example:
+        >>> MimeType.image_png
+        <MimeType.image_png: 'image/png'>
+    """
+
     image_jpeg = "image/jpeg"
     image_png = "image/png"
     audio_mp3 = "audio/mp3"
@@ -467,51 +584,25 @@ class RawResponse(msgspec.Struct, frozen=True):
 
 
 class TraceParams(TypedDict, total=False):
-    """
-    Parameters for updating the current trace, including metadata and context information.
-
-    This TypedDict is used to specify the parameters that can be updated for the current trace.
-    Each field corresponds to an attribute of the trace that can be dynamically modified
-    during execution. These parameters are useful for categorization, filtering, and analysis
-    within the Langfuse UI.
+    """Parameters for tracking and analyzing LLM interactions.
 
     Attributes:
-        name (Optional[str]):
-            Identifier of the trace. Useful for sorting and filtering in the UI.
+        name: Unique identifier for the trace
+        input: Input parameters for the traced operation
+        output: Result of the traced operation
+        user_id: ID of user initiating the request
+        session_id: Grouping identifier for related traces
+        version: Version of the trace. Can be used for tracking changes
+        release: Deployment release identifier
+        metadata: Custom JSON-serializable metadata
+        tags: Categorization labels for filtering
+        public: Visibility flag for trace data
 
-        input (Optional[Any]):
-            The input parameters of the trace, providing context about the observed operation
-            or function call.
-
-        output (Optional[Any]):
-            The output or result of the trace.
-
-        user_id (Optional[str]):
-            The ID of the user that triggered the execution. Used to provide user-level analytics.
-
-        session_id (Optional[str]):
-            Used to group multiple traces into a session in Langfuse. Typically your own session
-            or thread identifier.
-
-        version (Optional[str]):
-            The version of the trace type. Helps in understanding how changes to the trace type
-            affect metrics and is useful for debugging.
-
-        release (Optional[str]):
-            The release identifier of the current deployment. Helps in understanding how changes
-            in different deployments affect metrics and is useful for debugging.
-
-        metadata (Optional[Any]):
-            Additional metadata for the trace. Can be any JSON-serializable object. Metadata is
-            merged when updated via the API.
-
-        tags (Optional[list[str]]):
-            Tags used to categorize or label traces. Traces can be filtered by tags in the
-            Langfuse UI and through the GET API.
-
-        public (Optional[bool]):
-            Indicates whether the trace is public. If set to `True`, the trace is accessible publicly;
-            otherwise, it remains private.
+    Example:
+        >>> trace = TraceParams(
+        ...     name="customer_support",
+        ...     tags=["urgent", "billing"]
+        ... )
     """
 
     name: Optional[str]
@@ -527,6 +618,19 @@ class TraceParams(TypedDict, total=False):
 
 
 class CacheConfig(msgspec.Struct, frozen=True, kw_only=True):
+    """Configuration for response caching mechanisms.
+
+    Attributes:
+        ttl: Time-to-live duration for cached entries
+        cache_key: Unique identifier for cache lookups
+
+    Example:
+        >>> cache = CacheConfig(
+        ...     ttl=datetime.timedelta(minutes=30),
+        ...     cache_key="user_preferences"
+        ... )
+    """
+
     ttl: Annotated[
         datetime.timedelta,
         msgspec.Meta(
@@ -586,9 +690,15 @@ class CacheConfig(msgspec.Struct, frozen=True, kw_only=True):
 
 @dp.AbstractFactory
 class Part(msgspec.Struct, tag_field="type", frozen=True):
-    """
-    Represents a part of a multi-content message. The use-case is for
-    multimodal completions.
+    """Base class for multimodal message components.
+
+    Provides factory methods for creating specific part types and conversion
+    methods to various provider formats. Direct subclasses should implement
+    format-specific conversion logic.
+
+    Example:
+        >>> Part.from_text("Hello world")
+        TextPart(text='Hello world')
     """
 
     @classmethod
@@ -793,6 +903,15 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
 
 
 class WebsitePart(Part, frozen=True, tag="website"):
+    """Represents a website part in a multi-content message.
+
+    Attributes:
+        url: The URL of the website
+
+    Example:
+        >>> WebsitePart(url="https://www.example.com")
+    """
+
     url: str
 
     def __post_init__(self) -> None:
@@ -856,6 +975,15 @@ class WebsitePart(Part, frozen=True, tag="website"):
 
 
 class TextPart(Part, frozen=True, tag="text"):
+    """Text content component for messages.
+
+    Attributes:
+        text: String content of the text part
+
+    Example:
+        >>> TextPart(text="Welcome to our service!")
+    """
+
     text: str
 
     @ensure_module_installed("anthropic", "anthropic")
@@ -912,7 +1040,16 @@ class TextPart(Part, frozen=True, tag="text"):
 
 
 class ToolResponsePart(Part, frozen=True, tag="tool_response"):
-    """Represents a tool part in a multi-content message."""
+    """Represents a tool part in a multi-content message.
+
+    Attributes:
+        tool_name: The name of the tool
+        tool_call_id: The ID of the tool call
+        tool_response: The response from the tool
+
+    Example:
+        >>> ToolResponsePart(tool_name="calculator", tool_call_id="123", tool_response="5")
+    """
 
     tool_name: str
     """The name of the tool."""
@@ -980,6 +1117,18 @@ class ToolResponsePart(Part, frozen=True, tag="tool_response"):
 
 @dp.AbstractFactory
 class FilePart(Part, frozen=True, tag="file"):
+    """Base class for file-based parts in multimodal messages.
+    Cannot be instantiated directly.
+
+    Attributes:
+        data: bytes file data
+        mime_type: The MIME type of the file
+        metadata: Optional metadata for the file
+
+    Example:
+        >>> ImageFilePart(data=b"...", mime_type=MimeType.image_jpeg)
+    """
+
     data: bytes
     """bytes file data."""
 
@@ -1033,6 +1182,17 @@ class FilePart(Part, frozen=True, tag="file"):
 
 
 class VideoFilePart(FilePart, frozen=True, tag="video"):
+    """Video content component for messages.
+
+    Attributes:
+        data: bytes file data
+        mime_type: The MIME type of the file
+        metadata: Optional metadata for the file
+
+    Example:
+        >>> VideoFilePart(data=b"...", mime_type=MimeType.video_mp4)
+    """
+
     @ensure_module_installed("google.genai", "google-genai")
     @override
     def to_google_part(self) -> GenAIPart:
@@ -1087,6 +1247,17 @@ class VideoFilePart(FilePart, frozen=True, tag="video"):
 
 
 class AudioFilePart(FilePart, frozen=True, tag="audio"):
+    """Audio content component for messages.
+
+    Attributes:
+        data: bytes file data
+        mime_type: The MIME type of the file
+        metadata: Optional metadata for the file
+
+    Example:
+        >>> AudioFilePart(data=b"...", mime_type=MimeType.audio_mp3)
+    """
+
     @override
     def to_anthropic_part(self) -> ContentBlockParam:
         raise NotImplementedError(
@@ -1157,6 +1328,17 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
 
 
 class ImageFilePart(FilePart, frozen=True, tag="image"):
+    """Image content component for messages.
+
+    Attributes:
+        data: bytes file data
+        mime_type: The MIME type of the file
+        metadata: Optional metadata for the file
+
+    Example:
+        >>> ImageFilePart(data=b"...", mime_type=MimeType.image_jpeg)
+    """
+
     @ensure_module_installed("anthropic.types.image_block_param", "anthropic")
     @override
     def to_anthropic_part(self) -> ContentBlockParam:
@@ -1241,6 +1423,19 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
 
 
 class ToolCallPart(Part, frozen=True, tag="tool_call"):
+    """Represents a function/method invocation request.
+
+    Attributes:
+        function_name: Name of the function to call
+        arguments: Keyword arguments for the function call
+
+    Example:
+        >>> ToolCallPart(
+        ...     function_name="get_weather",
+        ...     arguments={"location": "Paris"}
+        ... )
+    """
+
     function_name: str
     arguments: dict[str, Any]
 
@@ -1301,6 +1496,17 @@ PartType: TypeAlias = (
 
 
 class PartFactory:
+    """Factory class for creating Part instances from dictionaries.
+
+    Example:
+        >>> part_dict = {
+        ...     "type": "text",
+        ...     "text": "Hello world"
+        ... }
+        >>> PartFactory.create_from_dict(part_dict)
+        TextPart(text='Hello world')
+    """
+
     @staticmethod
     def create_from_dict(part: dict[str, Any]) -> PartType:
         part_type = part.get("type", None)
@@ -1350,6 +1556,15 @@ class PartFactory:
 
 
 class PartSequece(msgspec.Struct, frozen=True):
+    """Represents a sequence of parts in a multimodal message.
+
+    Attributes:
+        parts: Sequence of parts
+
+    Example:
+        >>> PartSequence(parts=[TextPart(text="Hello"), ImageFilePart(data=b"...")])
+    """
+
     parts: Sequence[PartType]
 
 
@@ -1365,7 +1580,17 @@ class PartSequece(msgspec.Struct, frozen=True):
 
 
 class Prompt(msgspec.Struct, frozen=True):
-    """Represents a prompt"""
+    """Represents a prompt for an Generative AI model.
+    Provides a way to compile the prompt with replacement values.
+
+    Attributes:
+        content: The content of the prompt
+
+    Example:
+        >>> Prompt(content="Hello! How are you?")
+        >>> Prompt(content="Hi, my name is {{name}}.")
+        >>> Prompt(content="I need help on solving a Python problem.")
+    """
 
     content: Annotated[
         str,
@@ -1428,6 +1653,12 @@ class Prompt(msgspec.Struct, frozen=True):
 
 
 class Tool(msgspec.Struct, frozen=True):
+    """Represents a tool that can be used in a multimodal message.
+
+    Example:
+        >>> Tool(name="calculator", description="A simple calculator tool")
+    """
+
     def to_callable(self) -> Callable[..., Any]:
         raise NotImplementedError
 
@@ -1480,6 +1711,16 @@ type ToolInputType = Tool | Callable[..., Any]
 
 
 class ToolCall[R = Any](msgspec.Struct, kw_only=True, frozen=True):
+    """Represents a call to a tool with arguments.
+
+    Attributes:
+        id: The unique identifier of the tool call
+        called_function: The function to call with arguments
+
+    Example:
+        >>> ToolCall(id="123", called_function=Tool(name="calculator", description="A simple calculator tool"))
+    """
+
     id: str = msgspec.field(default_factory=lambda: str(uuid.uuid4()))
     called_function: CalledFunction[R]
 
@@ -1535,9 +1776,13 @@ class ToolCall[R = Any](msgspec.Struct, kw_only=True, frozen=True):
 
 
 class ToolCallSequence[R = Any](msgspec.Struct, frozen=True):
-    """
-    Container for a heterogeneous list of ToolCall objects.
-    Each item in *Ts can be a different type, e.g. [str, int, float].
+    """Represents a sequence of tool calls.
+
+    Attributes:
+        sequence: Sequence of tool calls
+
+    Example:
+        >>> ToolCallSequence(sequence=[ToolCall(called_function=Tool(name="calculator", description="A simple calculator tool"))])
     """
 
     sequence: Sequence[ToolCall[R]]
@@ -1599,6 +1844,16 @@ class ToolCallSequence[R = Any](msgspec.Struct, frozen=True):
 
 
 class Message(msgspec.Struct, tag_field="role", frozen=True):
+    """Represents a message in a conversation.
+
+    Attributes:
+        contents: The contents of the message
+
+    Example:
+        >>> Message(contents=[TextPart("Hello! How are you?")])
+
+    """
+
     contents: Annotated[
         Sequence[PartType],
         msgspec.Meta(
@@ -1651,6 +1906,15 @@ class Message(msgspec.Struct, tag_field="role", frozen=True):
 
 
 class DeveloperMessage(Message, frozen=True, tag="developer"):
+    """Represents a message from a developer in a conversation.
+
+    Attributes:
+        name: An optional name for the participant. Provides the model information to differentiate between participants of the same role.
+
+    Example:
+        >>> DeveloperMessage(contents=[TextPart("You are a helpful assistant.")])
+    """
+
     name: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -1731,10 +1995,32 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
 
 
 class SystemMessage(DeveloperMessage, frozen=True, tag="system"):
+    """Represents a system message in a conversation.
+
+    Attributes:
+        name: An optional name for the participant. Provides the model information to differentiate between participants of the same role.
+
+    Example:
+        >>> SystemMessage(contents=[TextPart("You are a helpful assistant.")])
+    """
+
     pass
 
 
 class UserMessage(Message, frozen=True, tag="user"):
+    """User role message in a conversation.
+
+    Attributes:
+        contents: Multimedia components of the message
+        name: Optional identifier for multi-user scenarios
+
+    Example:
+        >>> UserMessage(
+        ...     contents=[TextPart("What's the weather today?")],
+        ...     name="Alice"
+        ... )
+    """
+
     name: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -1809,6 +2095,21 @@ class UserMessage(Message, frozen=True, tag="user"):
 
 
 class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assistant"):
+    """AI-generated message with optional tool calls.
+
+    Attributes:
+        contents: Generated response content
+        refusal: Optional refusal rationale if request denied
+        name: Optional model identifier for multi-model dialogs
+        tool_calls: List of function/method invocations
+
+    Example:
+        >>> AssistantMessage(
+        ...     contents=[TextPart("It's sunny in Paris!")],
+        ...     tool_calls=[weather_tool_call]
+        ... )
+    """
+
     refusal: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -1971,6 +2272,18 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
 class GeneratedAssistantMessage[T = RawResponse, R = Any](
     AssistantMessage[R], frozen=True, kw_only=True, tag="generated_assistant"
 ):
+    """AI-generated message with structured model output.
+
+    Attributes:
+        parsed: The structured model output of the message
+
+    Example:
+        >>> GeneratedAssistantMessage(
+        ...     contents=[TextPart("{\"text\": \"Hello!\"}")],
+        ...     parsed=UserDefinedResponse(text="Hello!")
+        ... )
+    """
+
     parsed: Annotated[
         T,
         msgspec.Meta(
@@ -1981,6 +2294,20 @@ class GeneratedAssistantMessage[T = RawResponse, R = Any](
 
 
 class ToolMessage(Message, frozen=True, tag="tool"):
+    """Represents a message from a tool in a conversation.
+
+    Attributes:
+        tool_call_id: The unique identifier of the tool call
+        name: The name of the tool
+
+    Example:
+        >>> ToolMessage(
+        ...     contents=[TextPart("The weather is sunny today.")],
+        ...     tool_call_id="123",
+        ...     name="weather_tool"
+        ... )
+    """
+
     tool_call_id: str
     name: str
 
@@ -2039,6 +2366,18 @@ class ToolMessage(Message, frozen=True, tag="tool"):
 
 
 class MessageSequence(msgspec.Struct, frozen=True):
+    """Ordered collection of conversation messages.
+
+    Attributes:
+        messages: Sequence of Message objects
+
+    Example:
+        >>> history = MessageSequence([
+        ...     UserMessage.from_text("Hello"),
+        ...     AssistantMessage.from_text("Hi there!")
+        ... ])
+    """
+
     messages: Sequence[Message]
 
     @property
@@ -2095,6 +2434,19 @@ MessageType: TypeAlias = (
 
 
 class MessageFactory(msgspec.Struct, frozen=True):
+    """Factory class for creating Message instances from dictionaries.
+
+    Example:
+        >>> message_dict = {
+        ...     "role": "user",
+        ...     "contents": [
+        ...         {"type": "text", "text": "Hello! How are you?"}
+        ...     ]
+        ... }
+        >>> MessageFactory.create_from_dict(message_dict)
+        UserMessage(contents=[TextPart(text='Hello! How are you?')])
+    """
+
     @staticmethod
     def create_from_dict(_dict: dict[str, Any], /) -> MessageType:
         if "role" not in _dict:
@@ -2129,7 +2481,16 @@ class MessageFactory(msgspec.Struct, frozen=True):
 
 
 class LogProb(msgspec.Struct):
-    """LogProb of a token."""
+    """Log probability of a token generated by the model.
+
+    Attributes:
+        token: The token generated by the model
+        logprob: The log probability of the token
+        bytes: The byte representation of the token
+
+    Example:
+        >>> LogProb(token="Hello", logprob=-0.5, bytes=[0x48, 0x65, 0x6C, 0x6C, 0x6F])
+    """
 
     token: str = msgspec.field(default_factory=str)
     logprob: float = msgspec.field(default_factory=float)
@@ -2137,6 +2498,23 @@ class LogProb(msgspec.Struct):
 
 
 class MessageChoice[T](msgspec.Struct, frozen=True, kw_only=True):
+    """A choice generated by the model.
+
+    Attributes:
+        index: Index of the choice in the list of choices returned by the model
+        message: The message content for this choice, including role and text
+        logprobs: Log probability of the choice
+        finish_reason: The reason why the model stopped generating tokens for this choice
+
+    Example:
+        >>> MessageChoice(
+        ...     index=0,
+        ...     message=GeneratedAssistantMessage(
+        ...         contents=[TextPart(text="Hello there, how may I assist you today?")]
+        ...     )
+        ... )
+    """
+
     index: Annotated[
         int,
         msgspec.Meta(
@@ -2191,7 +2569,15 @@ class MessageChoice[T](msgspec.Struct, frozen=True, kw_only=True):
 
 
 class PromptTokensDetails(msgspec.Struct, frozen=True):
-    """Breakdown of tokens used in prompt"""
+    """Breakdown of tokens used in the prompt
+
+    Attributes:
+        audio_tokens: The number of audio tokens used in the prompt
+        cached_tokens: The number of cached tokens used in the prompt
+
+    Example:
+        >>> PromptTokensDetails(audio_tokens=9, cached_tokens=3)
+    """
 
     audio_tokens: Annotated[
         int | None,
@@ -2231,7 +2617,15 @@ class PromptTokensDetails(msgspec.Struct, frozen=True):
 
 
 class CompletionTokensDetails(msgspec.Struct, frozen=True):
-    """Breakdown of tokens generated in completion"""
+    """Breakdown of tokens generated in completion
+
+    Attributes:
+        audio_tokens: The number of audio tokens used in the prompt
+        reasoning_tokens: Tokens generated by the model for reasoning
+
+    Example:
+        >>> CompletionTokensDetails(audio_tokens=9, reasoning_tokens=3)
+    """
 
     audio_tokens: Annotated[
         int | None,
@@ -2281,6 +2675,17 @@ class CompletionTokensDetails(msgspec.Struct, frozen=True):
 
 
 class Usage(msgspec.Struct, frozen=True):
+    """Usage statistics for a completion response.
+
+    Attributes:
+        prompt_tokens: The number of tokens consumed by the input prompt
+        completion_tokens: The number of tokens generated in the completion response
+        total_tokens: The total number of tokens consumed, including both prompt and completion
+
+    Example:
+        >>> Usage(prompt_tokens=9, completion_tokens=12, total_tokens=21)
+    """
+
     prompt_tokens: Annotated[
         int | None,
         msgspec.Meta(
@@ -2403,7 +2808,22 @@ class Usage(msgspec.Struct, frozen=True):
 
 
 class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True):
-    """Immutable, memory-efficient representation of a completion response from a chat model."""
+    """Structured response from a chat model invocation.
+
+    Attributes:
+        elapsed_time: Total processing time in seconds
+        id: Unique response identifier
+        model: Model used for generation
+        choices: List of generated message options
+        usage: Token consumption statistics
+
+    Example:
+        >>> completion = ChatCompletion(
+        ...     model="gpt-4",
+        ...     choices=[message_choice],
+        ...     usage=Usage(prompt_tokens=100, completion_tokens=50)
+        ... )
+    """
 
     elapsed_time: Annotated[
         float,
@@ -2558,7 +2978,24 @@ class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True)
 
 
 class Property(msgspec.Struct, frozen=True, kw_only=True):
-    """Represents a property within a parameter."""
+    """Represents a property within a parameter.
+
+    Attributes:
+        name: The name of the property
+        type: The JSON schema type of the property
+        description: The description of the property
+        enum: The enum values of the property
+        properties: Nested properties
+        items: Items for arrays
+
+    Example:
+        >>> Property(
+        ...     name="name",
+        ...     type="string",
+        ...     description="The name of the user",
+        ...     enum=["Alice", "Bob", "Ana"]
+        ... )
+    """
 
     type: str | Literal["object", "string", "number", "integer", "boolean", "array"]
     description: Optional[str] = None
@@ -2568,7 +3005,25 @@ class Property(msgspec.Struct, frozen=True, kw_only=True):
 
 
 class Parameter(msgspec.Struct, frozen=True, kw_only=True):
-    """Represents a single parameter."""
+    """Represents a parameter within a function.
+
+    Attributes:
+        name: The name of the parameter
+        type: The JSON schema type of the parameter
+        description: The description of the parameter
+        enum: The enum values of the parameter
+        properties: Nested properties
+        items: Items for arrays
+        required: Whether the parameter is required
+
+    Example:
+        >>> Parameter(
+        ...     name="name",
+        ...     type="string",
+        ...     description="The name of the user",
+        ...     enum=["Alice", "Bob", "Ana"]
+        ... )
+    """
 
     name: str
     type: str | Literal["object", "string", "number", "integer", "boolean", "array"]
@@ -2583,7 +3038,19 @@ class Parameter(msgspec.Struct, frozen=True, kw_only=True):
 
 
 class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
-    """Represents a function with a name, description, and parameters."""
+    """Callable tool definition for LLM function calling.
+
+    Attributes:
+        name: Function identifier
+        parameters: Input schema definitions
+        callable: Actual implementation function
+        description: Natural language description
+
+    Example:
+        >>> def add(a: int, b: int) -> int: return a + b
+        >>> Function.from_callable(add)
+        Function(name='add', parameters=[...])
+    """
 
     name: str
     parameters: Sequence[Parameter]
@@ -3073,7 +3540,16 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
 
 
 class CalledFunction[R = Any](msgspec.Struct, frozen=True, kw_only=True):
-    """Represents a function that was called with arguments by an AI."""
+    """Represents a function that was called with arguments by an AI.
+
+    Attributes:
+        function: The function that was called
+        arguments: The arguments that were passed to the function
+
+    Example:
+        >>> def add(a: int, b: int) -> int: return a + b
+        >>> called_function = CalledFunction(function=Function.from_callable(add), arguments={"a": 2, "b": 3})
+    """
 
     function: Function[R]
     arguments: dict[str, Any] = msgspec.field(default_factory=dict)
@@ -3111,6 +3587,19 @@ class CalledFunction[R = Any](msgspec.Struct, frozen=True, kw_only=True):
 
 
 class SentenceSegment(msgspec.Struct, frozen=True):
+    """A segment of a transcribed audio file.
+
+    Attributes:
+        id: The unique identifier of the segment
+        sentence: The transcribed text of the segment
+        start: The start time of the segment in seconds
+        end: The end time of the segment in seconds
+        no_speech_prob: The probability that there is no speech in the segment
+
+    Example:
+        >>> SentenceSegment(id=0, sentence="Hello, world!", start=0.0, end=1.5, no_speech_prob=0.0)
+    """
+
     id: int
     """The unique identifier of the segment."""
 
@@ -3128,7 +3617,22 @@ class SentenceSegment(msgspec.Struct, frozen=True):
 
 
 class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
-    """The output of a transcriptions result call."""
+    """Result of audio-to-text transcription.
+
+    Attributes:
+        elapsed_time: Processing time in seconds
+        text: Full transcribed text
+        segments: Timed text segments with confidence
+        cost: API cost in USD
+        duration: Audio length in seconds
+
+    Example:
+        >>> transcription = AudioTranscription(
+        ...     text="Hello world",
+        ...     segments=[...],
+        ...     cost=0.02
+        ... )
+    """
 
     elapsed_time: Annotated[
         float,
@@ -3225,6 +3729,15 @@ class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
 
 
 class ThoughtDetail(msgspec.Struct, frozen=True):
+    """A detailed explanation of a specific aspect of a reasoning step.
+
+    Attributes:
+        detail: A granular explanation of a specific aspect of the reasoning step
+
+    Example:
+        >>> ThoughtDetail(detail="First, I added 2 + 3")
+    """
+
     detail: Annotated[
         str,
         msgspec.Meta(
@@ -3235,6 +3748,24 @@ class ThoughtDetail(msgspec.Struct, frozen=True):
 
 
 class Step(msgspec.Struct, frozen=True):
+    """A step in a chain of thought.
+
+    Attributes:
+        step_number: The position of this step in the overall chain of thought
+        explanation: A concise description of what was done in this step
+        details: A list of specific details for each step in the reasoning
+
+    Example:
+        >>> Step(
+        ...     step_number=1,
+        ...     explanation="Analyze the input statement",
+        ...     details=[
+        ...         ThoughtDetail(detail="Check initial values"),
+        ...         ThoughtDetail(detail="Confirm there are no inconsistencies")
+        ...     ]
+        ... )
+    """
+
     step_number: Annotated[
         int,
         msgspec.Meta(
@@ -3264,6 +3795,21 @@ class Step(msgspec.Struct, frozen=True):
 
 
 class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True):
+    """Structured reasoning process with final answer.
+
+    Attributes:
+        general_title: High-level description of reasoning goal
+        steps: Logical steps in reasoning process
+        final_answer: Conclusion of the reasoning chain
+
+    Example:
+        >>> ChainOfThought(
+        ...     general_title="Math problem solution",
+        ...     steps=[step1, step2],
+        ...     final_answer=42
+        ... )
+    """
+
     general_title: Annotated[
         str,
         msgspec.Meta(
@@ -3305,6 +3851,23 @@ class ChainOfThought(msgspec.Struct, Generic[_T], frozen=True):
 
 
 class GraphicalElementDescription(msgspec.Struct, frozen=True):
+    """A description of a visual or auditory element within a media file.
+
+    Attributes:
+        type: The general category of this visual element within the media
+        details: A detailed description of the characteristics and properties of this element
+        role: The purpose or function of this element within the context of the media
+        relationships: How this element is related to other elements in the media
+
+    Example:
+        >>> GraphicalElementDescription(
+        ...     type="Text string",
+        ...     details="The number '3' in the top-left corner",
+        ...     role="Represents the coefficient of x",
+        ...     relationships=["Located above the main equation"]
+        ... )
+    """
+
     type: Annotated[
         str,
         msgspec.Meta(
@@ -3378,6 +3941,21 @@ class GraphicalElementDescription(msgspec.Struct, frozen=True):
 
 
 class MediaStructure(msgspec.Struct, frozen=True):
+    """A description of the overall structure and organization of a visual or auditory media file.
+
+    Attributes:
+        layout: A description of how the elements are arranged and organized within the media
+        groupings: Significant groupings or clusters of elements that appear to function together
+        focal_point: The primary focal point that draws attention
+
+    Example:
+        >>> MediaStructure(
+        ...     layout="A step-by-step diagram",
+        ...     groupings=["The main body of the text", "The elements forming the control panel"],
+        ...     focal_point="The large heading at the top"
+        ... )
+    """
+
     layout: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -3433,6 +4011,23 @@ class MediaStructure(msgspec.Struct, frozen=True):
 
 
 class VisualMediaDescription(msgspec.Struct, frozen=True):
+    """Detailed description of visual content.
+
+    Attributes:
+        overall_description: Comprehensive content summary
+        content_type: Category (diagram, photo, etc.)
+        visual_elements: Individual components
+        structure: Spatial organization
+        dominant_features: Salient visual characteristics
+        intended_purpose: Interpreted purpose
+
+    Example:
+        >>> desc = VisualMediaDescription(
+        ...     content_type="infographic",
+        ...     visual_elements=[...]
+        ... )
+    """
+
     overall_description: Annotated[
         str,
         msgspec.Meta(
@@ -3534,6 +4129,23 @@ class VisualMediaDescription(msgspec.Struct, frozen=True):
 
 
 class AudioElementDescription(msgspec.Struct, frozen=True):
+    """A description of an audio element within a media file.
+
+    Attributes:
+        type: The general category of this audio element within the media
+        details: A detailed description of the auditory characteristics and properties of this element
+        role: The purpose or function of this audio element within the context of the media
+        relationships: How this audio element is related to other elements in the media
+
+    Example:
+        >>> AudioElementDescription(
+        ...     type="Speech segment",
+        ...     details="The word 'example' spoken with emphasis",
+        ...     role="Introduces the main subject",
+        ...     relationships=["Occurs after a period of silence"]
+        ... )
+    """
+
     type: Annotated[
         str,
         msgspec.Meta(
@@ -3602,6 +4214,21 @@ class AudioElementDescription(msgspec.Struct, frozen=True):
 
 
 class AudioStructure(msgspec.Struct, frozen=True):
+    """A description of the overall structure and organization of an audio media file.
+
+    Attributes:
+        organization: A description of how the audio elements are arranged and organized within the media
+        groupings: Significant groupings of elements that appear to function together
+        focal_point: The primary focal point that draws attention
+
+    Example:
+        >>> AudioStructure(
+        ...     organization="A narrative with a clear beginning, middle, and end",
+        ...     groupings=["The introduction of the song", "The main argument of the speech"],
+        ...     focal_point="The main theme of the music"
+        ... )
+    """
+
     organization: Annotated[
         Optional[str],
         msgspec.Meta(
@@ -3654,6 +4281,23 @@ class AudioStructure(msgspec.Struct, frozen=True):
 
 
 class AudioDescription(msgspec.Struct, frozen=True):
+    """Detailed description of audio content.
+
+    Attributes:
+        overall_description: Comprehensive content summary
+        content_type: Category (podcast, music, etc.)
+        audio_elements: Individual components
+        structure: Spatial organization
+        dominant_auditory_features: Salient auditory characteristics
+        intended_purpose: Interpreted purpose
+
+    Example:
+        >>> desc = AudioDescription(
+        ...     content_type="podcast",
+        ...     audio_elements=[...]
+        ... )
+    """
+
     overall_description: Annotated[
         str,
         msgspec.Meta(
