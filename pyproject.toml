@@ -6,15 +6,15 @@ readme = "README.md"
 requires-python = ">=3.13.0"
 dependencies = [
     "langfuse>=2.57.0",
- "groq>=0.13.1",
- "google-genai>=0.3.0",
- "msgspec",
- "langchain-core==0.3.28",
- "openai>=1.54.3",
- "beautifulsoup4>=4.12.3",
- "mypy>=1.14.1",
- "python-dotenv>=1.0.1",
- "architecture>=0.5.23",
+    "groq>=0.13.1",
+    "google-genai>=0.3.0",
+    "msgspec",
+    "langchain-core==0.3.28",
+    "openai>=1.54.3",
+    "beautifulsoup4>=4.12.3",
+    "mypy>=1.14.1",
+    "python-dotenv>=1.0.1",
+    "architecture>=0.5.23",
 ]
 
 [project.urls]
