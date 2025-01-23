@@ -550,18 +550,48 @@ class MimeType(str, Enum):
     """Enumeration of supported media MIME types.
 
     Values:
-        image_jpeg: JPEG image format
-        image_png: PNG image format
-        audio_mp3: MP3 audio format
-        audio_wav: WAV audio format
-        video_mp4: MP4 video format
-        video_avi: AVI video format
-        video_mov: QuickTime video format
-        video_webm: WebM video format
+        # ... existing entries ...
+        image_gif: GIF image format
+        image_webp: WebP image format
+        image_bmp: BMP image format
+        image_tiff: TIFF image format
+        image_svg_xml: SVG vector image
+        image_apng: Animated PNG format
+        image_heic: HEIC image format
+        image_heif: HEIF image format
+        image_psd: Photoshop document
+        application_pdf: PDF document
+        application_zip: ZIP archive
+        application_tar: TAR archive
+        application_gzip: GZIP compressed file
+        application_7z: 7-Zip archive
+        application_doc: Microsoft Word (legacy)
+        application_docx: Microsoft Word document
+        application_xls: Microsoft Excel (legacy)
+        application_xlsx: Microsoft Excel spreadsheet
+        application_ppt: Microsoft PowerPoint (legacy)
+        application_pptx: Microsoft PowerPoint presentation
+        text_plain: Plain text file
+        text_csv: CSV data
+        text_html: HTML document
+        text_markdown: Markdown document
+        text_css: CSS stylesheet
+        application_js: JavaScript file
+        video_mkv: Matroska video format
+        video_flv: Flash video format
+        video_mpeg: MPEG video format
+        audio_ogg: Ogg Vorbis audio
+        audio_flac: FLAC audio
+        audio_aac: AAC audio
+        audio_weba: WebM audio
+        font_ttf: TrueType font
+        font_woff2: WOFF2 font
+        application_epub: EPUB ebook
+        application_exe: Windows executable
 
     Example:
-        >>> MimeType.image_png
-        <MimeType.image_png: 'image/png'>
+        >>> MimeType.image_jpeg
+        'image/jpeg'
     """
 
     image_jpeg = "image/jpeg"
@@ -572,6 +602,49 @@ class MimeType(str, Enum):
     video_avi = "video/avi"
     video_mov = "video/mov"
     video_webm = "video/webm"
+    image_gif = "image/gif"
+    image_webp = "image/webp"
+    image_bmp = "image/bmp"
+    image_tiff = "image/tiff"
+    image_svg_xml = "image/svg+xml"
+    image_apng = "image/apng"
+    image_heic = "image/heic"
+    image_heif = "image/heif"
+    image_psd = "image/vnd.adobe.photoshop"
+    application_pdf = "application/pdf"
+    application_zip = "application/zip"
+    application_tar = "application/x-tar"
+    application_gzip = "application/gzip"
+    application_7z = "application/x-7z-compressed"
+    application_doc = "application/msword"
+    application_docx = (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    application_xls = "application/vnd.ms-excel"
+    application_xlsx = (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    application_ppt = "application/vnd.ms-powerpoint"
+    application_pptx = (
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
+    application_epub = "application/epub+zip"
+    application_exe = "application/x-msdownload"
+    text_plain = "text/plain"
+    text_csv = "text/csv"
+    text_html = "text/html"
+    text_markdown = "text/markdown"
+    text_css = "text/css"
+    application_js = "application/javascript"
+    video_mkv = "video/x-matroska"
+    video_flv = "video/x-flv"
+    video_mpeg = "video/mpeg"
+    audio_ogg = "audio/ogg"
+    audio_flac = "audio/flac"
+    audio_aac = "audio/aac"
+    audio_weba = "audio/webm"
+    font_ttf = "font/ttf"
+    font_woff2 = "font/woff2"
 
     def __str__(self) -> str:
         return self.value
