@@ -234,21 +234,21 @@ class LanguageModel(msgspec.Struct, frozen=True):
         )
 
 
-class TranscriptionModel(msgspec.Struct, frozen=True):
+class TranscriptionModel(msgspec.Struct, frozen=True, kw_only=True):
+    language: Optional[Language] = None
+
     def transcribe(
         self,
         audio: FileContent,
         temperature: Optional[float] = None,
-        language: Optional[Language] = None,
         prompt: Optional[str] = None,
     ) -> AudioTranscription:
-        return run_sync(self.transcribe_async, audio, temperature, language, prompt)
+        return run_sync(self.transcribe_async, audio, temperature, prompt)
 
     async def transcribe_async(
         self,
         audio: FileContent,
         temperature: Optional[float] = None,
-        language: Optional[Language] = None,
         prompt: Optional[str] = None,
     ) -> AudioTranscription:
         raise NotImplementedError

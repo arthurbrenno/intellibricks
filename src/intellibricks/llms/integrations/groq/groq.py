@@ -1,4 +1,5 @@
 import copy
+import os
 import tempfile
 import timeit
 from pathlib import Path
@@ -19,12 +20,12 @@ from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms.base import (
     FileContent,
-    Language,
     LanguageModel,
     TranscriptionModel,
 )
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.types import (
+    AudioTranscription,
     CalledFunction,
     ChatCompletion,
     Function,
@@ -34,12 +35,11 @@ from intellibricks.llms.types import (
     MessageChoice,
     Part,
     RawResponse,
-    AudioTranscription,
+    SentenceSegment,
     ToolCall,
     ToolCallSequence,
     ToolInputType,
     Usage,
-    SentenceSegment,
 )
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
@@ -287,32 +287,96 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         self,
         audio: FileContent,
         temperature: Optional[float] = None,
-        language: Optional[Language] = None,
         prompt: Optional[str] = None,
     ) -> AudioTranscription:
         from groq import AsyncGroq
         from groq._types import NOT_GIVEN
 
         client = AsyncGroq(api_key=self.api_key, max_retries=self.max_retries)
-
         now = timeit.default_timer()
+        audio_transcriptions: list[AudioTranscription] = []
+        audio_duration = get_audio_duration(audio)
+
+        if audio_duration > 600:
+            from pydub import AudioSegment
+            from pydub.utils import make_chunks
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                original_file_path = write_content_to_file(audio, temp_dir)
+                audio_segment = AudioSegment.from_file(original_file_path)
+
+                chunk_length_ms = 10 * 60 * 1000  # 10 minutes in milliseconds
+                chunks = make_chunks(audio_segment, chunk_length_ms)
+
+                for i, chunk in enumerate(chunks):
+                    if len(chunk) == 0:
+                        continue  # Skip empty chunks
+                    chunk_path = os.path.join(temp_dir, f"chunk_{i}.mp3")
+                    chunk.export(chunk_path, format="mp3")
+
+                    chunk_start_time = timeit.default_timer()
+                    transcription = await client.audio.transcriptions.create(
+                        file=Path(chunk_path),
+                        model=self.model_name,
+                        language=self.language or NOT_GIVEN,
+                        temperature=temperature or NOT_GIVEN,
+                        prompt=prompt or NOT_GIVEN,
+                        response_format="verbose_json",
+                    )
+                    chunk_elapsed_time = timeit.default_timer() - chunk_start_time
+
+                    dict_transcription = transcription.model_dump()
+                    segments: list[SentenceSegment] = []
+                    for seg in dict_transcription.get("segments", []):
+                        segments.append(
+                            SentenceSegment(
+                                id=seg.get("id"),
+                                sentence=seg.get("text"),
+                                start=seg.get("start"),
+                                end=seg.get("end"),
+                                no_speech_prob=seg.get("no_speech_prob"),
+                            )
+                        )
+
+                    chunk_duration = (
+                        len(chunk) / 1000
+                    )  # Convert milliseconds to seconds
+                    chunk_transcription = AudioTranscription(
+                        elapsed_time=chunk_elapsed_time,
+                        text=transcription.text,
+                        segments=segments if segments else None,
+                        cost=0.0,
+                        duration=chunk_duration,
+                    )
+                    audio_transcriptions.append(chunk_transcription)
+
+                if not audio_transcriptions:
+                    return AudioTranscription(
+                        elapsed_time=0.0,
+                        text="",
+                        segments=None,
+                        cost=0.0,
+                        duration=0.0,
+                    )
+
+                merged_transcription = audio_transcriptions[0].merge(
+                    *audio_transcriptions[1:]
+                )
+                return merged_transcription
 
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = write_content_to_file(audio, temp_dir)
             transcription = await client.audio.transcriptions.create(
                 file=Path(file_path),
                 model=self.model_name,
-                language=language or NOT_GIVEN,
+                language=self.language or NOT_GIVEN,
                 temperature=temperature or NOT_GIVEN,
                 prompt=prompt or NOT_GIVEN,
                 response_format="verbose_json",
             )
 
-        audio_duration = get_audio_duration(audio)
-
         dict_transcription = transcription.model_dump()
-
-        segments: list[SentenceSegment] = []
+        segments = []
         for segment in dict_transcription.get("segments", []):
             segments.append(
                 SentenceSegment(
@@ -327,7 +391,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         return AudioTranscription(
             elapsed_time=timeit.default_timer() - now,
             text=transcription.text,
-            segments=segments,
+            segments=segments if segments else None,
             cost=0.0,
             duration=audio_duration,
         )

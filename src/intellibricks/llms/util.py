@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import logging
 import mimetypes
+import os
 import re
-import struct
-from os import PathLike
+from io import BytesIO
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -17,6 +17,7 @@ from typing import (
     Sequence,
     Union,
     cast,
+    BinaryIO,
 )
 
 import msgspec
@@ -190,133 +191,28 @@ def get_audio_duration(file_content: FileContent) -> float:
     Returns:
         The duration in seconds, or 0.0 if the duration cannot be determined.
     """
+    from pydub import AudioSegment
+
     try:
-        if isinstance(file_content, (str, PathLike)):
-            with open(file_content, "rb") as f:
-                file_data = f.read()
+        if isinstance(file_content, (str, os.PathLike)):
+            path = os.fspath(file_content)
+            audio = AudioSegment.from_file(path)
         elif isinstance(file_content, bytes):
-            file_data = file_content
-        else:  # Assume it's a file object
-            file_data = file_content.read()
+            audio = AudioSegment.from_file(BytesIO(file_content))
+        else:
+            # Handle file-like objects
             try:
-                file_content.seek(0)  # Reset file pointer
-            except Exception:
-                pass  # If seek fails, it's likely not a seekable stream
-
-        header = file_data[:100]  # Read enough for basic header info
-
-        if header.startswith(b"RIFF") and header[8:12] == b"WAVE":
-            # WAV file
-            try:
-                fmt_start = header.find(b"fmt ")
-                if fmt_start != -1 and fmt_start + 16 <= len(header):
-                    fmt_chunk = header[fmt_start + 4 :]
-                    num_channels = struct.unpack("<H", fmt_chunk[2:4])[0]
-                    sample_rate = struct.unpack("<I", fmt_chunk[4:8])[0]
-                    bits_per_sample = struct.unpack("<H", fmt_chunk[14:16])[0]
-
-                    data_start = header.find(b"data")
-                    if data_start != -1 and data_start + 4 <= len(header):
-                        data_chunk_size = struct.unpack(
-                            "<I", header[data_start + 4 : data_start + 8]
-                        )[0]
-                        bytes_per_second = (
-                            sample_rate * num_channels * (bits_per_sample // 8)
-                        )
-                        if bytes_per_second > 0:
-                            return float(data_chunk_size / bytes_per_second)
-            except struct.error:
-                pass  # Could not unpack WAV header
-
-        elif header.startswith(b"\xff\xfb"):
-            # Attempt for CBR MP3 (more precise if CBR)
-            try:
-                bitrate_table = [
-                    0,
-                    32,
-                    40,
-                    48,
-                    56,
-                    64,
-                    80,
-                    96,
-                    112,
-                    128,
-                    160,
-                    192,
-                    224,
-                    256,
-                    320,
-                    0,
-                ]
-                sampling_rate_table = [44100, 48000, 32000, 0]
-                sampling_rate = 0  # Initialize sampling_rate
-
-                if len(header) >= 4:
-                    header_bytes = header[:4]
-                    if (
-                        header_bytes[1] & 0xF0 == 0xF0
-                        and (header_bytes[1] >> 1) & 0x03 != 0x00
-                    ):
-                        bitrate_index = (header_bytes[2] >> 4) & 0x0F
-                        sampling_rate_index = (header_bytes[2] >> 2) & 0x03
-
-                        if 0 < bitrate_index < len(
-                            bitrate_table
-                        ) and sampling_rate_index < len(sampling_rate_table):
-                            bitrate_kbps = bitrate_table[bitrate_index]
-                            sampling_rate = sampling_rate_table[sampling_rate_index]
-                            if (
-                                bitrate_kbps > 0
-                                and sampling_rate > 0
-                                and isinstance(file_content, (str, PathLike))
-                            ):
-                                import os
-
-                                file_size = os.path.getsize(file_content)
-                                if file_size > 0:
-                                    return float(
-                                        (file_size * 8) / (bitrate_kbps * 1000)
-                                    )
-
-            except (IndexError, struct.error):
+                if file_content.seekable():
+                    file_content.seek(0)
+            except AttributeError:
                 pass
 
-            # Fallback to Xing/Info tag check (less precise)
-            if b"Xing" in header or b"Info" in header:
-                try:
-                    xing_index = header.find(b"Xing")
-                    info_index = header.find(b"Info")
-                    tag_start = xing_index if xing_index != -1 else info_index
+            # Type narrowing: cast to BinaryIO to match pydub's expected type
+            audio = AudioSegment.from_file(cast(BinaryIO, file_content))
 
-                    if tag_start != -1 and tag_start + 16 < len(header):
-                        num_frames = struct.unpack(
-                            ">I", header[tag_start + 4 : tag_start + 8]
-                        )[0]
-                        if num_frames > 0:
-                            bitrate_loc = header.find(b"\x00\x00", tag_start + 8)
-                            if bitrate_loc != -1 and bitrate_loc + 1 < len(header):
-                                try:
-                                    bitrate_bytes = header[
-                                        bitrate_loc - 1 : bitrate_loc + 1
-                                    ]
-                                    bitrate_kbps = int(bitrate_bytes.hex(), 16)
-                                    if bitrate_kbps > 0:
-                                        default_sampling_rate = (
-                                            44100  # Default if not determined earlier
-                                        )
-                                        return float(
-                                            (num_frames * 1152) / default_sampling_rate
-                                        )
-                                except ValueError:
-                                    pass
-                except (IndexError, struct.error):
-                    pass
-
+        return len(audio) / 1000.0
     except Exception:
-        pass  # Catch any unexpected errors during file processing
-
-    return 0.0
+        return 0.0
 
 
 def get_struct_from_schema(
@@ -1136,7 +1032,7 @@ def ms_type_to_schema(
 
 
 def guess_extension(
-    file_content: Union[IO[bytes], bytes, PathLike[str]],
+    file_content: Union[IO[bytes], bytes, os.PathLike[str]],
 ) -> Union[
     Literal[
         "jpeg",
@@ -1185,7 +1081,7 @@ def guess_extension(
     import magic
 
     try:
-        if isinstance(file_content, (str, PathLike)):
+        if isinstance(file_content, (str, os.PathLike)):
             mime_type = magic.from_file(str(file_content), mime=True)  # type: ignore
         elif isinstance(file_content, bytes):
             mime_type = magic.from_buffer(file_content, mime=True)
@@ -1235,7 +1131,7 @@ def guess_extension(
 
 
 def write_content_to_file(
-    file_content: Union[IO[bytes], bytes, PathLike[str]],
+    file_content: Union[IO[bytes], bytes, os.PathLike[str]],
     output_dir: str,
     mode: Optional[str] = None,
 ) -> str:

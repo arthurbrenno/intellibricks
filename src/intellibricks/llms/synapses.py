@@ -914,6 +914,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 "model_name": self.model.split("/")[2],
                 "max_retries": max_retries,
                 "api_key": self.api_key,
+                "language": language,
             },
         )
         debug_logger.debug(
@@ -929,7 +930,6 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 await transcription_model.transcribe_async(
                     audio=audio,
                     temperature=temperature,
-                    language=language,
                     prompt=prompt,
                 )
             )
