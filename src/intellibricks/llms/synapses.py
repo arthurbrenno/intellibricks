@@ -1,8 +1,68 @@
 """
-Synapse:
-> The junction between two neurons that allows a signal to pass between them.
+Module: intellibricks.llms.synapses
 
-Welcome to the synapses
+This module defines the concept of "Synapses" within the intellibricks framework, drawing inspiration from the biological synapse as a junction for signal transmission.
+In this context, Synapses serve as the interface for interacting with Language Model Models (LLMs) and Transcription Models.
+
+**Core Concepts:**
+
+*   **Synapse as an Interface:** A Synapse acts as a unified entry point to perform operations with various LLMs and transcription services. It abstracts away the complexities of model selection, API interactions, and configuration.
+*   **Abstraction and Flexibility:** Synapses allow developers to switch between different LLMs or transcription models easily by changing the `model` attribute of a `Synapse` instance, without modifying the core application logic.
+*   **Simplified API Interaction:** Synapses provide high-level methods like `complete`, `chat`, and `transcribe` that encapsulate the lower-level API calls to LLM and transcription services, making interactions more intuitive and developer-friendly.
+*   **Cascade for Resilience:** The module introduces `SynapseCascade` and `TextTranscriptionsSynapseCascade` classes, which enable fault tolerance by allowing a sequence of Synapses to be tried in order. If one Synapse fails, the next one in the cascade is automatically attempted, enhancing robustness.
+*   **Observability with Langfuse:**  Synapses are designed to integrate with Langfuse for observability. They automatically trace and monitor interactions with LLMs and transcription models, providing valuable insights into performance, usage, and potential issues.
+
+**Key Classes:**
+
+*   **`Synapse`**: The primary class for interacting with Language Models. It offers methods for text completion (`complete`) and chat-based interactions (`chat`). It supports various configuration options like model selection, API keys, temperature, token limits, and more.
+*   **`SynapseCascade`**:  A class that encapsulates a sequence of `Synapse` or `SynapseCascade` objects. It implements the same interface as `Synapse`, allowing for seamless replacement. If a call to a synapse in the cascade fails, it automatically falls back to the next one in the sequence.
+*   **`TextTranscriptionSynapse`**:  A specialized synapse for audio transcription tasks. It provides a `transcribe` method to convert audio files into text using configured transcription models.
+*   **`TextTranscriptionsSynapseCascade`**: Similar to `SynapseCascade`, but specifically for `TextTranscriptionSynapse` objects. It provides fault tolerance for audio transcription by trying a sequence of transcription synapses.
+
+**Usage:**
+
+To use this module, you typically instantiate a `Synapse` or `TextTranscriptionSynapse` object, configuring it with the desired model and API keys. Then, you can use the `complete`, `chat`, or `transcribe` methods to interact with the chosen LLM or transcription service. For increased reliability, especially in production environments, consider using `SynapseCascade` or `TextTranscriptionsSynapseCascade` to create fallback mechanisms.
+
+**Example (Synapse for Chat Completion):**
+
+```python
+from intellibricks.llms.synapses import Synapse
+from intellibricks.llms.constants import AIModel
+
+# Instantiate a Synapse for a specific LLM
+my_synapse = Synapse.of(model=AIModel.GEMINI_PRO)
+
+# Perform a chat completion
+response = my_synapse.chat(
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the capital of France?"}
+    ]
+)
+
+print(response.message.content) # Output: Paris
+```
+
+**Example (SynapseCascade for Fallback):**
+
+```python
+from intellibricks.llms.synapses import Synapse, SynapseCascade
+from intellibricks.llms.constants import AIModel
+
+# Create multiple Synapses, potentially for different models or API keys
+synapse1 = Synapse.of(model=AIModel.GEMINI_PRO)
+synapse2 = Synapse.of(model=AIModel.GPT_3_5_TURBO) # Assuming GPT_3_5_TURBO is defined elsewhere
+
+# Create a SynapseCascade with the synapses
+cascade_synapse = SynapseCascade.of(synapse1, synapse2)
+
+# Use the cascade synapse just like a regular Synapse
+response = cascade_synapse.complete(prompt="Explain quantum physics in simple terms.")
+
+print(response.message.content) # Will try synapse1, then synapse2 if synapse1 fails
+```
+
+This module provides a flexible, robust, and easy-to-use interface for leveraging the power of Language Models and Transcription services within your applications.
 """
 
 from __future__ import annotations
@@ -65,6 +125,51 @@ S = TypeVar("S", bound=msgspec.Struct, default=RawResponse)
 
 @runtime_checkable
 class SynapseProtocol(Protocol):
+    """
+    Protocol defining the interface for Synapse-like classes.
+
+    This protocol outlines the methods that any class intending to act as a Synapse should implement.
+    It ensures type compatibility and allows for interchangeable use of different Synapse implementations.
+
+    **Methods (Abstract):**
+
+    *   `complete(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Synchronously performs a text completion operation given a prompt.
+
+    *   `chat(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Synchronously conducts a chat-based interaction given a sequence of messages.
+
+    *   `complete_async(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Asynchronously performs a text completion operation given a prompt.
+
+    *   `chat_async(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Asynchronously conducts a chat-based interaction given a sequence of messages.
+
+    **Type Parameters:**
+
+    *   `S` (bound=msgspec.Struct, default=RawResponse):
+        A type variable representing the expected response model. It must be a subclass of `msgspec.Struct` and defaults to `RawResponse` if no specific model is provided.
+
+    **Usage:**
+
+    Classes like `Synapse` and `SynapseCascade` implement this protocol, ensuring they provide the necessary methods for interacting with language models. You can use `isinstance(my_synapse, SynapseProtocol)` to check if an object conforms to this interface.
+
+    **Example (Protocol Usage - Type Hinting):**
+
+    ```python
+    from intellibricks.llms.synapses import Synapse, SynapseProtocol
+    from intellibricks.llms.constants import AIModel
+
+    def process_with_synapse(synapse: SynapseProtocol):
+        # Function that accepts any object adhering to SynapseProtocol
+        response = synapse.complete(prompt="Tell me a joke.")
+        print(response.message.content)
+
+    my_synapse = Synapse.of(model=AIModel.GEMINI_PRO)
+    process_with_synapse(my_synapse) # Works because Synapse implements SynapseProtocol
+    ```
+    """
+
     def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
@@ -149,6 +254,154 @@ class SynapseProtocol(Protocol):
 
 
 class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
+    """
+    The primary class for interacting with Language Models (LLMs).
+
+    `Synapse` encapsulates the configuration and methods to communicate with various LLM APIs.
+    It offers functionalities for both simple text completion and more complex chat-based interactions.
+
+    **Key Features:**
+
+    *   **Model Abstraction:** Supports various Language Models through the `model` attribute, allowing easy switching between different LLMs.
+    *   **API Key Management:** Handles API key configuration, either directly or via environment variables (depending on the underlying LLM implementation).
+    *   **Parameter Configuration:** Provides extensive parameters to control LLM behavior, such as temperature, token limits, stop sequences, and more.
+    *   **Synchronous and Asynchronous APIs:** Offers both synchronous (`complete`, `chat`) and asynchronous (`complete_async`, `chat_async`) methods for flexibility in different application contexts.
+    *   **Langfuse Integration:** Seamlessly integrates with Langfuse for observability, automatically tracing requests and responses, and providing performance metrics.
+    *   **Web Search Integration:** Optionally integrates with a `WebSearchable` instance to enable LLMs to perform general web searches as part of their response generation.
+    *   **Tool Support:** Supports the use of tools (functions) that the LLM can invoke, enhancing its capabilities for complex tasks.
+    *   **Caching:**  Offers caching mechanisms via `CacheConfig` to optimize performance and reduce API costs.
+
+    **Attributes:**
+
+    *   `model` (AIModel):
+        Specifies the Language Model to be used. Defaults to `"google/genai/gemini-2.0-flash-exp"`.
+
+        **Example:**
+        ```python
+        from intellibricks.llms.synapses import Synapse
+        from intellibricks.llms.constants import AIModel
+
+        synapse_gemini_pro = Synapse(model=AIModel.GEMINI_PRO)
+        synapse_gpt_3_5 = Synapse(model=AIModel.GPT_3_5_TURBO) # If GPT_3_5_TURBO is defined
+        ```
+
+    *   `api_key` (Optional[str]):
+        API key for accessing the Language Model service, if required.  The necessity and method of providing this depends on the chosen `AIModel`.
+
+        **Example:**
+        ```python
+        synapse_with_api_key = Synapse(model=AIModel.GPT_4, api_key="YOUR_API_KEY")
+        ```
+
+    *   `cloud_project` (Optional[str]):
+        Cloud project ID, relevant for some cloud-based LLM services like Google Cloud's Vertex AI.
+
+    *   `cloud_location` (Optional[str]):
+        Cloud location, relevant for some cloud-based LLM services like Google Cloud's Vertex AI.
+
+    *   `langfuse` (Maybe[Langfuse]):
+        Optional Langfuse client instance for observability. If provided, Synapse will automatically trace interactions. Defaults to `Maybe(None)`.
+
+        **Example:**
+        ```python
+        from intellibricks.llms.synapses import Synapse
+        from intellibricks.llms.constants import AIModel
+        from langfuse import Langfuse
+
+        langfuse_client = Langfuse(public_key="...", secret_key="...")
+        synapse_with_langfuse = Synapse(model=AIModel.GEMINI_PRO, langfuse=Maybe(langfuse_client))
+        ```
+
+    *   `web_searcher` (Optional[WebSearchable]):
+        Optional `WebSearchable` instance to enable web search functionality for the LLM. Defaults to `None`.
+
+    **Class Methods:**
+
+    *   `of(...) -> Synapse`:
+        A class method to create a `Synapse` instance with a more readable and explicit parameter passing.
+
+        **Parameters:**
+        *   `model` (AIModel): The Language Model to use.
+        *   `api_key` (Optional[str]): API key.
+        *   `langfuse` (Optional[Langfuse]): Langfuse client instance.
+        *   `web_searcher` (Optional[WebSearchable]): Web searcher instance.
+        *   `cloud_project` (Optional[str]): Cloud project ID.
+        *   `cloud_location` (Optional[str]): Cloud location.
+
+        **Returns:**
+        *   `Synapse`: A new `Synapse` instance.
+
+        **Example:**
+        ```python
+        synapse_instance = Synapse.of(
+            model=AIModel.GEMINI_PRO,
+            api_key="YOUR_API_KEY",
+            # ... other parameters
+        )
+        ```
+
+    **Methods:**
+
+    *   `complete(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Synchronously performs a text completion operation. It takes a prompt and optional system prompt,
+        along with various parameters to control the generation process.
+
+        **Parameters:**
+        *   `prompt` (str | Prompt | PartType | Sequence[PartType]): The user prompt for text completion. Can be a string, `Prompt` object, `PartType`, or a sequence of `PartType`.
+        *   `system_prompt` (Optional[str | Prompt | PartType | Sequence[PartType]]): Optional system prompt to guide the LLM's behavior.
+        *   `response_model` (Optional[type[S]]): Optional response model class to structure the LLM's output.
+        *   `n` (Optional[int]): Number of completion choices to generate.
+        *   `temperature` (Optional[float]): Sampling temperature for generation (0.0 to 1.0, higher values are more random).
+        *   `max_tokens` (Optional[int]): Maximum number of tokens in the generated completion.
+        *   `max_retries` (Optional[Literal[1, 2, 3, 4, 5]]): Maximum number of retries in case of API errors.
+        *   `top_p` (Optional[float]): Top-p sampling parameter.
+        *   `top_k` (Optional[int]): Top-k sampling parameter.
+        *   `stop_sequences` (Optional[Sequence[str]]): Sequences of tokens at which to stop generation.
+        *   `cache_config` (Optional[CacheConfig]): Configuration for caching responses.
+        *   `trace_params` (Optional[TraceParams]): Parameters for Langfuse tracing.
+        *   `tools` (Optional[Sequence[ToolInputType]]): Tools (functions) that the LLM can use.
+        *   `general_web_search` (Optional[bool]): Whether to enable general web search for the LLM.
+        *   `language` (Language):  Language for the LLM interaction. Defaults to `Language.ENGLISH`.
+        *   `timeout` (Optional[float]): Request timeout in seconds.
+
+        **Returns:**
+        *   `ChatCompletion[S] | ChatCompletion[RawResponse]`: A `ChatCompletion` object containing the LLM's response, potentially structured according to `response_model`.
+
+        **Example:**
+        ```python
+        response = my_synapse.complete(prompt="Write a short poem about autumn.")
+        print(response.message.content)
+        ```
+
+    *   `chat(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Synchronously conducts a chat-based interaction with the LLM. It takes a sequence of `Message` objects
+        representing the conversation history and parameters to control the chat.
+
+        **Parameters:**
+        *   `messages` (Sequence[Message]): A sequence of `Message` objects representing the conversation history.
+        *   `response_model` (Optional[type[S]]): Optional response model class.
+        *   ... (other parameters are the same as in `complete` method)
+
+        **Returns:**
+        *   `ChatCompletion[S] | ChatCompletion[RawResponse]`: A `ChatCompletion` object containing the LLM's chat response.
+
+        **Example:**
+        ```python
+        chat_response = my_synapse.chat(
+            messages=[
+                {"role": "user", "content": "Hello, how are you?"}
+            ]
+        )
+        print(chat_response.message.content)
+        ```
+
+    *   `complete_async(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Asynchronous version of the `complete` method.
+
+    *   `chat_async(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Asynchronous version of the `chat` method.
+    """
+
     model: AIModel = msgspec.field(
         default_factory=lambda: "google/genai/gemini-2.0-flash-exp"
     )
@@ -341,13 +594,13 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             case str():
                 user_message = DeveloperMessage(contents=[Part.from_text(prompt)])
             case Prompt():
-                user_message = DeveloperMessage(
+                user_message = UserMessage(
                     contents=[Part.from_text(prompt.as_string())]
                 )
             case Part():
-                user_message = DeveloperMessage(contents=[prompt])
+                user_message = UserMessage(contents=[prompt])
             case _:
-                user_message = DeveloperMessage(contents=prompt)
+                user_message = UserMessage(contents=prompt)
 
         messages: Sequence[Message] = [
             system_message,
@@ -577,10 +830,93 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
 
 class SynapseCascade(msgspec.Struct, frozen=True):
-    """If one synapse fails, the next one will be used. This class
-    implements the same interface as Synapse, so you can use it
-    like a normal Synapse object and also with union type hints like
-    synapse: Synapse | SynapseCascade
+    """
+    Encapsulates a sequence of Synapses to provide fault tolerance for LLM interactions.
+
+    `SynapseCascade` implements the same interface as `Synapse`, allowing it to be used interchangeably.
+    It's designed to automatically try a sequence of Synapses in order if one fails, providing resilience
+    against temporary issues with specific LLM services or configurations.
+
+    **Key Features:**
+
+    *   **Fault Tolerance:** Automatically retries requests with subsequent Synapses in the cascade if the current one fails.
+    *   **Synapse Sequencing:** Allows defining a specific order of Synapses to be tried.
+    *   **Shuffle Option:** Provides an option to shuffle the order of Synapses before each attempt, useful for load balancing or randomized testing.
+    *   **Same Interface as Synapse:** Implements the `SynapseProtocol`, ensuring seamless integration where a `Synapse` is expected.
+    *   **Cascade of Cascades:** Supports nesting of `SynapseCascade` objects within each other, allowing for complex fallback strategies.
+
+    **Attributes:**
+
+    *   `synapses` (Sequence[Synapse | SynapseCascade]):
+        A sequence of `Synapse` or `SynapseCascade` objects. These are the Synapses that will be tried in order.
+
+        **Example:**
+        ```python
+        from intellibricks.llms.synapses import Synapse, SynapseCascade
+        from intellibricks.llms.constants import AIModel
+
+        synapse1 = Synapse.of(model=AIModel.GEMINI_PRO)
+        synapse2 = Synapse.of(model=AIModel.GPT_3_5_TURBO)
+
+        cascade = SynapseCascade(synapses=[synapse1, synapse2])
+        print(cascade.synapses) # Output: [<Synapse...>, <Synapse...>]
+        ```
+
+    *   `shuffle` (bool):
+        A boolean flag indicating whether the `synapses` sequence should be shuffled before each attempt. Defaults to `False`.
+
+        **Example:**
+        ```python
+        shuffled_cascade = SynapseCascade(synapses=[synapse1, synapse2], shuffle=True)
+        print(shuffled_cascade.shuffle) # Output: True
+        ```
+
+    **Class Methods:**
+
+    *   `of(*synapses: Synapse | SynapseCascade, shuffle: bool = False) -> SynapseCascade`:
+        A class method to create a `SynapseCascade` instance with a more convenient way to pass Synapses as arguments.
+
+        **Parameters:**
+        *   `*synapses` (Synapse | SynapseCascade): Variable number of `Synapse` or `SynapseCascade` objects to include in the cascade.
+        *   `shuffle` (bool): Whether to shuffle the synapses.
+
+        **Returns:**
+        *   `SynapseCascade`: A new `SynapseCascade` instance.
+
+        **Example:**
+        ```python
+        cascade_instance = SynapseCascade.of(synapse1, synapse2, shuffle=True)
+        ```
+
+    **Methods:**
+
+    *   `complete(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Synchronously attempts text completion using the Synapses in the cascade. It iterates through the `synapses` sequence. If a `complete` call is successful on a Synapse, it returns the result immediately. If a call fails (raises an exception), it catches the exception and tries the next Synapse in the sequence. If all Synapses fail, it raises the last caught exception or a `RuntimeError` if no exception was caught.
+
+        **Parameters:**
+        *   ... (parameters are the same as in `Synapse.complete` method)
+
+        **Returns:**
+        *   `ChatCompletion[S] | ChatCompletion[RawResponse]`: The `ChatCompletion` result from the first successful Synapse.
+
+        **Raises:**
+        *   Exception: The last exception raised by a Synapse in the cascade if all attempts fail.
+        *   RuntimeError: If all synapses fail and no specific exception was last caught.
+
+        **Example:**
+        ```python
+        cascade_response = cascade_synapse.complete(prompt="Translate 'Hello' to Spanish.")
+        print(cascade_response.message.content) # Will try synapse1, then synapse2 if synapse1 fails
+        ```
+
+    *   `chat(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Synchronous version of chat for cascade synapse.
+
+    *   `complete_async(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Asynchronous version of complete for cascade synapse.
+
+    *   `chat_async(...) -> ChatCompletion[S] | ChatCompletion[RawResponse]`:
+        Asynchronous version of chat for cascade synapse.
     """
 
     synapses: Sequence[Synapse | SynapseCascade]
@@ -819,13 +1155,116 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                 debug_logger.warning(f"Synapse failed on chat_async: {e}")
                 last_exception = e
                 continue
+
         if last_exception:
             raise last_exception
         raise RuntimeError("All synapses failed for chat_async method.")
 
 
 class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
-    """A synapse for audio transcriptions"""
+    """
+    Specialized Synapse for handling audio transcriptions.
+
+    `TextTranscriptionSynapse` is designed to interact with audio transcription services.
+    It simplifies the process of transcribing audio files to text, handling model selection,
+    API interactions, and observability.
+
+    **Key Features:**
+
+    *   **Transcription Model Abstraction:** Supports various transcription models through the `model` attribute.
+    *   **API Key Management:** Handles API key configuration for transcription services.
+    *   **Simplified Transcription Method:** Provides a `transcribe` method to easily convert audio files to text.
+    *   **Langfuse Integration:** Integrates with Langfuse to trace and monitor transcription requests and results.
+    *   **Retry Mechanism:** Implements retry logic for robust transcription operations.
+
+    **Attributes:**
+
+    *   `model` (TranscriptionModelType):
+        Specifies the transcription model to be used.
+
+        **Example:**
+        ```python
+        from intellibricks.llms.synapses import TextTranscriptionSynapse
+        from intellibricks.llms.constants import TranscriptionModelType
+
+        transcription_synapse = TextTranscriptionSynapse(model=TranscriptionModelType.WHISPER_API)
+        ```
+
+    *   `api_key` (Optional[str]):
+        API key for the transcription service, if required by the chosen `TranscriptionModelType`.
+
+        **Example:**
+        ```python
+        transcription_synapse_with_key = TextTranscriptionSynapse(model=TranscriptionModelType.WHISPER_API, api_key="YOUR_WHISPER_API_KEY")
+        ```
+
+    *   `langfuse` (Maybe[Langfuse]):
+        Optional Langfuse client instance for observability of transcription operations. Defaults to `Maybe(None)`.
+
+        **Example:**
+        ```python
+        from intellibricks.llms.synapses import TextTranscriptionSynapse
+        from intellibricks.llms.constants import TranscriptionModelType
+        from langfuse import Langfuse
+
+        langfuse_client = Langfuse(public_key="...", secret_key="...")
+        transcription_synapse_langfuse = TextTranscriptionSynapse(model=TranscriptionModelType.WHISPER_API, langfuse=Maybe(langfuse_client))
+        ```
+
+    **Class Methods:**
+
+    *   `of(...) -> TextTranscriptionSynapse`:
+        A class method to create a `TextTranscriptionSynapse` instance with a more readable parameter passing style.
+
+        **Parameters:**
+        *   `model` (TranscriptionModelType): The transcription model to use.
+        *   `api_key` (Optional[str]): API key for the transcription service.
+        *   `langfuse` (Optional[Langfuse]): Langfuse client instance.
+
+        **Returns:**
+        *   `TextTranscriptionSynapse`: A new `TextTranscriptionSynapse` instance.
+
+        **Example:**
+        ```python
+        transcription_synapse_instance = TextTranscriptionSynapse.of(
+            model=TranscriptionModelType.WHISPER_API,
+            api_key="YOUR_WHISPER_API_KEY",
+            # ... other parameters
+        )
+        ```
+
+    **Methods:**
+
+    *   `transcribe(...) -> AudioTranscription`:
+        Synchronously transcribes an audio file to text.
+
+        **Parameters:**
+        *   `audio` (FileContent): The audio file content to transcribe.
+        *   `temperature` (Optional[float]): Sampling temperature for transcription.
+        *   `language` (Optional[TranscriptionsLanguage]): Language of the audio for transcription.
+        *   `prompt` (Optional[str]): Optional prompt to guide the transcription.
+        *   `trace_params` (Optional[TraceParams]): Parameters for Langfuse tracing.
+        *   `max_retries` (int): Maximum number of retries in case of errors. Defaults to 1.
+
+        **Returns:**
+        *   `AudioTranscription`: An `AudioTranscription` object containing the transcribed text and related metadata.
+
+        **Example:**
+        ```python
+        from intellibricks.llms.synapses import TextTranscriptionSynapse
+        from intellibricks.llms.constants import TranscriptionModelType
+        from intellibricks.llms.types import FileContent
+
+        transcription_synapse = TextTranscriptionSynapse.of(model=TranscriptionModelType.WHISPER_API, api_key="YOUR_WHISPER_API_KEY")
+        audio_file_content = FileContent(data=b"...", mime_type="audio/mp3") # Replace b"..." with actual audio bytes
+
+        transcription = transcription_synapse.transcribe(audio=audio_file_content)
+        print(transcription.text) # Output: Transcribed text from the audio
+        ```
+
+    *   `transcribe_async(...) -> AudioTranscription`:
+        Asynchronous version of the `transcribe` method.
+    """
 
     model: TranscriptionModelType
     api_key: Optional[str] = None
@@ -1023,8 +1462,88 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
 
 
 class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
-    """If one transcription synapse fails, the next one will be used. Implements
-    the same interface as TextTranscriptionSynapse.
+    """
+    Provides fault tolerance for audio transcription by cascading through multiple `TextTranscriptionSynapse` objects.
+
+    `TextTranscriptionsSynapseCascade` mirrors the functionality of `SynapseCascade` but is specifically designed for
+    `TextTranscriptionSynapse` objects. It allows you to define a sequence of transcription synapses, and if one fails,
+    it automatically attempts transcription with the next one in the cascade.
+
+    **Key Features:**
+
+    *   **Transcription Fault Tolerance:** Ensures transcription operations are more resilient to failures by automatically retrying with backup synapses.
+    *   **Synapse Sequencing for Transcription:** Defines a specific order in which transcription synapses are attempted.
+    *   **Shuffle Option for Transcription:** Offers the option to shuffle the order of transcription synapses for each transcription request.
+    *   **Same Interface as TextTranscriptionSynapse:** Implements the same `transcribe` and `transcribe_async` methods as `TextTranscriptionSynapse`, allowing for seamless replacement.
+    *   **Cascade Nesting for Transcription:** Supports nesting `TextTranscriptionsSynapseCascade` objects within each other for complex transcription fallback strategies.
+
+    **Attributes:**
+
+    *   `synapses` (Sequence[TextTranscriptionSynapse | TextTranscriptionsSynapseCascade]):
+        A sequence of `TextTranscriptionSynapse` or nested `TextTranscriptionsSynapseCascade` objects. These are the transcription synapses that will be tried in order.
+
+        **Example:**
+        ```python
+        from intellibricks.llms.synapses import TextTranscriptionSynapse, TextTranscriptionsSynapseCascade
+        from intellibricks.llms.constants import TranscriptionModelType
+
+        transcription_synapse1 = TextTranscriptionSynapse.of(model=TranscriptionModelType.WHISPER_API)
+        transcription_synapse2 = TextTranscriptionSynapse.of(model=TranscriptionModelType.GOOGLE_SPEECH_TO_TEXT) # Assuming GOOGLE_SPEECH_TO_TEXT is defined
+
+        cascade = TextTranscriptionsSynapseCascade(synapses=[transcription_synapse1, transcription_synapse2])
+        print(cascade.synapses) # Output: [<TextTranscriptionSynapse...>, <TextTranscriptionSynapse...>]
+        ```
+
+    *   `shuffle` (bool):
+        A boolean flag indicating whether the `synapses` sequence should be shuffled before each transcription attempt. Defaults to `False`.
+
+        **Example:**
+        ```python
+        shuffled_transcription_cascade = TextTranscriptionsSynapseCascade(synapses=[transcription_synapse1, transcription_synapse2], shuffle=True)
+        print(shuffled_transcription_cascade.shuffle) # Output: True
+        ```
+
+    **Class Methods:**
+
+    *   `of(*synapses: TextTranscriptionSynapse | TextTranscriptionsSynapseCascade, shuffle: bool = False) -> TextTranscriptionsSynapseCascade`:
+        A class method to create a `TextTranscriptionsSynapseCascade` instance with a convenient way to pass transcription Synapses.
+
+        **Parameters:**
+        *   `*synapses` (TextTranscriptionSynapse | TextTranscriptionsSynapseCascade): Variable number of `TextTranscriptionSynapse` or `TextTranscriptionsSynapseCascade` objects.
+        *   `shuffle` (bool): Whether to shuffle the order of synapses.
+
+        **Returns:**
+        *   `TextTranscriptionsSynapseCascade`: A new `TextTranscriptionsSynapseCascade` instance.
+
+        **Example:**
+        ```python
+        transcription_cascade_instance = TextTranscriptionsSynapseCascade.of(transcription_synapse1, transcription_synapse2, shuffle=False)
+        ```
+
+    **Methods:**
+
+    *   `transcribe(...) -> AudioTranscription`:
+        Synchronously attempts audio transcription using the transcription Synapses in the cascade. It iterates through the `synapses` sequence and calls the `transcribe` method of each. If a transcription is successful, it returns the result. If a synapse fails, it tries the next one. If all fail, it raises the last exception or a `RuntimeError`.
+
+        **Parameters:**
+        *   ... (parameters are the same as in `TextTranscriptionSynapse.transcribe` method)
+
+        **Returns:**
+        *   `AudioTranscription`: The `AudioTranscription` result from the first successful transcription Synapse.
+
+        **Raises:**
+        *   Exception: The last exception raised by a transcription Synapse in the cascade if all attempts fail.
+        *   RuntimeError: If all transcription synapses fail and no specific exception was last caught.
+
+        **Example:**
+        ```python
+        audio_file_content = FileContent(data=b"...", mime_type="audio/mp3") # Replace b"..." with actual audio bytes
+        cascade_transcription = transcription_cascade_instance.transcribe(audio=audio_file_content)
+        print(cascade_transcription.text) # Will try transcription_synapse1, then transcription_synapse2 if synapse1 fails
+        ```
+
+    *   `transcribe_async(...) -> AudioTranscription`:
+        Asynchronous version of the `transcribe` method for the cascade.
     """
 
     synapses: Sequence[TextTranscriptionSynapse | TextTranscriptionsSynapseCascade]
