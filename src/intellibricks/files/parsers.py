@@ -1,3 +1,71 @@
+"""
+Module: parsers
+
+This module provides a collection of classes designed for parsing various file types and extracting their content in a structured format.
+It offers a flexible and extensible architecture for handling different document formats,
+ranging from plain text and office documents to images, audio, video, and specialized formats like XML and compressed archives.
+
+**Core Functionality:**
+
+The central component of this module is the `FileParser` abstract base class.
+Concrete implementations of `FileParser` are responsible for handling specific file types.
+The module also includes a facade class, `IntellibricksFileParser`, which intelligently routes incoming `RawFile` objects to the appropriate parser based on the file extension.
+
+**Key Features:**
+
+*   **Extensibility:** Easily add support for new file types by creating new classes that inherit from `FileParser` and implement the `extract_contents_async` method.
+*   **Strategy-based Parsing:**  The `ParsingStrategy` enum allows you to control the level of detail and processing applied during parsing. Strategies can range from basic text extraction to advanced content analysis using AI agents.
+*   **AI-Powered Content Enrichment:** Integration with AI agents (specifically, visual and audio description agents) to generate rich textual descriptions for images, videos, and audio files when using higher parsing strategies.
+*   **Structured Output:** Parsers return a `ParsedFile` object, which contains structured content extracted from the file, including sections, text, Markdown representation, images, and items like tables.
+*   **Dependency Management:** Uses decorators like `@ensure_module_installed` to manage optional dependencies required for parsing specific file types, enhancing robustness and user experience.
+
+**Module Structure:**
+
+*   **Abstract Base Class:** `FileParser` - Defines the interface for all file parsers.
+*   **Facade Parser:** `IntellibricksFileParser` - Acts as the entry point for parsing files, delegating to specific parsers based on file type.
+*   **Concrete Parsers:** Classes like `TxtFileParser`, `OfficeFileParser`, `PDFFileParser`, `ImageFileParser`, `AudioFileParser`, `VideoFileParser`, `XMLFileParser`, `CompressedFileParser`, `DWGFileParser`, `PKTFileParser`, `AlgFileParser`, `MarkitdownFileParser` - Implement parsing logic for specific file formats.
+*   **Data Structures:** `ParsedFile`, `SectionContent`, `Image`, `TablePageItem` - Define the structured output format for parsed file content.
+*   **Enums and Constants:** `ParsingStrategy` - Defines different levels of parsing detail.
+*   **Exceptions:** `InvalidFileExtension` - Custom exception raised for unsupported file types.
+
+**Getting Started:**
+
+To parse a file, you would typically use the `IntellibricksFileParser`. First, create a `RawFile` object representing the file you want to parse. Then, instantiate an `IntellibricksFileParser` and call the `extract_contents` or `extract_contents_async` method.
+
+**Example:**
+
+```python
+from architecture.data.files import RawFile, FileExtension
+from parsers import IntellibricksFileParser, ParsingStrategy
+import asyncio
+
+async def main():
+    # Assuming you have file contents in bytes and the file name
+    file_contents = b"This is a sample text file."
+    file_name = "example.txt"
+
+    raw_file = RawFile.from_bytes(
+        data=file_contents,
+        name=file_name,
+        extension=FileExtension.TXT
+    )
+
+    parser = IntellibricksFileParser(strategy=ParsingStrategy.DEFAULT)
+    parsed_file = await parser.extract_contents_async(raw_file)
+
+    print(f"Parsed file name: {parsed_file.name}")
+    for section in parsed_file.sections:
+        print(f"Section {section.number}:")
+        print(f"  Text: {section.text[:50]}...") # Print first 50 characters
+        print(f"  Markdown: {section.md[:50]}...") # Print first 50 characters
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+This module provides a robust and versatile solution for file content extraction, adaptable to various needs and file formats.
+"""
+
 from __future__ import annotations
 
 import abc
@@ -9,7 +77,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Never, Optional, Sequence, TypedDict, cast, override
+from typing import Never, Optional, Sequence, cast, override
 from xml.etree.ElementTree import Element
 
 import msgspec
@@ -38,17 +106,106 @@ exception_logger = log.create_logger(__name__, level=logging.ERROR)
 
 
 class InvalidFileExtension(Exception):
-    """Raised when a file extension is not supported."""
+    """
+    Exception raised when a file extension is not supported by the parsers.
 
+    This exception is typically raised by the `IntellibricksFileParser` when it encounters
+    a `RawFile` with an extension that no specific parser is registered to handle.
 
-class LocalSettings(TypedDict):
-    use_gpu: bool
+    **Example:**
+
+    ```python
+    from architecture.data.files import RawFile, FileExtension
+    from parsers import IntellibricksFileParser, InvalidFileExtension, ParsingStrategy
+    import asyncio
+
+    async def main():
+        file_contents = b"This is an unsupported file."
+        file_name = "unknown.extension"
+        raw_file = RawFile.from_bytes(
+            data=file_contents,
+            name=file_name,
+            extension=FileExtension.UNKNOWN # Or any extension not explicitly handled
+        )
+
+        parser = IntellibricksFileParser(strategy=ParsingStrategy.DEFAULT)
+        try:
+            parsed_file = await parser.extract_contents_async(raw_file)
+        except InvalidFileExtension as e:
+            print(f"Error: {e}") # Output: Error: Unsupported file extension: unknown
+
+    if __name__ == "__main__":
+        asyncio.run(main())
+    ```
+    """
 
 
 class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
     """
-    Abstract class for extracting content from files.
-    This should be used as a base class for specific file parsers.
+    Abstract base class for file parsers.
+
+    This class defines the interface that all concrete file parser classes in this module must implement.
+    It provides a basic structure and common functionality for parsing files and extracting their content.
+
+    **Key Features:**
+
+    *   **Abstract Base Class:** Cannot be instantiated directly. Subclasses must implement the abstract method `extract_contents_async`.
+    *   **Strategy-Based Parsing:**  Includes a `strategy` attribute of type `ParsingStrategy` to control the parsing level.
+    *   **Synchronous and Asynchronous Interface:** Provides both synchronous (`extract_contents`) and asynchronous (`extract_contents_async`) methods for content extraction. The synchronous method is a wrapper around the asynchronous one, using `run_sync`.
+
+    **Attributes:**
+
+    *   `strategy` (ParsingStrategy):  The parsing strategy to be used. Defaults to `ParsingStrategy.DEFAULT`.
+
+    **Methods:**
+
+    *   `extract_contents(file: RawFile) -> ParsedFile`:
+        Synchronously extracts content from a `RawFile`. This method is a convenience wrapper around `extract_contents_async`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the file to be parsed.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing the extracted content.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import TxtFileParser, FileParser, ParsedFile, ParsingStrategy
+
+        # Assume you have raw file content and name
+        file_content = b"This is a text file content."
+        file_name = "document.txt"
+        raw_file = RawFile.from_bytes(file_content, file_name, FileExtension.TXT)
+
+        parser: FileParser = TxtFileParser(strategy=ParsingStrategy.DEFAULT)
+        parsed_file: ParsedFile = parser.extract_contents(raw_file)
+
+        print(f"Parsed file name: {parsed_file.name}") # Output: Parsed file name: document.txt
+        print(f"Section 1 Text: {parsed_file.sections[0].text}") # Output: Section 1 Text: This is a text file content.
+        ```
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        **Abstract method** that must be implemented by subclasses. Asynchronously extracts content from a `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the file to be parsed.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing the extracted content.
+
+        **Raises:**
+
+        *   `NotImplementedError`: If the method is not implemented in a subclass.
+
+        **Note:**
+
+        Subclasses should override `extract_contents_async` to provide specific parsing logic for their supported file types.
     """
 
     strategy: ParsingStrategy = ParsingStrategy.DEFAULT
@@ -71,6 +228,82 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
 
 @dp.Facade
 class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
+    """
+    Facade class that acts as the main entry point for parsing files.
+
+    This class implements the `FileParser` interface and automatically delegates the parsing process
+    to the appropriate specialized parser based on the file extension of the input `RawFile`.
+    It supports a wide range of file types, including office documents, PDFs, images, audio, video, and more.
+
+    **Key Features:**
+
+    *   **File Type Dispatch:**  Automatically selects the correct parser based on the file extension.
+    *   **Facade Pattern:** Simplifies the parsing process by providing a single class to handle various file types.
+    *   **AI Agent Integration:** Optionally integrates with visual and audio description agents to enhance content extraction, especially in `HIGH` parsing strategy.
+    *   **Configurable Strategy:** Inherits the `strategy` attribute from `FileParser` to control the parsing level.
+
+    **Attributes:**
+
+    *   `strategy` (ParsingStrategy): The parsing strategy to be used. Defaults to `ParsingStrategy.DEFAULT`.
+    *   `visual_description_agent` (Optional[Agent[ChainOfThought[VisualMediaDescription]]]):
+        Optional agent for generating textual descriptions of images and videos. Used when the parsing strategy is `HIGH` and for file types that support visual content analysis.
+    *   `audio_description_agent` (Optional[Agent[ChainOfThought[AudioDescription]]]):
+        Optional agent for generating textual descriptions of audio files. Used when the parsing strategy is `HIGH` and for audio file types.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from the provided `RawFile`. This method determines the file type and delegates the actual parsing to the appropriate specialized parser.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the file to be parsed.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing the extracted content.
+
+        **Raises:**
+
+        *   `InvalidFileExtension`: If the file extension is not supported.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import IntellibricksFileParser, ParsingStrategy, ParsedFile
+        import asyncio
+
+        async def main():
+            # Example with a DOCX file (assuming you have docx_content in bytes)
+            docx_content = b"..." # Your DOCX file content here
+            docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
+
+            parser = IntellibricksFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_docx: ParsedFile = await parser.extract_contents_async(docx_file)
+
+            print(f"Parsed DOCX file name: {parsed_docx.name}")
+            # Access parsed content from parsed_docx.sections
+
+            # Example with a TXT file
+            txt_content = b"This is a plain text file."
+            txt_file = RawFile.from_bytes(txt_content, "text.txt", FileExtension.TXT)
+            parsed_txt: ParsedFile = await parser.extract_contents_async(txt_file)
+
+            print(f"Parsed TXT file name: {parsed_txt.name}")
+            # Access parsed content from parsed_txt.sections
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   This is the recommended class to use for parsing files in most scenarios.
+    *   You can configure the parsing behavior by setting the `strategy` attribute.
+    *   To enable AI-powered descriptions for images, videos, and audio, provide instances of `visual_description_agent` and/or `audio_description_agent` during initialization.
+    """
+
     visual_description_agent: Optional[
         Agent[ChainOfThought[VisualMediaDescription]]
     ] = None
@@ -205,8 +438,67 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
 
 class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
     """
-    Parses XML files, keeping the raw XML in the 'text' field and converting the structure
-    into a nested Markdown list in the 'md' field.
+    Parser for XML files (.xml).
+
+    This parser extracts the content from XML files and represents it in two formats:
+
+    *   **Raw XML Text:** The original XML content is preserved in the `text` field of the `SectionContent`.
+    *   **Markdown Representation:** The XML structure is converted into a nested Markdown list format, making it more human-readable. This Markdown representation is stored in the `md` field of the `SectionContent`.
+
+    **Key Features:**
+
+    *   **XML to Markdown Conversion:** Transforms XML structure into a clear Markdown representation.
+    *   **Error Handling:** Gracefully handles XML parsing errors by falling back to displaying the raw XML within a Markdown code block.
+    *   **Single Section Output:**  Outputs the entire XML content as a single section in the `ParsedFile`.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from an XML `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the XML file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing a single section with the XML content in both raw text and Markdown formats.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import XMLFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            xml_content = b"..."
+            xml_file = RawFile.from_bytes(xml_content, "data.xml", FileExtension.XML)
+
+            parser = XMLFileParser(strategy=ParsingStrategy.DEFAULT)
+            parsed_xml: ParsedFile = await parser.extract_contents_async(xml_file)
+
+            section = parsed_xml.sections[0]
+            print(f"Section 1 - Raw XML Text:\n{section.text}")
+            print(f"Section 1 - Markdown Representation:\n{section.md}")
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    *   `xml_to_md(xml_str: str) -> str`:
+        Converts a string containing XML content into a nested Markdown list structure.
+
+        **Parameters:**
+
+        *   `xml_str` (str): The XML content as a string.
+
+        **Returns:**
+
+        *   `str`: The Markdown representation of the XML.
+
+    *   `_convert_element_to_md(element: Element, level: int) -> str`:
+        Recursive helper method to convert an XML element and its children to Markdown. (Internal use)
     """
 
     @override
@@ -269,8 +561,78 @@ class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
 
 class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed"):
     """
-    Parses compressed files (ZIP, RAR, PKZ) by extracting each file within the archive,
-    delegating to the appropriate parser, and merging the results.
+    Parser for compressed archive files (ZIP, RAR, PKZ).
+
+    This parser handles compressed files by:
+
+    1.  **Extracting Contents:**  Extracting all files within the archive to a temporary directory.
+    2.  **Recursive Parsing:**  For each extracted file, it uses the `IntellibricksFileParser` facade to determine the appropriate parser and extract content.
+    3.  **Merging Results:**  Combines the `ParsedFile` objects from each extracted file into a single `ParsedFile` representing the entire archive.
+
+    **Supported Formats:**
+
+    *   ZIP (.zip, .pkz)
+    *   RAR (.rar)
+
+    **Key Features:**
+
+    *   **Archive Handling:**  Supports common archive formats to extract and parse contained files.
+    *   **Recursive Parsing:** Leverages the `IntellibricksFileParser` to handle diverse file types within archives.
+    *   **Merged Output:** Provides a single `ParsedFile` representing the combined content of all files in the archive.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts and parses the contents of a compressed `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the compressed archive file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing the merged content of all parsed files from within the archive.
+
+        **Raises:**
+
+        *   `ValueError`: If the file extension is not a supported compressed file type.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import CompressedFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+        import zipfile
+        import io
+
+        async def main():
+            # Create a dummy ZIP file in memory for example
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(buffer, 'w') as zf:
+                zf.writestr("text_file.txt", "This is a text file inside ZIP.")
+                zf.writestr("image.png", b"PNG Content Here") # Replace with actual PNG bytes
+
+            zip_content = buffer.getvalue()
+            zip_file = RawFile.from_bytes(zip_content, "archive.zip", FileExtension.ZIP)
+
+            parser = CompressedFileParser(strategy=ParsingStrategy.DEFAULT)
+            parsed_zip: ParsedFile = await parser.extract_contents_async(zip_file)
+
+            print(f"Parsed ZIP file name: {parsed_zip.name}")
+            for parsed_child_file in parsed_zip.parsed_files:
+                print(f"  Child File: {parsed_child_file.name}")
+                for section in parsed_child_file.sections:
+                    print(f"    Section {section.number}: Text: {section.text[:30]}...") # First 30 chars
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   Requires the `zipfile` and `rarfile` libraries to be installed (automatically handled if you installed `intellibricks[files]`).
+    *   Handles nested archives recursively (parses files within archives within archives).
     """
 
     @override
@@ -361,6 +723,73 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
 
 
 class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
+    """
+    Parser for DWG (Drawing) files (.dwg).
+
+    This parser handles DWG files by converting them to PDF format first, and then extracting
+    images of each page from the PDF. It then uses the `StaticImageFileParser` to process each page image,
+    potentially utilizing a visual description agent if configured and the parsing strategy is set to `HIGH`.
+
+    **Key Features:**
+
+    *   **DWG to PDF Conversion:** Converts DWG files to PDF format using the `aspose-cad` library.
+    *   **PDF Page to Image Extraction:** Extracts each page of the converted PDF as a PNG image.
+    *   **Image Parsing Delegation:** Uses `StaticImageFileParser` to process the extracted images, enabling text extraction and visual description if configured.
+    *   **Multi-Page DWG Support:** Handles multi-page DWG files by processing each page individually.
+
+    **Dependencies:**
+
+    *   Requires the `aspose-cad` and `pymupdf` libraries to be installed (automatically handled if you installed `intellibricks[files]`).
+    *   Requires a non-ARM64 architecture due to `aspose-cad` limitations.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a DWG `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the DWG file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing sections, each representing a page from the DWG, processed as an image.
+
+        **Raises:**
+
+        *   `ValueError`: If running on ARM64 architecture.
+        *   `RuntimeError`: If `aspose-cad` module is not installed or if conversion fails.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import DWGFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have dwg_content in bytes
+            dwg_content = b"..." # Your DWG file content in bytes
+            dwg_file = RawFile.from_bytes(dwg_content, "drawing.dwg", FileExtension.DWG)
+
+            parser = DWGFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_dwg: ParsedFile = await parser.extract_contents_async(dwg_file)
+
+            print(f"Parsed DWG file name: {parsed_dwg.name}")
+            for section in parsed_dwg.sections:
+                print(f"  Section {section.number}: Images: {len(section.images)}") # Number of images per page
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   Due to the conversion process, the output `ParsedFile` will primarily contain images representing the DWG content, rather than text.
+    *   Make sure to install the required dependencies (`aspose-cad`, `pymupdf`) before using this parser.
+    *   This parser is resource-intensive due to format conversion and image processing.
+    """
+
     @ensure_module_installed("aspose-cad", "intellibricks[files]")
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -446,6 +875,72 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
 
 
 class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
+    """
+    Parser for Packet Tracer files (.pkt, .pka).
+
+    This parser extracts the XML representation from Packet Tracer files. Packet Tracer files are
+    compressed and encrypted, so this parser handles decryption and decompression to obtain the underlying XML content.
+
+    **Key Features:**
+
+    *   **Packet Tracer Format Support:** Specifically designed to parse .pkt and .pka files.
+    *   **Decryption and Decompression:** Handles the necessary steps to decrypt and decompress the file content to reveal the XML data.
+    *   **XML Output:** Extracts the content as XML text, which is stored in both `text` and `md` fields of the `SectionContent`.
+    *   **Single Section Output:**  Outputs the entire XML content as a single section in the `ParsedFile`.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a Packet Tracer `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the Packet Tracer file (.pkt or .pka).
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing a single section with the extracted XML content.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import PKTFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have pkt_content in bytes
+            pkt_content = b"..." # Your PKT file content in bytes
+            pkt_file = RawFile.from_bytes(pkt_content, "network.pkt", FileExtension.PKT)
+
+            parser = PKTFileParser(strategy=ParsingStrategy.DEFAULT)
+            parsed_pkt: ParsedFile = await parser.extract_contents_async(pkt_file)
+
+            section = parsed_pkt.sections[0]
+            print(f"Parsed PKT file name: {parsed_pkt.name}")
+            print(f"Section 1 - XML Content:\n{section.text[:100]}...") # Print first 100 chars of XML
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    *   `pkt_to_xml_bytes(pkt_file: str) -> bytes`:
+        Converts a Packet Tracer file (.pkt/.pka) to its XML representation as bytes.
+
+        **Parameters:**
+
+        *   `pkt_file` (str): Path to the input .pkt or .pka file.
+
+        **Returns:**
+
+        *   `bytes`: The uncompressed XML content as bytes.
+
+    **Usage Notes:**
+
+    *   This parser is specific to Cisco Packet Tracer files.
+    *   The extracted content is in XML format, representing the network topology and configuration.
+    """
+
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -501,7 +996,59 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
 
 
 class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
-    """ALG Files can be treated as text files, so we'll use TxtFileParser to extract content."""
+    """
+    Parser for ALG files (.alg).
+
+    This parser treats ALG files as plain text files. It delegates the parsing to the `TxtFileParser`,
+    effectively extracting the content as plain text.
+
+    **Key Features:**
+
+    *   **ALG File Support:** Handles .alg files.
+    *   **Plain Text Extraction:** Extracts the content as plain text, similar to how `TxtFileParser` works.
+    *   **Simple Text-Based Output:** Provides a `ParsedFile` with a single section containing the text content.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from an ALG `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the ALG file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with a single section containing the plain text content of the ALG file.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import AlgFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have alg_content in bytes
+            alg_content = b"This is content of an ALG file."
+            alg_file = RawFile.from_bytes(alg_content, "algorithm.alg", FileExtension.ALG)
+
+            parser = AlgFileParser(strategy=ParsingStrategy.DEFAULT)
+            parsed_alg: ParsedFile = await parser.extract_contents_async(alg_file)
+
+            section = parsed_alg.sections[0]
+            print(f"Parsed ALG file name: {parsed_alg.name}")
+            print(f"Section 1 - Text Content:\n{section.text}")
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   Assumes ALG files are plain text based. If ALG files have a more complex structure, a dedicated parser might be needed.
+    *   Uses `TxtFileParser` internally for actual text extraction.
+    """
 
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -512,6 +1059,66 @@ class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
 
 
 class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
+    """
+    Parser for PDF files (.pdf).
+
+    This parser extracts text and images from PDF files. For higher parsing strategies (`ParsingStrategy.HIGH`),
+    it can also utilize a visual description agent to generate textual descriptions of images found within the PDF.
+
+    **Key Features:**
+
+    *   **Text Extraction:** Extracts text content from each page of the PDF.
+    *   **Image Extraction:** Extracts images embedded within the PDF pages.
+    *   **Visual Description (Optional):**  When `ParsingStrategy.HIGH` is used and a `visual_description_agent` is provided, it generates AI-powered descriptions for extracted images.
+    *   **Multi-Page Support:** Processes multi-page PDFs, creating a `SectionContent` for each page.
+
+    **Dependencies:**
+
+    *   Requires the `pypdf` library to be installed (automatically handled if you installed `intellibricks[files]`).
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a PDF `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the PDF file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing sections, each representing a page from the PDF, with extracted text and images.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import PDFFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have pdf_content in bytes
+            pdf_content = b"..." # Your PDF file content in bytes
+            pdf_file = RawFile.from_bytes(pdf_content, "document.pdf", FileExtension.PDF)
+
+            parser = PDFFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_pdf: ParsedFile = await parser.extract_contents_async(pdf_file)
+
+            print(f"Parsed PDF file name: {parsed_pdf.name}")
+            for section in parsed_pdf.sections:
+                print(f"  Section {section.number}: Text: {section.text[:50]}...") # First 50 chars of text
+                print(f"  Section {section.number}: Images: {len(section.images)}") # Number of images on page
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   For `ParsingStrategy.HIGH`, ensure you have configured a `visual_description_agent` in the `IntellibricksFileParser` or `PDFFileParser` instance.
+    *   The quality of text extraction can vary depending on the PDF's structure and whether it's text-based or image-based.
+    """
+
     @ensure_module_installed("pypdf", "intellibricks[files]")
     @override
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -570,8 +1177,75 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
 
 class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
     """
-    This class actually delegates the parsing to the appropriate parser based on the file extension.
-    This class is a Facade for the different Office file parsers.
+    Facade parser for Microsoft Office documents (Word, PowerPoint, Excel).
+
+    This class acts as a dispatcher for different Office file formats. It does not parse files directly
+    but instead delegates the parsing to the appropriate specialized parser based on the file extension.
+
+    **Supported Formats:**
+
+    *   Word documents (.doc, .docx) - Handled by `DocxFileParser`.
+    *   PowerPoint presentations (.ppt, .pptx, .pptm) - Handled by `PptxFileParser`.
+    *   Excel spreadsheets (.xls, .xlsx) - Handled by `ExcelFileParser`.
+
+    **Key Features:**
+
+    *   **Office Format Dispatch:**  Automatically selects the correct parser for different Office file types.
+    *   **Facade Pattern:** Simplifies Office document parsing by providing a single entry point.
+    *   **Strategy and Agent Passthrough:**  Passes the `strategy` and AI agents (visual description agent) to the delegated parsers.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from an Office document `RawFile`. This method determines the specific Office file type and delegates the parsing to the corresponding parser.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the Office document.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object containing the extracted content, as processed by the specific Office document parser.
+
+        **Raises:**
+
+        *   `ValueError`: If the file extension is not a supported Office file type.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import OfficeFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Example with a DOCX file (assuming you have docx_content in bytes)
+            docx_content = b"..." # Your DOCX file content here
+            docx_file = RawFile.from_bytes(docx_content, "report.docx", FileExtension.DOCX)
+
+            parser = OfficeFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_office: ParsedFile = await parser.extract_contents_async(docx_file)
+
+            print(f"Parsed Office file name: {parsed_office.name}")
+            # Access parsed content from parsed_office.sections
+
+            # Example with an XLSX file
+            xlsx_content = b"..." # Your XLSX file content here
+            xlsx_file = RawFile.from_bytes(xlsx_content, "data.xlsx", FileExtension.XLSX)
+            parsed_excel: ParsedFile = await parser.extract_contents_async(xlsx_file)
+
+            print(f"Parsed Excel file name: {parsed_excel.name}")
+            # Access parsed content from parsed_excel.sections
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   Use this class when you need to parse various types of Office documents without knowing the exact format beforehand.
+    *   It simplifies the process by hiding the complexity of selecting the correct parser for each Office file type.
+    *   Ensure that the necessary dependencies for each specific Office parser (e.g., `docx`, `pptx`, `openpyxl`) are installed if you plan to parse those formats.
     """
 
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
@@ -603,6 +1277,66 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
 
 
 class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
+    """
+    Parser for DOCX (Microsoft Word) files (.docx, .doc).
+
+    This parser extracts text and images from DOCX files. For higher parsing strategies (`ParsingStrategy.HIGH`),
+    it can also utilize a visual description agent to generate textual descriptions of images found within the document.
+
+    **Key Features:**
+
+    *   **Text Extraction:** Extracts text content from paragraphs in the DOCX document.
+    *   **Image Extraction:** Extracts images embedded within the DOCX document.
+    *   **Visual Description (Optional):** When `ParsingStrategy.HIGH` is used and a `visual_description_agent` is provided, it generates AI-powered descriptions for extracted images.
+    *   **Single Section Output:**  Outputs the entire DOCX content as a single section in the `ParsedFile` (DOCX files do not inherently have pages like PDFs).
+
+    **Dependencies:**
+
+    *   Requires the `docx` library (python-docx) to be installed (automatically handled if you installed `intellibricks[files]`).
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a DOCX `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the DOCX file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with a single section containing the extracted text and images from the DOCX file.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import DocxFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have docx_content in bytes
+            docx_content = b"..." # Your DOCX file content in bytes
+            docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
+
+            parser = DocxFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_docx: ParsedFile = await parser.extract_contents_async(docx_file)
+
+            print(f"Parsed DOCX file name: {parsed_docx.name}")
+            section = parsed_docx.sections[0]
+            print(f"Section 1 - Text: {section.text[:100]}...") # First 100 chars of text
+            print(f"Section 1 - Images: {len(section.images)}") # Number of images in document
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   For `ParsingStrategy.HIGH`, ensure you have configured a `visual_description_agent` in the `IntellibricksFileParser` or `DocxFileParser` instance.
+    *   The output `ParsedFile` contains a single section as DOCX documents are typically treated as a continuous flow of content rather than distinct pages.
+    """
+
     @ensure_module_installed("docx", "intellibricks[files]")
     @override
     async def extract_contents_async(
@@ -677,6 +1411,83 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
 
 
 class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
+    """
+    Parser for PowerPoint files (.pptx, .ppt, .pptm).
+
+    This parser extracts text from shapes and images from slides in PowerPoint presentations.
+    For higher parsing strategies (`ParsingStrategy.HIGH`), it can also utilize a visual description agent
+    to generate textual descriptions of images found on the slides.
+
+    **Supported Formats:**
+
+    *   PowerPoint Presentation (.pptx)
+    *   PowerPoint Presentation (.ppt) - Converted to .pptx format before parsing.
+    *   PowerPoint Macro-Enabled Presentation (.pptm) - Converted to .pptx format before parsing.
+
+    **Key Features:**
+
+    *   **Text Extraction:** Extracts text content from shapes on each slide.
+    *   **Image Extraction:** Extracts images embedded within the slides.
+    *   **Visual Description (Optional):** When `ParsingStrategy.HIGH` is used and a `visual_description_agent` is provided, it generates AI-powered descriptions for extracted slide images.
+    *   **Multi-Slide Support:** Processes multi-slide presentations, creating a `SectionContent` for each slide.
+    *   **.ppt and .pptm Conversion:** Automatically converts older .ppt and macro-enabled .pptm formats to .pptx using LibreOffice before parsing.
+
+    **Dependencies:**
+
+    *   Requires the `pptx` library (python-pptx) to be installed (automatically handled if you installed `intellibricks[files]`).
+    *   Requires LibreOffice to be installed and in the system PATH for .ppt and .pptm conversion.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a PowerPoint `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the PowerPoint file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with sections, each representing a slide from the presentation, containing extracted text and images.
+
+        **Raises:**
+
+        *   `RuntimeError`: If LibreOffice is not installed or if .ppt/.pptm conversion fails.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import PptxFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have pptx_content in bytes
+            pptx_content = b"..." # Your PPTX file content in bytes
+            pptx_file = RawFile.from_bytes(pptx_content, "presentation.pptx", FileExtension.PPTX)
+
+            parser = PptxFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_pptx: ParsedFile = await parser.extract_contents_async(pptx_file)
+
+            print(f"Parsed PPTX file name: {parsed_pptx.name}")
+            for section in parsed_pptx.sections:
+                print(f"  Section {section.number} (Slide): Text: {section.text[:100]}...") # First 100 chars of text
+                print(f"  Section {section.number} (Slide): Images: {len(section.images)}") # Number of images on slide
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    *   `_convert_to_pptx(file: RawFile) -> RawFile`:
+        Converts PowerPoint files (.ppt/.pptm) to .pptx format using LibreOffice. (Internal use)
+
+    **Usage Notes:**
+
+    *   For `ParsingStrategy.HIGH`, ensure you have configured a `visual_description_agent` in the `IntellibricksFileParser` or `PptxFileParser` instance.
+    *   For parsing .ppt and .pptm files, LibreOffice must be installed and accessible in the system's PATH.
+    *   Each slide in the PowerPoint presentation is represented as a separate section in the output `ParsedFile`.
+    """
+
     @ensure_module_installed("pptx", "intellibricks[files]")
     @override
     async def extract_contents_async(
@@ -838,6 +1649,74 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
 
 
 class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
+    """
+    Parser for Excel files (.xlsx, .xls).
+
+    This parser extracts data and images from Excel spreadsheets. It extracts cell values as structured data
+    and also as CSV formatted text. For higher parsing strategies (`ParsingStrategy.HIGH`),
+    it can also utilize a visual description agent to generate textual descriptions of images found within the worksheets.
+
+    **Supported Formats:**
+
+    *   Excel Workbook (.xlsx)
+    *   Excel Workbook (.xls)
+
+    **Key Features:**
+
+    *   **Structured Data Extraction:** Extracts cell values from each worksheet and provides them as lists of rows and a CSV string.
+    *   **Image Extraction:** Extracts images embedded within the worksheets.
+    *   **Visual Description (Optional):** When `ParsingStrategy.HIGH` is used and a `visual_description_agent` is provided, it generates AI-powered descriptions for extracted worksheet images.
+    *   **Multi-Sheet Support:** Processes multi-sheet Excel workbooks, creating a `SectionContent` for each worksheet.
+    *   **Table Page Items:** Creates `TablePageItem` objects within each section to represent the structured table data from each worksheet.
+
+    **Dependencies:**
+
+    *   Requires the `openpyxl` library to be installed (automatically handled if you installed `intellibricks[files]`).
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from an Excel `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the Excel file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with sections, each representing a worksheet, containing extracted text (CSV), structured table data, and images.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import ExcelFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have xlsx_content in bytes
+            xlsx_content = b"..." # Your XLSX file content in bytes
+            xlsx_file = RawFile.from_bytes(xlsx_content, "data.xlsx", FileExtension.XLSX)
+
+            parser = ExcelFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_excel: ParsedFile = await parser.extract_contents_async(xlsx_file)
+
+            print(f"Parsed Excel file name: {parsed_excel.name}")
+            for section in parsed_excel.sections:
+                print(f"  Section {section.number} (Worksheet): Text (CSV):\n{section.items[0].csv[:100]}...") # First 100 chars of CSV
+                print(f"  Section {section.number} (Worksheet): Images: {len(section.images)}") # Number of images on worksheet
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   For `ParsingStrategy.HIGH`, ensure you have configured a `visual_description_agent` in the `IntellibricksFileParser` or `ExcelFileParser` instance.
+    *   Each worksheet in the Excel workbook is represented as a separate section in the output `ParsedFile`.
+    *   Structured table data (rows, CSV) is available within the `items` attribute of each section, specifically as a `TablePageItem`.
+    """
+
     @ensure_module_installed("openpyxl", "intellibricks[files]")
     @override
     async def extract_contents_async(
@@ -938,7 +1817,57 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
 
 class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
     """
-    Parses plain .txt files. Extracts all content as a single page (number=1).
+    Parser for plain text files (.txt).
+
+    This parser extracts the entire content of a text file as plain text. It creates a single section
+    in the `ParsedFile` representing the entire file content.
+
+    **Key Features:**
+
+    *   **Plain Text Extraction:** Extracts the text content directly from .txt files.
+    *   **Single Section Output:**  Outputs the entire text content as a single section in the `ParsedFile`.
+    *   **Simple and Efficient:**  Provides a straightforward and efficient way to parse plain text files.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a TXT `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the text file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with a single section containing the plain text content of the file.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import TxtFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have txt_content in bytes
+            txt_content = b"This is a sample text file."
+            txt_file = RawFile.from_bytes(txt_content, "document.txt", FileExtension.TXT)
+
+            parser = TxtFileParser(strategy=ParsingStrategy.DEFAULT)
+            parsed_txt: ParsedFile = await parser.extract_contents_async(txt_file)
+
+            section = parsed_txt.sections[0]
+            print(f"Parsed TXT file name: {parsed_txt.name}")
+            print(f"Section 1 - Text Content:\n{section.text}")
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   This parser is ideal for simple text-based files where no complex structure or image extraction is needed.
+    *   The output `ParsedFile` will always contain a single section representing the whole file's text content.
     """
 
     @override
@@ -959,10 +1888,73 @@ class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
 
 class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_image"):
     """
-    Parses static image files (PNG, JPEG, TIFF, etc.) as a single "page" with one image.
-    If the image is TIFF, it converts to PNG in-memory for better compatibility.
-    If the strategy == HIGH and an visual_description_agent is present,
-    it appends an AI-generated textual description of the image.
+    Parser for static image files (PNG, JPEG, TIFF, BMP, JPG).
+
+    This parser extracts content from static image files. For higher parsing strategies (`ParsingStrategy.HIGH`)
+    and if a `visual_description_agent` is configured, it can generate an AI-powered textual description of the image.
+    For TIFF images, it performs an in-memory conversion to PNG for broader compatibility.
+
+    **Supported Formats:**
+
+    *   PNG (.png)
+    *   JPEG (.jpeg, .jpg)
+    *   TIFF (.tiff, .tif) - Converted to PNG internally.
+    *   BMP (.bmp)
+
+    **Key Features:**
+
+    *   **Image Format Support:** Handles common static image formats.
+    *   **TIFF to PNG Conversion:** Automatically converts TIFF images to PNG format in memory for consistent processing.
+    *   **Visual Description (Optional):** When `ParsingStrategy.HIGH` is used and a `visual_description_agent` is provided, it generates AI-powered descriptions for the image.
+    *   **Single Section Output:**  Outputs the image (and optional description) as a single section in the `ParsedFile`.
+
+    **Dependencies:**
+
+    *   Requires the `Pillow` (PIL) library to be installed (automatically handled if you installed `intellibricks[files]`).
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a static image `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the static image file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with a single section containing the image and optionally a textual description.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import StaticImageFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have png_content in bytes
+            png_content = b"..." # Your PNG file content in bytes
+            png_file = RawFile.from_bytes(png_content, "image.png", FileExtension.PNG)
+
+            parser = StaticImageFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_image: ParsedFile = await parser.extract_contents_async(png_file)
+
+            section = parsed_image.sections[0]
+            print(f"Parsed Image file name: {parsed_image.name}")
+            print(f"Section 1 - Images: {len(section.images)}") # Should be 1
+            if section.text:
+                print(f"Section 1 - Description:\n{section.text[:100]}...") # First 100 chars of description if strategy is HIGH
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   For `ParsingStrategy.HIGH`, ensure you have configured a `visual_description_agent` in the `IntellibricksFileParser` or `StaticImageFileParser` instance.
+    *   TIFF images are converted to PNG in memory, so the `Image` object in the `ParsedFile` will always contain PNG data for TIFF inputs.
+    *   The output `ParsedFile` contains a single section representing the image and its optional description.
     """
 
     @override
@@ -1045,13 +2037,67 @@ class AnimatedImageFileParser(
     IntellibricksFileParser, frozen=True, tag="animated_image"
 ):
     """
-    Parses animated GIF files by splitting them into 3 equally sized segments
-    (or fewer if total frames < 3).
-    Each selected frame is turned into a PNG in memory and, if strategy == HIGH,
-    sent to visual_description_agent for a textual description.
+    Parser for animated GIF files (.gif).
 
-    Returns a ParsedFile with up to 3 SectionContent items, each page representing
-    one of the frames chosen from the animation.
+    This parser handles animated GIF files by extracting representative frames from the animation.
+    It selects up to 3 frames from the GIF, aiming to capture different points in the animation sequence.
+    For higher parsing strategies (`ParsingStrategy.HIGH`) and if a `visual_description_agent` is configured,
+    it can generate AI-powered textual descriptions for each selected frame.
+
+    **Key Features:**
+
+    *   **Animated GIF Support:** Specifically designed to parse .gif files.
+    *   **Frame Selection:** Selects up to 3 representative frames from the animation.
+    *   **Visual Description (Optional):** When `ParsingStrategy.HIGH` is used and a `visual_description_agent` is provided, it generates AI-powered descriptions for each selected frame.
+    *   **Multi-Section Output:**  Outputs a `ParsedFile` with up to 3 sections, each representing a selected frame from the GIF animation.
+
+    **Dependencies:**
+
+    *   Requires the `Pillow` (PIL) library to be installed (automatically handled if you installed `intellibricks[files]`).
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from an animated GIF `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the animated GIF file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with sections, each representing a selected frame from the GIF animation.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import AnimatedImageFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have gif_content in bytes
+            gif_content = b"..." # Your GIF file content in bytes
+            gif_file = RawFile.from_bytes(gif_content, "animation.gif", FileExtension.GIF)
+
+            parser = AnimatedImageFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_gif: ParsedFile = await parser.extract_contents_async(gif_file)
+
+            print(f"Parsed GIF file name: {parsed_gif.name}")
+            for section in parsed_gif.sections:
+                print(f"  Section {section.number} (Frame): Images: {len(section.images)}") # Should be 1 per section
+                if section.text:
+                    print(f"  Section {section.number} (Frame): Description:\n{section.text[:100]}...") # First 100 chars of description if strategy is HIGH
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   For `ParsingStrategy.HIGH`, ensure you have configured a `visual_description_agent` in the `IntellibricksFileParser` or `AnimatedImageFileParser` instance.
+    *   The number of sections in the output `ParsedFile` will be between 0 and 3, depending on the number of frames in the GIF and the frame selection process.
+    *   Each section represents a single frame from the animation, converted to PNG format.
     """
 
     @override
@@ -1152,6 +2198,98 @@ class AnimatedImageFileParser(
 
 
 class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
+    """
+    Parser for audio files (FLAC, MP3, MPEG, MPGA, M4A, OGG, WAV, WEBM).
+
+    This parser handles various audio file formats. It first converts the audio file to MP3 format using FFmpeg
+    to ensure compatibility with audio transcription services. Then, it uses an `audio_description_agent` to
+    transcribe the audio content into text.
+
+    **Supported Formats:**
+
+    *   FLAC (.flac)
+    *   MP3 (.mp3)
+    *   MPEG (.mpeg)
+    *   MPGA (.mpga)
+    *   M4A (.m4a)
+    *   OGG (.ogg)
+    *   WAV (.wav)
+    *   WEBM (.webm)
+
+    **Key Features:**
+
+    *   **Audio Format Conversion:** Converts audio files to MP3 format using FFmpeg for consistent processing.
+    *   **Audio Transcription:** Uses an `audio_description_agent` to transcribe the audio content to text.
+    *   **Single Section Output:**  Outputs the transcribed text and Markdown representation as a single section in the `ParsedFile`.
+
+    **Dependencies:**
+
+    *   Requires FFmpeg to be installed and in the system PATH.
+    *   Requires an `audio_description_agent` to be provided to the parser instance.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from an audio `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the audio file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with a single section containing the transcribed text and Markdown representation of the audio content.
+
+        **Raises:**
+
+        *   `ValueError`: If no `audio_description_agent` is provided.
+        *   `RuntimeError`: If FFmpeg is not installed or if audio conversion fails.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import AudioFileParser, ParsedFile, ParsingStrategy
+        from intellibricks.agents import Agent
+        from intellibricks.llms.mock_llm import MockLLM  # Example Mock LLM
+        from intellibricks.llms.types import ChainOfThought, AudioDescription
+        import asyncio
+
+        async def main():
+            # Assume you have mp3_content in bytes
+            mp3_content = b"..." # Your MP3 file content in bytes
+            mp3_file = RawFile.from_bytes(mp3_content, "audio.mp3", FileExtension.MP3)
+
+            # Mock audio description agent for example
+            mock_llm = MockLLM[ChainOfThought[AudioDescription]](...) # Configure MockLLM as needed
+            audio_agent: Agent[ChainOfThought[AudioDescription]] = Agent(llm=mock_llm)
+
+            parser = AudioFileParser(
+                strategy=ParsingStrategy.DEFAULT,
+                audio_description_agent=audio_agent # Provide the audio agent
+            )
+            parsed_audio: ParsedFile = await parser.extract_contents_async(mp3_file)
+
+            section = parsed_audio.sections[0]
+            print(f"Parsed Audio file name: {parsed_audio.name}")
+            print(f"Section 1 - Transcription:\n{section.text[:100]}...") # First 100 chars of transcription
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    *   `_check_ffmpeg_installed() -> None`:
+        Checks if FFmpeg is installed and accessible in the system PATH. (Internal use)
+    *   `_could_not_transcript() -> Never`:
+        Raises a ValueError indicating audio transcription failure. (Internal use)
+
+    **Usage Notes:**
+
+    *   Requires FFmpeg to be installed and configured correctly in your environment.
+    *   You must provide an `audio_description_agent` instance when creating an `AudioFileParser`.
+    *   The output `ParsedFile` contains a single section with the audio transcription.
+    """
+
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         if self.audio_description_agent is None:
             raise ValueError("No audio description agent provided.")
@@ -1266,6 +2404,82 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
 
 
 class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
+    """
+    Parser for video files (.mp4).
+
+    This parser handles MP4 video files. It uses a `visual_description_agent` to generate a textual description
+    of the video content.
+
+    **Supported Formats:**
+
+    *   MP4 (.mp4)
+
+    **Key Features:**
+
+    *   **Video Description:** Uses a `visual_description_agent` to generate a textual description of the video content.
+    *   **Single Section Output:**  Outputs the generated video description as a single section in the `ParsedFile`.
+
+    **Dependencies:**
+
+    *   Requires a `visual_description_agent` to be provided to the parser instance.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a video `RawFile`.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the video file.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with a single section containing the textual description of the video content.
+
+        **Raises:**
+
+        *   `ValueError`: If no `visual_description_agent` is provided or if the file is not an MP4 file.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import VideoFileParser, ParsedFile, ParsingStrategy
+        from intellibricks.agents import Agent
+        from intellibricks.llms.mock_llm import MockLLM  # Example Mock LLM
+        from intellibricks.llms.types import ChainOfThought, VisualMediaDescription
+        import asyncio
+
+        async def main():
+            # Assume you have mp4_content in bytes
+            mp4_content = b"..." # Your MP4 file content in bytes
+            mp4_file = RawFile.from_bytes(mp4_content, "video.mp4", FileExtension.MP4)
+
+            # Mock visual description agent for example
+            mock_llm = MockLLM[ChainOfThought[VisualMediaDescription]](...) # Configure MockLLM as needed
+            visual_agent: Agent[ChainOfThought[VisualMediaDescription]] = Agent(llm=mock_llm)
+
+            parser = VideoFileParser(
+                strategy=ParsingStrategy.DEFAULT,
+                visual_description_agent=visual_agent # Provide the visual agent
+            )
+            parsed_video: ParsedFile = await parser.extract_contents_async(mp4_file)
+
+            section = parsed_video.sections[0]
+            print(f"Parsed Video file name: {parsed_video.name}")
+            print(f"Section 1 - Description:\n{section.text[:100]}...") # First 100 chars of video description
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   You must provide a `visual_description_agent` instance when creating a `VideoFileParser`.
+    *   Currently, only MP4 files are supported.
+    *   The output `ParsedFile` contains a single section with the AI-generated video description.
+    """
+
     async def extract_contents_async(self, file: RawFile) -> ParsedFile:
         if self.visual_description_agent is None:
             raise ValueError("No visual description agent provided.")
@@ -1293,6 +2507,73 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
 
 
 class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):
+    """
+    Parser for Markdown files using the Markitdown library.
+
+    This parser utilizes the `markitdown` library to convert various document formats (like PDF, DOCX etc.)
+    into Markdown. It can optionally use an OpenAI client and model for enhanced conversion capabilities,
+    especially when `ParsingStrategy.HIGH` is used.
+
+    **Key Features:**
+
+    *   **Markdown Conversion:** Converts various document formats to Markdown using the `markitdown` library.
+    *   **LLM Integration (Optional):** Supports integration with OpenAI for potentially improved conversion quality, especially in `HIGH` strategy mode.
+    *   **Strategy-Based LLM Usage:**  LLM is used only when `ParsingStrategy.HIGH` is set. For other strategies, the conversion is performed without LLM.
+    *   **Single Section Output:**  Outputs the converted Markdown content as a single section in the `ParsedFile`.
+
+    **Dependencies:**
+
+    *   Requires the `markitdown` library to be installed (automatically handled if you installed `intellibricks[files]`).
+    *   Optional: Requires the `openai` library and OpenAI API key if using `ParsingStrategy.HIGH` with default client and model.
+
+    **Attributes:**
+
+    *   `client` (Optional[OpenAI]): Optional OpenAI client instance to be used for Markdown conversion when `ParsingStrategy.HIGH` is enabled. If not provided, a default `OpenAI()` client is created.
+    *   `model` (Optional[str]): Optional OpenAI model name to be used for Markdown conversion when `ParsingStrategy.HIGH` is enabled. Defaults to "gpt-4o" if not specified.
+
+    **Methods:**
+
+    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+        Asynchronously extracts content from a `RawFile` and converts it to Markdown using Markitdown.
+
+        **Parameters:**
+
+        *   `file` (RawFile): The `RawFile` object representing the document to be converted to Markdown.
+
+        **Returns:**
+
+        *   `ParsedFile`: A `ParsedFile` object with a single section containing the converted Markdown content.
+
+        **Example:**
+
+        ```python
+        from architecture.data.files import RawFile, FileExtension
+        from parsers import MarkitdownFileParser, ParsedFile, ParsingStrategy
+        import asyncio
+
+        async def main():
+            # Assume you have docx_content in bytes (or any format markitdown supports)
+            docx_content = b"..." # Your DOCX file content in bytes
+            docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
+
+            parser = MarkitdownFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
+            parsed_markdown: ParsedFile = await parser.extract_contents_async(docx_file)
+
+            section = parsed_markdown.sections[0]
+            print(f"Parsed file name (as Markdown): {parsed_markdown.name}")
+            print(f"Section 1 - Markdown Content:\n{section.md[:200]}...") # First 200 chars of Markdown
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+        ```
+
+    **Usage Notes:**
+
+    *   This parser is useful for converting various document formats into Markdown for further processing or integration.
+    *   When using `ParsingStrategy.HIGH`, ensure you have the `openai` library installed and your OpenAI API key configured, or provide a custom `OpenAI` client instance.
+    *   The output `ParsedFile` contains a single section with the converted Markdown content.
+    """
+
     client: Optional[OpenAI] = None
     model: Optional[str] = None
 
