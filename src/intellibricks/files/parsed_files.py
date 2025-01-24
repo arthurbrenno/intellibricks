@@ -18,6 +18,14 @@ class Image(msgspec.Struct, frozen=True):
         ),
     ]
 
+    ocr_text: Annotated[
+        Optional[str],
+        msgspec.Meta(
+            title="OCR Text",
+            description="Text extracted from the image using OCR.",
+        ),
+    ] = None
+
     height: Annotated[
         Optional[float],
         msgspec.Meta(

@@ -3978,13 +3978,30 @@ class GraphicalElementDescription(msgspec.Struct, frozen=True):
         Optional[Sequence[str]],
         msgspec.Meta(
             title="Element Relationships",
-            description="Describe how this element is related to other elements in the media. Explain its position relative to others, whether it's connected, overlapping, near, or otherwise associated with them, considering spatial and temporal relationships. Be specific about the other elements involved. Examples: 'The arrow points from this box to the next', 'This circle is enclosed within the square', 'This scene follows the previous one', 'The music swells during this visual element'.",
+            description="Describe how this element is related to other elements in the media. "
+            "Explain its position relative to others, whether it's connected, overlapping, "
+            "near, or otherwise associated with them, considering spatial and temporal "
+            "relationships. Be specific about the other elements involved. Examples: "
+            "'The arrow points from this box to the next', 'This circle is enclosed"
+            "within the square', 'This scene follows the previous one', 'The music"
+            "swells during this visual element'.",
             examples=[
                 "Located above the main equation",
                 "Connected to the previous step by a line",
                 "Part of a larger assembly",
                 "Occurs immediately after the title card",
             ],
+        ),
+    ] = msgspec.field(default=None)
+
+    extracted_text: Annotated[
+        Optional[str],
+        msgspec.Meta(
+            title="Extracted Text Content",
+            description="For elements that contains text elements, the actual textual content "
+            "extracted through OCR. Preserves line breaks and spatial relationships where "
+            "possible.",
+            examples=["'3.14'", "'Warning: Do not open'", "'y = mx + b'"],
         ),
     ] = msgspec.field(default=None)
 
@@ -4162,6 +4179,18 @@ class VisualMediaDescription(msgspec.Struct, frozen=True):
             ],
         ),
     ] = msgspec.field(default=None)
+
+    @property
+    def ocr_text(self) -> str:
+        """Aggregates all OCR-extracted text from the media."""
+        parts: list[str] = []
+        # Add individual element texts
+        if self.visual_elements:
+            for element in self.visual_elements:
+                if element.extracted_text:
+                    parts.append(element.extracted_text)
+
+        return "\n".join(parts).strip()
 
     @property
     def md(self) -> str:

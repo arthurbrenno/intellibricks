@@ -524,18 +524,15 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
             reader = PdfReader(file_path)
             section_contents: list[SectionContent] = []
             for page_num, page in enumerate(reader.pages):
-                page_images: Sequence[Image] = [
-                    Image(contents=image.data, name=image.name) for image in page.images
-                ]
-
+                page_images: list[Image] = []
                 image_descriptions: list[str] = []
                 if (
                     self.visual_description_agent
                     and self.strategy == ParsingStrategy.HIGH
                 ):
-                    for image_num, image in enumerate(page_images):
+                    for image_num, image in enumerate(page.images):
                         agent_input = ImageFilePart(
-                            mime_type=MimeType.image_png, data=image.contents
+                            mime_type=MimeType.image_png, data=image.data
                         )
                         agent_response = await self.visual_description_agent.run_async(
                             agent_input
@@ -543,6 +540,13 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
                         image_md: str = agent_response.parsed.final_answer.md
                         image_descriptions.append(
                             f"Page Image {image_num + 1}: {image_md}"
+                        )
+                        page_images.append(
+                            Image(
+                                contents=image.data,
+                                name=image.name,
+                                ocr_text=agent_response.parsed.final_answer.ocr_text,
+                            )
                         )
 
                 page_text = [page.extract_text(), "".join(image_descriptions)]
