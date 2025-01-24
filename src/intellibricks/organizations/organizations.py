@@ -3,7 +3,7 @@
 from typing import Any, Sequence
 import msgspec
 
-from .agents import Agent
+from intellibricks.agents import Agent
 
 
 class Department(msgspec.Struct, frozen=True):
