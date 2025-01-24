@@ -1,3 +1,51 @@
+"""
+Module: intellibricks.llms.util
+
+This module provides utility functions and helper classes for the `intellibricks.llms` package.
+It includes tools for handling different data types, parsing responses from Language Model Models (LLMs),
+managing JSON schemas, and performing common tasks related to file content and data manipulation.
+
+**Key Functionalities:**
+
+*   **Part Handling:** Functions for extracting text parts from sequences, and converting parts to LLM-described text or raw text.
+*   **Response Parsing:** Utility to parse LLM responses, especially structured JSON responses, handling potential formatting issues and extracting data according to response models.
+*   **Prompt Structuring:** Functions to generate structured prompt instructions based on language and schema, and to modify message sequences with response format instructions.
+*   **Function and Tool Management:** Utilities for creating function mappings from tools, used for integrating custom functions with LLMs.
+*   **Audio Duration Handling:** Function to determine the duration of audio files without external audio libraries.
+*   **JSON Schema Conversion:** Tools to convert msgspec Struct types to JSON schemas, with options for handling nullable fields and OpenAI compatibility.
+*   **Broken JSON Fixer:** Robust function to parse and fix common issues in JSON strings, enhancing resilience against imperfect LLM outputs.
+*   **URL and File Handling:** Utilities to check if a string is a URL, if a URL is a file URL (based on extension), and to guess file extensions from content.
+*   **File Output:** Function to write content to a file in a specified output directory, guessing the extension based on content.
+*   **Subtitle Generation:** Utility to convert sentence segments into SRT (SubRip Text) subtitle format.
+
+**Module Structure:**
+
+*   **Functions:** A collection of standalone utility functions for various tasks.
+*   **Dependencies:** Relies on `msgspec` for Struct handling and JSON processing, `architecture` for logging, `typing` for type hints, `json` for JSON operations, `os` for file system operations, `re` for regular expressions, `io` for input/output streams, `mimetypes` for MIME type guessing, and optional dependency `python-magic` for file type detection.
+
+**Usage:**
+
+This module is intended for internal use within the `intellibricks.llms` package and by developers extending or customizing LLM interactions. The functions provided here are building blocks for creating more complex LLM-based applications, handling data transformations, and ensuring robustness in communication with LLM APIs.
+
+**Example:**
+
+```python
+from intellibricks.llms.util import get_parsed_response
+from intellibricks.llms.types import RawResponse
+from typing import Sequence
+
+# Assume 'response_parts' is a Sequence[PartType] obtained from an LLM call
+response_parts = ... # your LLM response parts here
+
+# Parse the response into a RawResponse object
+parsed_response: RawResponse = get_parsed_response(response_parts, RawResponse)
+
+print(f"Parsed response text: {parsed_response.text}")
+```
+
+This module enhances the functionality of `intellibricks.llms` by providing a suite of utilities for data manipulation, error handling, and integration with external services, making it easier to build robust and versatile LLM-powered applications.
+"""
+
 from __future__ import annotations
 
 import json
@@ -42,6 +90,27 @@ debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 def find_text_part(parts: Sequence[Part]) -> TextPart:
+    """
+    Finds and returns the first TextPart from a sequence of Part objects.
+
+    This function iterates through a sequence of `Part` objects and returns the first instance that is of type `TextPart`.
+    If no `TextPart` is found in the sequence, it raises a ValueError.
+
+    Args:
+        parts (Sequence[Part]): A sequence of Part objects to search within.
+
+    Returns:
+        TextPart: The first TextPart found in the sequence.
+
+    Raises:
+        ValueError: If no TextPart is found in the provided parts list.
+
+    Example:
+        >>> from intellibricks.llms.types import Part, TextPart, ImagePart
+        >>> parts_list = [ImagePart(mime_type="image/png", data=b"...", name="image.png"), TextPart(text="Sample text")]
+        >>> text_part = find_text_part(parts_list)
+        >>> print(text_part.text) # Output: Sample text
+    """
     from intellibricks.llms.types import TextPart
 
     text_part: Optional[Part] = next(
@@ -55,10 +124,46 @@ def find_text_part(parts: Sequence[Part]) -> TextPart:
 
 
 def get_parts_llm_described_text(parts: Sequence[PartType]) -> str:
+    """
+    Concatenates the LLM-described text representation of a sequence of PartType objects.
+
+    This function takes a sequence of `PartType` objects (which can be `Part` or its subclasses)
+    and concatenates their LLM-described text representations into a single string.
+
+    Args:
+        parts (Sequence[PartType]): A sequence of PartType objects.
+
+    Returns:
+        str: A string containing the concatenated LLM-described text from all parts.
+
+    Example:
+        >>> from intellibricks.llms.types import TextPart, ImagePart
+        >>> parts_example = [TextPart(text="Text content"), ImagePart(mime_type="image/png", data=b"...", name="image.png")]
+        >>> llm_text = get_parts_llm_described_text(parts_example)
+        >>> print(llm_text) # Output: Text content<image>
+    """
     return "".join([part.to_llm_described_text() for part in parts])
 
 
 def get_parts_raw_text(parts: Sequence[PartType]) -> str:
+    """
+    Concatenates the raw text representation of a sequence of PartType objects.
+
+    This function takes a sequence of `PartType` objects and concatenates their raw text representations
+    (obtained by calling `str(part)` on each part) into a single string.
+
+    Args:
+        parts (Sequence[PartType]): A sequence of PartType objects.
+
+    Returns:
+        str: A string containing the concatenated raw text from all parts.
+
+    Example:
+        >>> from intellibricks.llms.types import TextPart, ImagePart
+        >>> parts_example = [TextPart(text="Text content"), ImagePart(mime_type="image/png", data=b"...", name="image.png")]
+        >>> raw_text = get_parts_raw_text(parts_example)
+        >>> print(raw_text) # Output: Text content
+    """
     return "".join([str(part) for part in parts])
 
 
@@ -91,6 +196,26 @@ def get_parsed_response[S](
 def get_structured_prompt_instructions_by_language(
     language: Language, schema: dict[str, Any]
 ) -> str:
+    """
+    Returns structured prompt instructions in different languages, guiding LLMs to respond in JSON format.
+
+    This function generates instructions for Language Model Models (LLMs) to ensure they respond with JSON output
+    that adheres to a given schema. The instructions are tailored to different languages to potentially improve
+    the LLM's understanding and compliance based on the language context.
+
+    Args:
+        language (Language): The target language for the instructions.
+        schema (dict[str, Any]): The JSON schema to which the LLM's response should adhere.
+
+    Returns:
+        str: A string containing prompt instructions in the specified language.
+
+    Example:
+        >>> from intellibricks.llms.constants import Language
+        >>> json_schema = {"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "number"}}}
+        >>> instructions_en = get_structured_prompt_instructions_by_language(Language.ENGLISH, json_schema)
+        >>> print(instructions_en) # Output: Return only a valid json adhering to the following schema:\n{"type": "object", "properties": {"name": {"type": "string"}, "age": {"type": "number"}}}
+    """
     from intellibricks.llms.constants import Language
 
     schema_str = json.dumps(schema)
@@ -397,6 +522,7 @@ def get_struct_from_schema(
             # If there's no type in the property schema, just treat it as Any
             field_type = Any
 
+        # Prepare for the following lines of code
         elif isinstance(maybe_type, str):
             if maybe_type == "array":
                 # array -> items
@@ -425,8 +551,6 @@ def get_struct_from_schema(
                             items_type_val = Any
                     else:
                         items_type_val = Any
-                else:
-                    items_type_val = Any
                 field_type = list[items_type_val]
             else:
                 if maybe_type in basic_type_map:
@@ -536,106 +660,6 @@ def fix_broken_json(
     ------
     ValueError
         If no JSON object could be found in the string, or if parsing fails after applying all fix functions.
-
-    Examples
-    --------
-    Extracting JSON from text with embedded JSON:
-
-        >>> json_str = 'Sure! Here is your formatted json:\\n\\n```json\\n{"name": "Alice", "age": 30}\\n```'
-        >>> fix_broken_json(json_str)
-        {'name': 'Alice', 'age': 30}
-
-        >>> json_str = '{ "name": "Bob", "age": 25 }'
-        >>> fix_broken_json(json_str)
-        {'name': 'Bob', 'age': 25}
-
-        >>> json_str = 'Here is the json\\n\\n{ "name": "Charlie", "age": 28 }'
-        >>> fix_broken_json(json_str)
-        {'name': 'Charlie', 'age': 28}
-
-        >>> json_str = '{ "name": "David", "age": 35 }\\n\\nI provided the json above'
-        >>> fix_broken_json(json_str)
-        {'name': 'David', 'age': 35}
-
-    Basic usage:
-
-        >>> json_str = '{"name": "Alice", "age": 30}'
-        >>> fix_broken_json(json_str)
-        {'name': 'Alice', 'age': 30}
-
-    Handling code block markers:
-
-        >>> json_str = '''
-        ... ```json
-        ... {
-        ...     "name": "Bob",
-        ...     "age": 25
-        ... }
-        ... ```
-        ... '''
-        >>> fix_broken_json(json_str)
-        {'name': 'Bob', 'age': 25}
-
-    Handling unescaped backslashes:
-
-        >>> json_str = '{"path": "C:\\Users\\Bob"}'
-        >>> deserialize_json(json_str)
-        {'path': 'C:\\Users\\Bob'}
-
-    Handling unescaped newlines within strings:
-
-        >>> json_str = '{"text": "Line1\nLine2"}'
-        >>> deserialize_json(json_str)
-        {'text': 'Line1\\nLine2'}
-
-    Handling missing commas between objects in an array:
-
-        >>> json_str = '{"items": [{"id": 1} {"id": 2}]}'
-        >>> deserialize_json(json_str)
-        {'items': [{'id': 1}, {'id': 2}]}
-
-    Removing control characters:
-
-        >>> json_str = '{"text": "Hello\\x00World"}'
-        >>> deserialize_json(json_str)
-        {'text': 'HelloWorld'}
-
-    Attempting to parse invalid JSON:
-
-        >>> json_str = 'Not a JSON string'
-        >>> deserialize_json(json_str)
-        Traceback (most recent call last):
-            ...
-        ValueError: No JSON object could be found in the content.
-
-    Parsing fails after all fixes:
-
-        >>> json_str = '{"name": "David", "age": }'
-        >>> deserialize_json(json_str)
-        Traceback (most recent call last):
-            ...
-        ValueError: Failed to parse JSON content after multiple attempts.
-
-
-    Notes
-    -----
-    The function applies a series of fix functions to correct common issues that may prevent JSON parsing. The fix functions applied are:
-
-    - **No fix**: Attempts to parse the string as-is.
-    - **Escaping unescaped backslashes**: Fixes unescaped backslashes in the string.
-    - **Escaping unescaped newlines within strings**: Escapes unescaped newline and carriage return characters within JSON strings.
-    - **Inserting missing commas between JSON objects in arrays**: Inserts missing commas between JSON objects in arrays.
-    - **Removing control characters**: Removes control characters that may interfere with JSON parsing.
-    - **Removing invalid characters**: Removes any remaining invalid characters (non-printable ASCII characters).
-
-    If parsing fails after all fixes, a `ValueError` is raised.
-
-    Dependencies
-    ------------
-    - **msgspec**: Used for JSON decoding. Install via `pip install msgspec`.
-    - **re**: Used for regular expression operations.
-    - **logging**: Used for logging errors during parsing attempts.
-
     """
 
     # Remove code block markers if present
@@ -809,10 +833,29 @@ def is_url(url: str) -> bool:
 
 
 def struct_to_dict(struct: msgspec.Struct) -> dict[str, Any]:
+    """
+    Converts a msgspec Struct object to a Python dictionary.
+
+    Args:
+        struct (msgspec.Struct): The msgspec Struct object to convert.
+
+    Returns:
+        dict[str, Any]: A Python dictionary representation of the Struct.
+    """
     return msgspec.json.decode(msgspec.json.encode(struct), type=dict)
 
 
 def dict_to_struct[S: msgspec.Struct](d: dict[str, Any], struct: type[S]) -> S:
+    """
+    Converts a Python dictionary to a msgspec Struct object of a specified type.
+
+    Args:
+        d (dict[str, Any]): The Python dictionary to convert.
+        struct (type[S]): The msgspec Struct type to convert to.
+
+    Returns:
+        S: An instance of the specified msgspec Struct, populated with data from the dictionary.
+    """
     return msgspec.json.decode(msgspec.json.encode(d), type=struct)
 
 
@@ -837,25 +880,6 @@ def is_file_url(url: str) -> bool:
 
     # If a MIME type is found, the URL likely points to a file
     return mime_type is not None
-
-
-# def get_file_extension(url: str) -> FileExtension:
-#     """
-#     Get the file extension from a URL.
-
-#     Parameters:
-#         url (str): The URL to extract the file extension from.
-
-#     Returns:
-#         str: The file extension (e.g., '.txt', '.jpg') extracted from the URL.
-#     """
-#     from intellibricks.llms.types import FileExtension
-
-#     extension = url[url.rfind(".") :]
-#     if extension not in get_args(FileExtension):
-#         raise ValueError(f"Unsupported file extension: {extension}")
-
-#     return cast(FileExtension, extension)
 
 
 def ms_type_to_schema(
@@ -1180,6 +1204,30 @@ def write_content_to_file(
     output_dir: str,
     mode: Optional[str] = None,
 ) -> str:
+    """
+    Writes file content to a file in the specified output directory, guessing the extension from content.
+
+    This utility function takes file content, determines an appropriate file extension based on the content type,
+    and writes the content to a file within the specified output directory. It supports various types of file content
+    including bytes, IO streams, and file paths.
+
+    Args:
+        file_content (Union[IO[bytes], bytes, os.PathLike[str]]): The content to write to a file. Can be bytes,
+            an IO stream of bytes, or a file path.
+        output_dir (str): The directory where the file should be written.
+        mode (Optional[str]): The mode in which the file should be opened (e.g., 'wb' for binary write, 'wt' for text write).
+            Defaults to 'wb' (binary write) if not specified.
+
+    Returns:
+        str: The path to the file that was created.
+
+    Example:
+        >>> file_bytes = b"This is a sample file content."
+        >>> output_directory = "output_files"
+        >>> os.makedirs(output_directory, exist_ok=True)
+        >>> file_path = write_content_to_file(file_bytes, output_directory)
+        >>> print(file_path) # Output: output_files/file.txt
+    """
     _mode = mode or "wb"
     extension = guess_extension(file_content)
     if isinstance(file_content, bytes):
@@ -1187,7 +1235,7 @@ def write_content_to_file(
         with open(file_path, _mode) as f:
             f.write(file_content)
     elif hasattr(file_content, "read"):
-        file_path = f"{file_content}/file{extension}"
+        file_path = f"{output_dir}/file.{extension}"
         with open(file_path, _mode) as f:
             f.write(file_content.read())  # type: ignore
     else:
@@ -1197,6 +1245,35 @@ def write_content_to_file(
 
 
 def segments_to_srt(segments: Sequence[SentenceSegment]) -> str:
+    """
+    Converts a sequence of SentenceSegment objects into SRT (SubRip Text) subtitle format.
+
+    This function takes a sequence of `SentenceSegment` objects, each representing a segment of transcribed speech with start and end times,
+    and formats them into a SRT subtitle string. SRT is a widely used subtitle format that includes an index, time range, and subtitle text for each segment.
+
+    Args:
+        segments (Sequence[SentenceSegment]): A sequence of SentenceSegment objects, each containing `sentence`, `start`, and `end` attributes.
+
+    Returns:
+        str: A string containing the segments formatted as SRT subtitles.
+
+    Example:
+        >>> from intellibricks.llms.types import SentenceSegment
+        >>> segments_example = [
+        ...     SentenceSegment(sentence="Hello world.", start=0.0, end=2.5),
+        ...     SentenceSegment(sentence="This is a test subtitle.", start=3.0, end=6.7)
+        ... ]
+        >>> srt_content = segments_to_srt(segments_example)
+        >>> print(srt_content)
+        1
+        00:00:00,000 --> 00:00:02,500
+        Hello world.
+
+        2
+        00:00:03,000 --> 00:00:06,700
+        This is a test subtitle.
+    """
+
     def format_time(seconds: float) -> str:
         hours = int(seconds // 3600)
         remaining = seconds % 3600
