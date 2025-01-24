@@ -627,28 +627,36 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
             doc_text = "\n".join(paragraph_texts)
 
             # Extract all images
-            doc_images: list[Image] = []
+            doc_images: list[tuple[str, bytes]] = []
             for rel in document.part._rels.values():  # type: ignore
                 # Relationship is image-based if it references an image part
                 if "image" in rel.reltype:
                     image_part = rel.target_part
                     image_name = image_part.partname.split("/")[-1]  # e.g. "image1.png"
                     image_bytes = image_part.blob
-                    doc_images.append(Image(name=image_name, contents=image_bytes))
+                    doc_images.append((image_name, image_bytes))
 
             # If high-level strategy, describe images
+            document_images: list[Image] = []
             image_descriptions: list[str] = []
             if self.visual_description_agent and self.strategy == ParsingStrategy.HIGH:
                 for idx, image in enumerate(doc_images, start=1):
                     agent_input = ImageFilePart(
                         mime_type=MimeType.image_png,  # or detect from extension
-                        data=image.contents,
+                        data=image[1],
                     )
                     agent_response = await self.visual_description_agent.run_async(
                         agent_input
                     )
                     image_md = agent_response.parsed.final_answer.md
                     image_descriptions.append(f"Docx Image {idx}: {image_md}")
+                    document_images.append(
+                        Image(
+                            name=image[0],
+                            contents=image[1],
+                            ocr_text=agent_response.parsed.final_answer.ocr_text,
+                        )
+                    )
 
                 # Append the images' descriptions to the main text
                 if image_descriptions:
@@ -659,7 +667,7 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
                 number=1,
                 text=doc_text,
                 md=doc_text,
-                images=doc_images,
+                images=document_images,
             )
 
             return ParsedFile(
@@ -696,7 +704,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
             for slide_index, slide in enumerate(prs.slides, start=1):
                 # We'll store text from shapes and images
                 slide_texts: list[str] = []
-                slide_images: list[Image] = []
+                _slide_images: list[tuple[str, bytes]] = []
 
                 # Examine each shape
                 for shape in slide.shapes:
@@ -711,20 +719,21 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
                         picture_shape = cast(Picture, shape)
                         image_blob: bytes = picture_shape.image.blob
                         image_name: str = shape.name or f"slide_{slide_index}_img"
-                        slide_images.append(Image(name=image_name, contents=image_blob))
+                        _slide_images.append((image_name, image_blob))
 
                 combined_text: str = "\n".join(slide_texts)
 
+                slide_images: list[Image] = []
                 # If strategy is HIGH, we generate image descriptions
                 if (
                     self.visual_description_agent
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     image_descriptions: list[str] = []
-                    for img_idx, image_obj in enumerate(slide_images, start=1):
+                    for img_idx, image_obj in enumerate(_slide_images, start=1):
                         agent_input = ImageFilePart(
                             mime_type=MimeType.image_png,
-                            data=image_obj.contents,
+                            data=image_obj[1],
                         )
                         agent_response = await self.visual_description_agent.run_async(
                             agent_input
@@ -732,6 +741,13 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
                         image_md: str = agent_response.parsed.final_answer.md
                         image_descriptions.append(
                             f"Slide {slide_index} - Image {img_idx}: {image_md}"
+                        )
+                        slide_images.append(
+                            Image(
+                                name=image_obj[0],
+                                contents=image_obj[1],
+                                ocr_text=agent_response.parsed.final_answer.ocr_text,
+                            )
                         )
 
                     if image_descriptions:
@@ -861,17 +877,16 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                 csv_str = csv_buffer.getvalue().strip()
 
                 # Process images
-                sheet_images: list[Image] = []
+                sheet_images: list[tuple[str, bytes]] = []
                 if hasattr(sheet, "_images"):
                     image_list = getattr(sheet, "_images", [])
                     for img_idx, img in enumerate(image_list, start=1):
                         img_data = getattr(img, "_data", None)
                         if img_data is not None:
                             image_name = f"{sheet.title}_img_{img_idx}.png"
-                            sheet_images.append(
-                                Image(name=image_name, contents=img_data)
-                            )
+                            sheet_images.append((image_name, img_data))
 
+                final_images: list[Image] = []
                 # Generate image descriptions if needed
                 if (
                     self.visual_description_agent
@@ -881,7 +896,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                     for img_idx, image_obj in enumerate(sheet_images, start=1):
                         agent_input = ImageFilePart(
                             mime_type=MimeType.image_png,
-                            data=image_obj.contents,
+                            data=image_obj[1],
                         )
                         agent_response = await self.visual_description_agent.run_async(
                             agent_input
@@ -890,6 +905,14 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                         image_descriptions.append(
                             f"Worksheet {sheet.title} - Image {img_idx}: {image_md}"
                         )
+                        final_images.append(
+                            Image(
+                                name=image_obj[0],
+                                contents=image_obj[1],
+                                ocr_text=agent_response.parsed.final_answer.ocr_text,
+                            )
+                        )
+
                     if image_descriptions:
                         combined_text += "\n\n" + "\n".join(image_descriptions)
 
@@ -902,7 +925,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                     number=sheet_index,
                     text=combined_text,
                     md=combined_text,
-                    images=sheet_images,
+                    images=final_images,
                     items=[table_item],
                 )
                 sections.append(section_content)
@@ -987,8 +1010,8 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
                     current_mime_type = MimeType.image_png
 
             # Create an Image object
-            image_obj = Image(name=file.name, contents=image_bytes)
 
+            image_ocr: str | None = None
             # Generate a description if we have an agent + HIGH strategy
             text_content = ""
             if self.visual_description_agent and self.strategy == ParsingStrategy.HIGH:
@@ -1000,8 +1023,10 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
                     agent_input
                 )
                 description_md = agent_response.parsed.final_answer.md
+                image_ocr = agent_response.parsed.final_answer.ocr_text
                 text_content = description_md
 
+            image_obj = Image(name=file.name, contents=image_bytes, ocr_text=image_ocr)
             # We treat it as a single "page" with one image
             page_content = SectionContent(
                 number=1,
@@ -1087,11 +1112,7 @@ class AnimatedImageFileParser(
                 frame.save(png_buffer, format="PNG")
                 png_bytes = png_buffer.getvalue()
 
-                # Create an Image object
-                frame_image = Image(
-                    name=f"{file.name}-frame{i}.png", contents=png_bytes
-                )
-
+                frame_image_ocr: str | None = None
                 # If strategy is HIGH, pass the frame to the agent
                 text_description = ""
                 if (
@@ -1105,8 +1126,15 @@ class AnimatedImageFileParser(
                     agent_response = await self.visual_description_agent.run_async(
                         agent_input
                     )
+                    frame_image_ocr = agent_response.parsed.final_answer.ocr_text
                     text_description = agent_response.parsed.final_answer.md
 
+                # Create an Image object
+                frame_image = Image(
+                    name=f"{file.name}-frame{i}.png",
+                    contents=png_bytes,
+                    ocr_text=frame_image_ocr,
+                )
                 # Each frame is its own "page" in the final doc
                 page_content = SectionContent(
                     number=i,
