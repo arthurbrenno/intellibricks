@@ -9,7 +9,6 @@ They encapsulate the logic for interacting with LLMs, managing state, and perfor
 
 *   **Agent Class:** The `Agent` class is the central component for building intelligent agents. It orchestrates interactions with LLMs through `Synapse` objects, allowing for text completion, chat, and structured data extraction.
 *   **Task Execution:** Agents are designed to execute tasks by interacting with LLMs, interpreting responses, and potentially using tools or external resources.
-*   **State Management:** While the base `Agent` class is stateless, it provides a foundation for building stateful agents by managing conversation history and other relevant data within your application logic.
 *   **Flexibility and Extensibility:** The `Agent` class is designed to be flexible and extensible, allowing developers to customize agent behavior, integrate custom tools, and adapt to various application requirements.
 *   **Integration with Synapses:** Agents rely on `Synapse` objects to communicate with specific LLMs, enabling easy switching between different models and providers.
 
@@ -32,11 +31,11 @@ from intellibricks.llms.constants import AIModel
 my_synapse = Synapse(model=AIModel.GEMINI_PRO)
 
 # Create an Agent instance, linked to the Synapse
-my_agent: Agent[str] = Agent(llm=my_synapse) # Assuming Agent is type-hinted to return str
+my_agent = Agent([...], synapse=my_synapse)
 
 # Run a task with the agent
 response = my_agent.run("Summarize the main points of quantum physics.")
-print(response) # Output: Summary of quantum physics from the LLM
+print(response)
 ```
 
 Explore the `Agent` class documentation to understand its configuration options, task execution methods, and how to integrate custom functionalities.
