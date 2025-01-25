@@ -14,7 +14,7 @@ test:
 
 docs:
 	@echo "Gerando documentação..."
-	sphinx-apidoc -o docs src/intellibricks
+	cd docs && make html
 
 clean:
 	@echo "Removendo diretórios __pycache__..."
