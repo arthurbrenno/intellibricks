@@ -163,7 +163,7 @@ class SynapseProtocol(Protocol):
         response = synapse.complete(prompt="Tell me a joke.")
         print(response.message.content)
 
-    my_synapse = Synapse.of(model=AIModel.GEMINI_PRO)
+    my_synapse = Synapse.of("google/genai/gemini-1.5-pro")
     process_with_synapse(my_synapse) # Works because Synapse implements SynapseProtocol
     ```
     """
@@ -695,7 +695,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
         **Example:**
         ```python
-        synapse_with_api_key = Synapse(model=AIModel.GPT_4, api_key="YOUR_API_KEY")
+        synapse_with_api_key = Synapse("openai/api/gpt-4o", api_key="YOUR_API_KEY")
         ```
 
     *   `cloud_project` (Optional[str]):
@@ -738,7 +738,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         **Example:**
         ```python
         synapse_instance = Synapse.of(
-            model=AIModel.GEMINI_PRO,
+            model="openai/api/gpt-4o",
             api_key="YOUR_API_KEY",
             # ... other parameters
         )
