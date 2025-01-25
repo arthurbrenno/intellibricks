@@ -91,7 +91,7 @@ IntelliBricks stands out from other frameworks by prioritizing **Python as a Fir
 
 *   🐍 **Python First**: Built with idiomatic Python, leveraging modern features for a truly Pythonic development experience.
 *   ✨ **Unmatched Simplicity & Clarity**: Designed to be intuitive and easy to use, reducing complexity and boilerplate.
-*   🧱 **Structured Outputs Out-of-the-Box**: Core strength in getting structured data from LLMs with pure Python definitions.
+*   🧱 **Structured Outputs Out-of-the-Box**: Core strength in getting structured data from LLMs with blazingly fast and efficient definitions.
 *   🧠 **Focus on Intelligence**: Concentrate on building intelligent logic, not framework intricacies. IntelliBricks handles the plumbing.
 
 🚀 Join the IntelliBricks Revolution!
