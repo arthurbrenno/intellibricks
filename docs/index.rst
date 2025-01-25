@@ -41,5 +41,12 @@ Get Started
     :caption: User Guide
 
     sections/user_guide/agents.rst
-    sections/user_guide/install.rst
-    sections/user_guide/benchmarks.rst
+    sections/user_guide/synapses.rst
+    sections/user_guide/files.rst
+
+.. toctree::
+    :hidden:
+    :maxdepth: 2
+    :caption: API Reference
+
+    
