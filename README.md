@@ -25,7 +25,7 @@ IntelliBricks is not just another LLM framework. It's a **developer-centric tool
 * **APIs in Minutes:**  Turn your intelligent agents into production-ready REST APIs with just a few lines of code, using FastAPI or Litestar.
 * **Contextual Awareness Built-In:** Seamlessly integrate Retrieval-Augmented Generation (RAG) to give your agents access to a wealth of information.
 
-[Quick Overview](!/docs/_static/quick_overview.png)
+![Quick Overview](/docs/_static/quick_overview.png)
 
 **IntelliBricks is designed to solve the core challenges of building intelligent applications:**
 
