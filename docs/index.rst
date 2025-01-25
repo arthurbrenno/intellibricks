@@ -50,8 +50,3 @@ Get Started
     sections/user_guide/synapses
     sections/user_guide/files
 
-.. toctree::
-    :maxdepth: 2
-    :caption: API Reference
-
-    modules
