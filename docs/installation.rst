@@ -27,11 +27,9 @@ Installation Steps
 
    After the installation is complete, you can verify it by importing ``intellibricks`` in a Python script or interactive session:
 
-   .. code-block:: python
+   .. code-block:: bash
 
-      import intellibricks
-
-      print("IntelliBricks installed successfully!")
+      python -c "from intellibricks.llms import Synapse"
 
    If no errors are raised, and the message is printed, IntelliBricks has been installed correctly.
 
@@ -96,11 +94,4 @@ IntelliBricks interfaces with various LLM providers, which often require API key
 Next Steps
 ----------
 
-With IntelliBricks installed and your environment set up, you're ready to start building! Explore the :doc:`Quickstart <sections/user_guide/quickstart>` guide to begin creating your first intelligent application.
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   why
-   benchmarks
+With IntelliBricks installed and your environment set up, you're ready to start building! Explore the :doc:`Quickstart <quickstart>` guide to begin creating your first intelligent application.
