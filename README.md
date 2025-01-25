@@ -12,7 +12,7 @@ Do you dream of a framework that speaks your language – **Python** – fluentl
 
 **Welcome to IntelliBricks.**
 
-![Quick Overview](/docs/_static/quick_overview.png)
+![Quick Overview](/docs/_static/quick_overview.svg)
 
 IntelliBricks is not just another LLM framework. It's a **developer-centric toolkit** built from the ground up to empower you to create intelligent applications with unprecedented ease and clarity.  We believe that building with AI should feel as natural and intuitive as writing Python itself.
 
