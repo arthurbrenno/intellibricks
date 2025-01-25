@@ -96,17 +96,4 @@ IntelliBricks is innovating file parsing capabilities within the ``files`` modul
 
 While full parsing functionalities are still evolving, the ``files`` module already provides the foundational ``RawFile`` abstraction and is being extended to handle parsed content.
 
-Future Directions for File Parsing
-
-The roadmap for file parsing in IntelliBricks includes:
-
-* **Parser Implementations:** Developing parsers for common file formats (PDF, DOCX, PPTX, Markdown, HTML, images, audio, video, archives, etc.).
-* **Parsing Strategies:** Implementing different parsing strategies (e.g., fast, medium, high accuracy) to balance speed and quality of content extraction.
-* **Integration with Agents:** Seamlessly integrating parsed file content into Agents and LLM workflows, allowing Agents to process and understand file data intelligently.
-* **Extensibility:** Designing the parsing system to be easily extensible, allowing developers to add custom parsers for specialized file types.
-
-Summary
-
-The ``intellibricks.files`` module provides the essential tools for representing and handling files in AI applications. The ``RawFile`` abstraction simplifies file loading, saving, and management. As file parsing capabilities are further developed, this module will become a cornerstone for building intelligent applications that can understand and process information from a wide range of file formats.
-
-Stay tuned for updates and enhancements to file parsing in IntelliBricks!
+# TODO - REST OF THE DOCS. COMPLETE.
