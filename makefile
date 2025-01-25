@@ -12,6 +12,10 @@ release:
 test:
 	uv run pytest -x -s
 
+docs:
+	@echo "Gerando documentação..."
+	sphinx-apidoc -o docs src/intellibricks
+
 clean:
 	@echo "Removendo diretórios __pycache__..."
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
