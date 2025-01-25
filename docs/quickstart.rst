@@ -8,7 +8,7 @@ In this guide, we will build a basic **Creative Title Generator Agent**. This ag
 Step 1: Set up your Python Environment
 --------------------------------------
 
-Ensure you have IntelliBricks installed as per the :doc:`Installation <sections/overview/installation>` guide. Also, make sure you have your API keys configured as environment variables if you plan to use cloud-based LLMs.
+Ensure you have IntelliBricks installed as per the :doc:`Installation <installation>` guide. Also, make sure you have your API keys configured as environment variables if you plan to use cloud-based LLMs.
 
 Step 2: Import Necessary Modules
 --------------------------------
@@ -119,6 +119,6 @@ This quickstart barely scratches the surface of what IntelliBricks can do. Here 
 * **Modify Agent Instructions:** Tweak the instructions to guide the agent towards different styles of titles (e.g., more humorous, more dramatic, etc.).
 * **Explore other LLMs:** Change the ``Synapse`` to use a different model (e.g., OpenAI's models, Groq models) and compare the results. Remember to install necessary dependencies and configure API keys.
 * **Dive into Agent Response:** Explore other properties of the ``AgentResponse`` object, such as ``agent_response.parsed`` (when using response models), and metadata.
-* **User Guide Sections:** Continue reading the :doc:`User Guide <sections/user_guide/index>` to learn about Agents, Synapses, Files, and more advanced features of IntelliBricks.
+* **User Guide Sections:** Continue reading the User Guide to learn about Agents, Synapses, Files, and more advanced features of IntelliBricks.
 
 IntelliBricks is designed to empower you to build sophisticated AI applications with ease. This quickstart is just the beginning. Happy building!

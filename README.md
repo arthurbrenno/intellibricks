@@ -178,7 +178,7 @@ The `intellibricks.files` module provides a robust way to handle and process fil
     # raw_file.contents now holds the raw bytes of the PDF
     ```
 
-* **Parsed Files and Structured Content:**  IntelliBricks is designed to work with parsed file content.  While the parsing functionalities are WIP and being enhanced, the module lays the foundation for extracting structured information (text, images, tables) from files, making it easier to feed file data into your agents and LLM workflows. (More details on parsing capabilities and future integrations can be expanded here).
+* **Parsed Files and Structured Content:**  IntelliBricks is designed to work with parsed file content.  While the parsing functionalities are being enhanced, the module lays the foundation for extracting structured information (text, images, tables) from files, making it easier to feed file data into your agents and LLM workflows. (More details on parsing capabilities and future integrations can be expanded here).
 
 ---
 
@@ -202,7 +202,7 @@ Ready to build truly intelligent applications, effortlessly?
 
 * **Get Started:** `pip install intellibricks`
 * **Explore Examples:** Dive into the [official documentation](https://example.com) for practical code snippets.
-* **Contribute:**  IntelliBricks is a community-driven project!  See our "WIP & Contribution" section to get involved.
+* **Contribute:**  IntelliBricks is a community-driven project!
 * **Connect:** Reach out with questions, feedback, and ideas!
 
 **Let's build the future of intelligent applications, together!**

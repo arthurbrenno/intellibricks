@@ -1,7 +1,9 @@
+.. _files_module:
+
 Files Module: Intelligent File Handling
 =======================================
 
-The ``intellibricks.files`` module is designed to provide a robust and Pythonic way to handle files within your AI applications. It focuses on representing files as ``RawFile`` objects and provides a foundation for parsing and extracting content from various file types.
+The ``intellibricks.files`` module is designed to provide a robust and Pythonic way to handle files within your AI applications. It focuses on representing files as ``RawFile`` objects and provides functionalities for parsing and extracting content from various file types.
 
 Core Concepts of the Files Module
 ---------------------------------
@@ -18,9 +20,9 @@ Core Concepts of the Files Module
 
 * **File Saving:** You can save the contents of a ``RawFile`` to disk using ``RawFile.to_file_path``.
 
-* **File Parsing Infrastructure (WIP):** While parsing functionalities are still under development, the module lays the groundwork for integrating file parsers. The goal is to enable extraction of structured information (text, images, tables) from various file types.
+* **File Parsing Infrastructure:** The module provides a comprehensive system for file parsing, integrating various file parsers to enable extraction of structured information (text, images, tables) from different file types.
 
-* **File Extension Management:** The module helps in managing and determining file extensions, which is crucial for routing files to appropriate parsers in the future.
+* **File Extension Management:** The module helps in managing and determining file extensions, which is crucial for routing files to appropriate parsers.
 
 Working with RawFile Objects
 -----------------------------
@@ -84,16 +86,120 @@ To save the content of a ``RawFile`` to a new file path:
 
    print(f"File saved to: {output_path}")
 
-File Parsing
-------------
+Using File Parsers
+--------------------
 
-IntelliBricks is innovating file parsing capabilities within the ``files`` module and integrating it with the ``intellibricks.files.parsers`` module. The goal is to provide a flexible and extensible system for:
+IntelliBricks provides a set of file parsers within the ``intellibricks.files.parsers`` module to extract structured content from different file formats. Here's how you can use them:
 
-* **Text Extraction:** Extracting plain text content from various document formats (PDF, DOCX, TXT, etc.).
-* **Image Extraction:** Identifying and extracting images embedded in files.
-* **Table Data Extraction:** Recognizing and extracting tabular data from documents.
-* **Structured Content Representation:** Representing parsed content in structured schema objects (e.g., headings, paragraphs, tables, images with metadata).
+**Available Parsers**
 
-While full parsing functionalities are still evolving, the ``files`` module already provides the foundational ``RawFile`` abstraction and is being extended to handle parsed content.
+Currently, IntelliBricks offers the following file parsers:
 
-# TODO - REST OF THE DOCS. COMPLETE.
+* ``TxtFileParser``: For parsing plain text files (.txt).
+* ``PdfFileParser``: For parsing PDF documents (.pdf).
+
+You can import these parsers from ``intellibricks.files.parsers``.
+
+**Basic Usage Example**
+
+Let's demonstrate how to parse a PDF file to extract its content:
+
+.. code-block:: python
+
+   from intellibricks.files import RawFile
+   from intellibricks.files.parsers import PdfFileParser, TxtFileParser
+
+   # 1. Load a RawFile (e.g., from a file path)
+   raw_pdf_file = RawFile.from_file_path("document.pdf") # Replace with your PDF file
+   raw_txt_file = RawFile.from_file_path("document.txt") # Replace with your TXT file
+
+   # 2. Instantiate the appropriate parser
+   pdf_parser = PdfFileParser()
+   txt_parser = TxtFileParser()
+
+   # 3. Extract content using the parser
+   parsed_pdf_document = pdf_parser.extract_contents(raw_pdf_file)
+   parsed_txt_document = txt_parser.extract_contents(raw_txt_file)
+
+   # 4. Access parsed content (ParsedFile object)
+   if isinstance(parsed_pdf_document, ParsedFile):
+       print(f"Parsed document name: {parsed_pdf_document.name}")
+       for section in parsed_pdf_document.sections:
+           print(f"\nSection {section.number}:")
+           print(f"  Text (first 100 chars): {section.text[:100]}...")
+           # ... access other parsed content like images, items, etc.
+
+   if isinstance(parsed_txt_document, ParsedFile):
+       print(f"Parsed document name: {parsed_txt_document.name}")
+       for section in parsed_txt_document.sections:
+           print(f"\nSection {section.number}:")
+           print(f"  Text (first 100 chars): {section.text[:100]}...")
+
+
+**Handling Different File Types**
+
+To parse different file types, you would:
+
+1. Create a ``RawFile`` object for your file.
+2. Instantiate the appropriate parser class based on the file type (e.g., ``PdfFileParser`` for PDFs, ``DocxFileParser`` for DOCX files - when available).
+3. Call the ``extract_contents()`` method of the parser, passing the ``RawFile`` object as input.
+4. Work with the returned ``ParsedFile`` object to access the extracted structured content.
+
+**Parsed File Structure**
+
+The output of file parsing is a ``ParsedFile`` object, which contains:
+
+* **Sections**: The document is divided into ``SectionContent`` objects, representing pages or logical sections. Each ``SectionContent`` contains:
+    * **Text**: The extracted text content of the section.
+    * **Markdown**: A Markdown representation of the section content, including headings, lists, and basic formatting.
+    * **Images**: A list of ``Image`` objects found in the section, including image data and metadata.
+    * **Items**: A list of structured ``PageItem`` objects, representing elements like paragraphs, headings, and tables.
+
+**Example of Parsed Content (Illustrative)**
+
+.. code-block:: python
+
+   from intellibricks.files import RawFile, ParsedFile
+   from intellibricks.files.parsers import PdfFileParser
+
+   # Assume you have a RawFile object loaded from a PDF
+   raw_pdf_file = RawFile.from_file_path("document.pdf")
+   pdf_parser = PdfFileParser()
+
+   parsed_document = pdf_parser.extract_contents(raw_pdf_file)
+
+   if isinstance(parsed_document, ParsedFile):
+       print(f"Parsed document: {parsed_document.name}")
+       for section in parsed_document.sections:
+           print(f"\nSection {section.number}:")
+           print(f"  Text (first 100 chars): {section.text[:100]}...")
+           if section.images:
+               print(f"  Images found: {len(section.images)}")
+           if section.items:
+               print(f"  Items found: {len(section.items)}")
+               # Iterate through items (TextPageItem, HeadingPageItem, TablePageItem, etc.)
+
+
+API Reference
+-------------
+
+.. automodule:: intellibricks.files
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+.. automodule:: intellibricks.files.parsed_files
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: intellibricks.files.parsers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: intellibricks.files.types
+   :members:
+   :undoc-members:
+   :show-inheritance:
