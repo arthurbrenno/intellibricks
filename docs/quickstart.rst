@@ -26,7 +26,7 @@ A ``Synapse`` is your connection to a Language Model Model (LLM). Let's initiali
 
 .. code-block:: python
 
-   synapse = Synapse.of("openai/api/gpt-4o") # Or "google/genai/gemini-pro-experimental"
+   synapse = Synapse.of("openai/api/gpt-4o")
 
    # Ensure you have set up your GOOGLE_API_KEY environment variable.
    # If you face issues, refer to the Synapse documentation for configuration details.
