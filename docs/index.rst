@@ -31,11 +31,20 @@ Get Started
 
    pip install intellibricks
 
-Dive Deeper
------------
+.. toctree::
+    :hidden:
+    :maxdepth: 2
+    :caption: Overview
+
+    why.rst
+    install.rst
+    benchmarks.rst
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :hidden:
+    :maxdepth: 2
+    :caption: Overview
 
-   
+    why.rst
+    install.rst
+    benchmarks.rst
