@@ -1,4 +1,4 @@
-.PHONY: run release test clean typecheck
+.PHONY: run release test docs clean typecheck
 
 .DEFAULT_GOAL := run
 
