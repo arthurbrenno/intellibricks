@@ -36,7 +36,7 @@ Installation Steps
    If no errors are raised, and the message is printed, IntelliBricks has been installed correctly.
 
 Optional Installations (For Extended Functionality)
---------------------------------------------------
+---------------------------------------------------
 
 IntelliBricks is designed to be modular, and some functionalities are provided through optional dependencies. You can install these extras based on your needs:
 

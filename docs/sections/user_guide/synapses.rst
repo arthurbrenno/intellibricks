@@ -1,5 +1,5 @@
 Synapses: Connecting to Language Model Models (LLMs)
-==================================================
+====================================================
 
 **Synapses** in IntelliBricks are your gateway to the world of Language Model Models (LLMs). A Synapse acts as a smart connector, handling the complexities of interacting with different LLM providers and models in a consistent and Pythonic way. It abstracts away the low-level API details, allowing you to focus on *what* you want to achieve with LLMs, rather than *how* to communicate with them.
 
@@ -19,7 +19,7 @@ Core Concepts of Synapses
 * **Text Transcription Synapse:** For audio processing, ``TextTranscriptionSynapse`` is specialized for audio transcription tasks, connecting to transcription services like OpenAI Whisper or Groq Whisper.
 
 Initializing Synapses
------------------------
+---------------------
 
 Synapses are typically initialized using the static factory method ``Synapse.of()``, which simplifies configuration based on model identifiers.
 

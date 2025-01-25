@@ -85,7 +85,7 @@ To save the content of a ``RawFile`` to a new file path:
    print(f"File saved to: {output_path}")
 
 File Parsing (Work in Progress)
-------------------------------
+-------------------------------
 
 IntelliBricks is actively developing file parsing capabilities within the ``files`` module and integrating it with the ``intellibricks.parsers`` module. The goal is to provide a flexible and extensible system for:
 

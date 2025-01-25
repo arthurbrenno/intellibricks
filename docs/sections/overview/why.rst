@@ -1,5 +1,5 @@
 Why IntelliBricks? The Intelligent Choice
-=======================================
+=========================================
 
 In the rapidly evolving landscape of AI, building intelligent applications can often feel like navigating a complex maze. Many frameworks introduce layers of abstraction that, instead of simplifying, add to the cognitive load. You end up wrestling with configurations and boilerplate code, losing sight of the core intelligence you're trying to build.
 

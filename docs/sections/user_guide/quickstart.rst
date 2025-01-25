@@ -11,7 +11,7 @@ Step 1: Set up your Python Environment
 Ensure you have IntelliBricks installed as per the :doc:`Installation <sections/overview/installation>` guide. Also, make sure you have your API keys configured as environment variables if you plan to use cloud-based LLMs.
 
 Step 2: Import Necessary Modules
--------------------------------
+--------------------------------
 
 Start by importing the required classes from IntelliBricks:
 
@@ -63,7 +63,7 @@ Let's break down the Agent configuration:
 * ``synapse``:  The ``Synapse`` object we initialized earlier, linking this agent to the Google Gemini Pro LLM.
 
 Step 5: Run the Agent with a Prompt
-----------------------------------
+-----------------------------------
 
 To get our agent to generate titles, we need to run it with an input prompt. Let's ask it to generate titles for a story about a knight discovering a dragon egg.
 

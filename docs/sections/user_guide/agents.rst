@@ -1,10 +1,10 @@
 Agents: The Core of Intelligent Applications
-===========================================
+============================================
 
 In IntelliBricks, **Agents** are the fundamental building blocks for creating intelligent and autonomous applications. An Agent is an entity designed to perform specific tasks by interacting with Language Model Models (LLMs), leveraging tools, and managing contextual information. Think of Agents as specialized AI workers in your application, each with a defined role and capabilities.
 
 Key Concepts of Agents
------------------------
+----------------------
 
 * **Task Definition:** Each Agent is configured with a specific ``task``, clearly outlining its purpose. This task acts as the agent's primary objective.
 
@@ -21,7 +21,7 @@ Key Concepts of Agents
 * **Response Models:** Agents can be configured with ``response_model`` to ensure structured outputs from LLMs. This makes it easy to get predictable, parsed data from Agent runs.
 
 Creating and Configuring Agents
----------------------------------
+-------------------------------
 
 Let's explore how to create and configure Agents in IntelliBricks with Python code examples.
 
