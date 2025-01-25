@@ -186,7 +186,7 @@ The `intellibricks.files` module provides a robust way to handle and process fil
 
 IntelliBricks stands out from other frameworks like LangChain and LlamaIndex because it's built with a core philosophy: **Python First.**
 
-* **Python as a First-Class Citizen:**  IntelliBricks leverages the latest Python features (like type hints and default generics) to provide a truly Pythonic experience. Write clean, idiomatic code, not framework-specific abstractions.
+* **Python as a First-Class Citizen:**  IntelliBricks leverages the latest Python features (like default values for generics) to provide a truly Pythonic experience. Write clean, idiomatic code, not framework-specific abstractions.
 
 * **Unmatched Simplicity and Clarity:**  IntelliBricks is designed to be intuitive and easy to use, even for complex tasks.  We prioritize developer experience, eliminating unnecessary complexity and boilerplate.
 
@@ -196,20 +196,12 @@ IntelliBricks stands out from other frameworks like LangChain and LlamaIndex bec
 
 ---
 
-## 📚 Deep Dive: Exploring the Modules
-
-**(You can keep the "Deep Dive: The Schema Module" section from your original README here and adapt it slightly to fit the new structure and focus on the core modules.  Potentially rename it to "Deep Dive: Key Concepts and Modules" and expand on Agents and Files too, not just schema).**
-
-**(The "WIP (Work in Progress) & Contribution" and "Local Development" and "License" sections should be kept and potentially enhanced, adding specific areas where contributions are welcome based on the current TODO and WIP notes in your files).**
-
----
-
 ## 🚀 Join the IntelliBricks Revolution!
 
 Ready to build truly intelligent applications, effortlessly?
 
 * **Get Started:** `pip install intellibricks`
-* **Explore Examples:** Dive into the `tests/example.py` and `docs/examples` for practical code snippets.
+* **Explore Examples:** Dive into the [official documentation](https://example.com) for practical code snippets.
 * **Contribute:**  IntelliBricks is a community-driven project!  See our "WIP & Contribution" section to get involved.
 * **Connect:** Reach out with questions, feedback, and ideas!
 
