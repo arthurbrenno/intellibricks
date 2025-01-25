@@ -1,4 +1,4 @@
-<h1 align="center">🧠🧱 IntelliBricks: Build Intelligent Apps, Effortlessly.</h1>
+<h1 align="center">🧠🧱 IntelliBricks: The Building Blocks for Intelligent Applications..</h1>
 
 <p align="center">
   <b>The Python-First Framework for Agentic & LLM-Powered Applications</b>
