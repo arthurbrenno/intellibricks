@@ -24,6 +24,7 @@ extensions: list[str] = [
 ]
 
 templates_path = ["_templates"]
+pygments_style = "default"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
@@ -31,4 +32,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
+html_theme_options = {
+    "light_logo": "logo-light.svg",
+    "dark_logo": "logo-dark.svg",
+}
 html_static_path = ["_static"]

@@ -6,11 +6,6 @@
 IntelliBricks Documentation
 ===========================
 
-.. image:: https://raw.githubusercontent.com/arthurbrenno/intellibricks/refs/heads/master/static/readme_images/logo.png
-   :alt: IntelliBricks Logo
-   :align: center
-   :width: 500
-
 **Build Intelligent Apps, Effortlessly.**
 
 IntelliBricks is a Python-first framework designed to simplify the development of agentic and LLM-powered applications. It provides a streamlined set of tools to interact with Language Model Models (LLMs), build autonomous agents, and handle files intelligently, all while keeping Python at the forefront. Focus on building intelligence, not boilerplate, with IntelliBricks.
@@ -36,15 +31,15 @@ Get Started
     :maxdepth: 2
     :caption: Overview
 
-    why.rst
-    install.rst
-    benchmarks.rst
+    sections/overview/why.rst
+    sections/overview/installation.rst
+    sections/overview/benchmarks.rst
 
 .. toctree::
     :hidden:
     :maxdepth: 2
-    :caption: Overview
+    :caption: User Guide
 
-    why.rst
-    install.rst
-    benchmarks.rst
+    sections/user_guide/agents.rst
+    sections/user_guide/install.rst
+    sections/user_guide/benchmarks.rst
