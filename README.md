@@ -12,9 +12,7 @@ Do you dream of a framework that speaks your language – **Python** – fluentl
 
 **Welcome to IntelliBricks.**
 
-<p align="center">
- <img src="/static/readme_images/advantages.jpeg" alt="IntelliBricks Advantages" width="700"/>
-</p>
+![Quick Overview](/docs/_static/quick_overview.png)
 
 IntelliBricks is not just another LLM framework. It's a **developer-centric toolkit** built from the ground up to empower you to create intelligent applications with unprecedented ease and clarity.  We believe that building with AI should feel as natural and intuitive as writing Python itself.
 
@@ -24,8 +22,6 @@ IntelliBricks is not just another LLM framework. It's a **developer-centric tool
 * **Agents that Truly Understand:**  Craft autonomous agents with clear tasks, instructions, and access to your own knowledge – all in clean, Pythonic code.
 * **APIs in Minutes:**  Turn your intelligent agents into production-ready REST APIs with just a few lines of code, using FastAPI or Litestar.
 * **Contextual Awareness Built-In:** Seamlessly integrate Retrieval-Augmented Generation (RAG) to give your agents access to a wealth of information.
-
-![Quick Overview](/docs/_static/quick_overview.png)
 
 **IntelliBricks is designed to solve the core challenges of building intelligent applications:**
 
