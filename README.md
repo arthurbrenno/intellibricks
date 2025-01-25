@@ -102,6 +102,16 @@ The `intellibricks.llms` module is your gateway to the world of Language Model M
 
 * **Observability with Langfuse:**  IntelliBricks integrates seamlessly with [Langfuse](https://langfuse.com/) for tracing, monitoring, and debugging your LLM interactions. Gain deep insights into your application's performance and LLM behavior.
 
+```py
+from intellibricks import Synapse
+from langfuse import Langfuse
+
+synapse = Synapse.of(..., langfuse=Langfuse())
+```
+
+Completions should be well organized in this beautiful dashboard:
+![Langfuse](static/readme_images/langfuse_view.jpeg)
+
 ### 🤖 Agents Module:  Craft Autonomous Intelligent Entities
 
 The `intellibricks.agents` module empowers you to build sophisticated, autonomous agents that can perform complex tasks. Agents are the core of intelligent applications, orchestrating LLM interactions and leveraging tools to achieve specific goals.
