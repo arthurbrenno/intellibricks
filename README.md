@@ -168,11 +168,10 @@ The `intellibricks.files` module provides a robust way to handle and process fil
 * **`RawFile`: Your File Abstraction:**  Represent files as `RawFile` objects, encapsulating file content, name, and extension. Load files from paths, bytes, or in-memory streams.
 
     ```python
-    from intellibricks import RawFile
+    from intellibricks.files import RawFile
     from pathlib import Path
 
-    file_path = Path("my_document.pdf") # Assuming you have a PDF
-    raw_file = RawFile.from_file_path(file_path)
+    raw_file = RawFile.from_file_path("my_document.pdf")
 
     print(f"File Name: {raw_file.name}")
     print(f"File Extension: {raw_file.extension}")
