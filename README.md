@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/docs/readme_images/logo.png" alt="IntelliBricks Logo" width="500" />
+  <img src="/static/readme_images/logo.png" alt="IntelliBricks Logo" width="500" />
 </p>
 
 <h1 align="center">🧠🧱 IntelliBricks: Build Intelligent Apps, Effortlessly.</h1>
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
- <img src="/docs/readme_images/quick_overv.jpeg" alt="Quick Overview" width="700" />
+ <img src="/static/readme_images/quick_overv.jpeg" alt="Quick Overview" width="700" />
 </p>
 
 ---
@@ -21,7 +21,7 @@ Do you dream of a framework that speaks your language – **Python** – fluentl
 **Welcome to IntelliBricks.**
 
 <p align="center">
- <img src="/docs/readme_images/advantages.jpeg" alt="IntelliBricks Advantages" width="700"/>
+ <img src="/static/readme_images/advantages.jpeg" alt="IntelliBricks Advantages" width="700"/>
 </p>
 
 IntelliBricks is not just another LLM framework. It's a **developer-centric toolkit** built from the ground up to empower you to create intelligent applications with unprecedented ease and clarity.  We believe that building with AI should feel as natural and intuitive as writing Python itself.
