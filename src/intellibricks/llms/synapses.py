@@ -27,10 +27,9 @@ To use this module, you typically instantiate a `Synapse` or `TextTranscriptionS
 
 ```python
 from intellibricks.llms.synapses import Synapse
-from intellibricks.llms.constants import AIModel
 
 # Instantiate a Synapse for a specific LLM
-my_synapse = Synapse.of(model=AIModel.GEMINI_PRO)
+my_synapse = Synapse.of("google/genai/gemini-1.5-pro")
 
 # Perform a chat completion
 response = my_synapse.chat(
@@ -47,11 +46,10 @@ print(response.message.content) # Output: Paris
 
 ```python
 from intellibricks.llms.synapses import Synapse, SynapseCascade
-from intellibricks.llms.constants import AIModel
 
 # Create multiple Synapses, potentially for different models or API keys
-synapse1 = Synapse.of(model=AIModel.GEMINI_PRO)
-synapse2 = Synapse.of(model=AIModel.GPT_3_5_TURBO) # Assuming GPT_3_5_TURBO is defined elsewhere
+synapse1 = Synapse.of("google/genai/gemini-1.5-pro")
+synapse2 = Synapse.of("openai/api/gpt-4o")
 
 # Create a SynapseCascade with the synapses
 cascade_synapse = SynapseCascade.of(synapse1, synapse2)
@@ -159,7 +157,6 @@ class SynapseProtocol(Protocol):
 
     ```python
     from intellibricks.llms.synapses import Synapse, SynapseProtocol
-    from intellibricks.llms.constants import AIModel
 
     def process_with_synapse(synapse: SynapseProtocol):
         # Function that accepts any object adhering to SynapseProtocol
@@ -688,10 +685,9 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         **Example:**
         ```python
         from intellibricks.llms.synapses import Synapse
-        from intellibricks.llms.constants import AIModel
 
-        synapse_gemini_pro = Synapse(model=AIModel.GEMINI_PRO)
-        synapse_gpt_3_5 = Synapse(model=AIModel.GPT_3_5_TURBO) # If GPT_3_5_TURBO is defined
+        synapse_gemini_pro = Synapse("google/genai/gemini-1.5-pro")
+        synapse_gpt_3_5 = Synapse("openai/api/gpt-4o")
         ```
 
     *   `api_key` (Optional[str]):
@@ -714,11 +710,10 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         **Example:**
         ```python
         from intellibricks.llms.synapses import Synapse
-        from intellibricks.llms.constants import AIModel
         from langfuse import Langfuse
 
         langfuse_client = Langfuse(public_key="...", secret_key="...")
-        synapse_with_langfuse = Synapse(model=AIModel.GEMINI_PRO, langfuse=Maybe(langfuse_client))
+        synapse_with_langfuse = Synapse(model="google/genai/gemini-1.5-pro", langfuse=Maybe(langfuse_client))
         ```
 
     *   `web_searcher` (Optional[WebSearchable]):
@@ -1679,10 +1674,9 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         **Example:**
         ```python
         from intellibricks.llms.synapses import Synapse, SynapseCascade
-        from intellibricks.llms.constants import AIModel
 
-        synapse1 = Synapse.of(model=AIModel.GEMINI_PRO)
-        synapse2 = Synapse.of(model=AIModel.GPT_3_5_TURBO)
+        synapse1 = Synapse.of("google/genai/gemini-1.5-pro")
+        synapse2 = Synapse.of("google/vertexai/gemini-1.5-pro")
 
         cascade = SynapseCascade(synapses=[synapse1, synapse2])
         print(cascade.synapses) # Output: [<Synapse...>, <Synapse...>]
@@ -2484,9 +2478,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         **Example:**
         ```python
         from intellibricks.llms.synapses import TextTranscriptionSynapse
-        from intellibricks.llms.constants import TranscriptionModelType
 
-        transcription_synapse = TextTranscriptionSynapse(model=TranscriptionModelType.WHISPER_API)
+        transcription_synapse = TextTranscriptionSynapse("groq/api/distil-whisper-large-v3-en")
         ```
 
     *   `api_key` (Optional[str]):
@@ -2503,11 +2496,10 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         **Example:**
         ```python
         from intellibricks.llms.synapses import TextTranscriptionSynapse
-        from intellibricks.llms.constants import TranscriptionModelType
         from langfuse import Langfuse
 
         langfuse_client = Langfuse(public_key="...", secret_key="...")
-        transcription_synapse_langfuse = TextTranscriptionSynapse(model=TranscriptionModelType.WHISPER_API, langfuse=Maybe(langfuse_client))
+        transcription_synapse = TextTranscriptionSynapse("groq/api/distil-whisper-large-v3-en", langfuse=Maybe(langfuse_client))
         ```
 
     **Class Methods:**
@@ -2551,10 +2543,9 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         **Example:**
         ```python
         from intellibricks.llms.synapses import TextTranscriptionSynapse
-        from intellibricks.llms.constants import TranscriptionModelType
         from intellibricks.llms.types import FileContent
 
-        transcription_synapse = TextTranscriptionSynapse.of(model=TranscriptionModelType.WHISPER_API, api_key="YOUR_WHISPER_API_KEY")
+        transcription_synapse = TextTranscriptionSynapse.of("groq/api/distil-whisper-large-v3-en", api_key="YOUR_WHISPER_API_KEY")
         audio_file_content = FileContent(data=b"...", mime_type="audio/mp3") # Replace b"..." with actual audio bytes
 
         transcription = transcription_synapse.transcribe(audio=audio_file_content)
@@ -2814,10 +2805,9 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
         **Example:**
         ```python
         from intellibricks.llms.synapses import TextTranscriptionSynapse, TextTranscriptionsSynapseCascade
-        from intellibricks.llms.constants import TranscriptionModelType
 
-        transcription_synapse1 = TextTranscriptionSynapse.of(model=TranscriptionModelType.WHISPER_API)
-        transcription_synapse2 = TextTranscriptionSynapse.of(model=TranscriptionModelType.GOOGLE_SPEECH_TO_TEXT) # Assuming GOOGLE_SPEECH_TO_TEXT is defined
+        transcription_synapse1 = TextTranscriptionSynapse.of("groq/api/distil-whisper-large-v3-en")
+        transcription_synapse2 = TextTranscriptionSynapse.of("groq/api/distil-whisper-large-v3")
 
         cascade = TextTranscriptionsSynapseCascade(synapses=[transcription_synapse1, transcription_synapse2])
         print(cascade.synapses) # Output: [<TextTranscriptionSynapse...>, <TextTranscriptionSynapse...>]

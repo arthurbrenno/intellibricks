@@ -18,7 +18,6 @@ Start by importing the required classes from IntelliBricks:
 .. code-block:: python
 
    from intellibricks import Agent, Synapse
-   from intellibricks.llms.constants import AIModel
 
 Step 3: Initialize a Synapse
 ----------------------------
@@ -27,7 +26,7 @@ A ``Synapse`` is your connection to a Language Model Model (LLM). Let's initiali
 
 .. code-block:: python
 
-   synapse = Synapse.of(AIModel.GEMINI_PRO) # Or "google/genai/gemini-pro-experimental"
+   synapse = Synapse.of("openai/api/gpt-4o") # Or "google/genai/gemini-pro-experimental"
 
    # Ensure you have set up your GOOGLE_API_KEY environment variable.
    # If you face issues, refer to the Synapse documentation for configuration details.

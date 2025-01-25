@@ -38,10 +38,9 @@ To start using LLMs in IntelliBricks, you would typically begin by instantiating
 
 ```python
 from intellibricks.llms import Synapse
-from intellibricks.llms.constants import AIModel
 
 # Create a Synapse for Gemini Pro model
-my_synapse = Synapse(model=AIModel.GEMINI_PRO)
+my_synapse = Synapse("google/genai/gemini-1.5-pro")
 
 # You can now use my_synapse to interact with the Gemini Pro LLM
 ```

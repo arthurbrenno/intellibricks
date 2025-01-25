@@ -159,8 +159,7 @@ The output of file parsing is a ``ParsedFile`` object, which contains:
 
 .. code-block:: python
 
-   from intellibricks.files import RawFile, ParsedFile
-   from intellibricks.files.parsers import PdfFileParser
+   from intellibricks.files import RawFile, ParsedFile, PdfFileParser
 
    # Assume you have a RawFile object loaded from a PDF
    raw_pdf_file = RawFile.from_file_path("document.pdf")
@@ -168,16 +167,15 @@ The output of file parsing is a ``ParsedFile`` object, which contains:
 
    parsed_document = pdf_parser.extract_contents(raw_pdf_file)
 
-   if isinstance(parsed_document, ParsedFile):
-       print(f"Parsed document: {parsed_document.name}")
-       for section in parsed_document.sections:
-           print(f"\nSection {section.number}:")
-           print(f"  Text (first 100 chars): {section.text[:100]}...")
-           if section.images:
-               print(f"  Images found: {len(section.images)}")
-           if section.items:
-               print(f"  Items found: {len(section.items)}")
-               # Iterate through items (TextPageItem, HeadingPageItem, TablePageItem, etc.)
+   print(f"Parsed document: {parsed_document.name}")
+   for section in parsed_document.sections:
+      print(f"\nSection {section.number}:")
+      print(f"  Text (first 100 chars): {section.text[:100]}...")
+      if section.images:
+         print(f"  Images found: {len(section.images)}")
+      if section.items:
+         print(f"  Items found: {len(section.items)}")
+         # Iterate through items (TextPageItem, HeadingPageItem, TablePageItem, etc.)
 
 
 API Reference

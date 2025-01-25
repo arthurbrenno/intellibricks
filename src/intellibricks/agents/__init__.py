@@ -24,11 +24,10 @@ To create an intelligent agent with IntelliBricks, you would typically instantia
 
 ```python
 from intellibricks.agents import Agent
-from intellibricks.llms.synapses import Synapse
-from intellibricks.llms.constants import AIModel
+from intellibricks.llms import Synapse
 
 # Create a Synapse instance
-my_synapse = Synapse(model=AIModel.GEMINI_PRO)
+my_synapse = Synapse("openai/api/gpt-4o")
 
 # Create an Agent instance, linked to the Synapse
 my_agent = Agent([...], synapse=my_synapse)

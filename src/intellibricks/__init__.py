@@ -49,10 +49,9 @@ To begin building with IntelliBricks, you can start by creating a `Synapse` to c
 
 ```python
 from intellibricks import Synapse
-from intellibricks.llms.constants import AIModel
 
 # Create a Synapse instance
-my_synapse = Synapse(model=AIModel.GEMINI_PRO)
+my_synapse = Synapse("openai/api/gpt-4o")
 
 # Perform a text completion
 response = my_synapse.complete(prompt="Write a short poem about the sea.")
