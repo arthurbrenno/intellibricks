@@ -12,4 +12,3 @@ This section provides a high-level API reference for the Intellibricks library. 
    intellibricks.llms
    intellibricks.files
    intellibricks.rag
-   intellibricks.organizations
