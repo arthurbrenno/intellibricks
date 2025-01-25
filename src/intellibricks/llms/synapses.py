@@ -77,6 +77,7 @@ from typing import (
     Sequence,
     TypeVar,
     cast,
+    overload,
     runtime_checkable,
 )
 
@@ -170,6 +171,93 @@ class SynapseProtocol(Protocol):
     ```
     """
 
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Synchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model.
+        """
+        ...
+
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Synchronously performs a text completion operation with a raw response.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw response.
+        """
+
     def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
@@ -189,12 +277,118 @@ class SynapseProtocol(Protocol):
         general_web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]: ...
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Synchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model.
+        """
+        ...
+
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Synchronously conducts a chat-based interaction with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
+        """
+        ...
+
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Synchronously conducts a chat-based interaction with a raw response.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw chat response.
+        """
+        ...
 
     def chat(
         self,
-        *,
         messages: Sequence[Message],
+        *,
         response_model: Optional[type[S]] = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
@@ -209,7 +403,116 @@ class SynapseProtocol(Protocol):
         general_web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]: ...
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Synchronously conducts a chat-based interaction with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
+        """
+        ...
+
+    @overload
+    async def complete_async(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Asynchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
+        """
+        ...
+
+    @overload
+    async def complete_async(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Asynchronously performs a text completion operation with a raw response.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw response (async).
+        """
+        ...
 
     async def complete_async(
         self,
@@ -230,12 +533,118 @@ class SynapseProtocol(Protocol):
         general_web_search: Optional[bool] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
-    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]: ...
+    ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Asynchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
+        """
+        ...
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Asynchronously conducts a chat-based interaction with a raw response.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw chat response (async).
+        """
+        ...
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Asynchronously conducts a chat-based interaction with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
+        """
+        ...
 
     async def chat_async(
         self,
-        *,
         messages: Sequence[Message],
+        *,
         response_model: Optional[type[S]] = None,
         n: Optional[int] = None,
         temperature: Optional[float] = None,
@@ -422,6 +831,17 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cloud_project: Optional[str] = None,
         cloud_location: Optional[str] = None,
     ) -> Synapse:
+        """
+        Class method to create a Synapse instance.
+
+        :param model: The Language Model to use.
+        :param api_key: API key for the Language Model service, if required.
+        :param langfuse: Optional Langfuse client instance for observability.
+        :param web_searcher: Optional WebSearchable instance to enable web search functionality.
+        :param cloud_project: Optional Cloud project ID for cloud-based LLM services.
+        :param cloud_location: Optional Cloud location for cloud-based LLM services.
+        :return: A new Synapse instance.
+        """
         return cls(
             model=model,
             langfuse=Maybe(langfuse),
@@ -430,6 +850,94 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             cloud_project=cloud_project,
             cloud_location=cloud_location,
         )
+
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Synchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model.
+        """
+        ...
+
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Synchronously performs a text completion operation with a raw response.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw response.
+        """
+        ...
 
     def complete(
         self,
@@ -451,6 +959,27 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Synchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model.
+        """
         if system_prompt is None:
             system_prompt = [
                 Part.from_text(
@@ -509,6 +1038,90 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             timeout=timeout,
         )
 
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Synchronously conducts a chat-based interaction with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
+        """
+        ...
+
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Synchronously conducts a chat-based interaction with a raw response.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw chat response.
+        """
+        ...
+
     def chat(
         self,
         messages: Sequence[Message],
@@ -528,6 +1141,26 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Synchronously conducts a chat-based interaction with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
+        """
         return run_sync(
             self.__achat,
             messages=messages,
@@ -546,6 +1179,94 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             language=language,
             timeout=timeout,
         )
+
+    @overload
+    async def complete_async(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Asynchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
+        """
+        ...
+
+    @overload
+    async def complete_async(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Asynchronously performs a text completion operation with a raw response.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw response (async).
+        """
+        ...
 
     async def complete_async(
         self,
@@ -567,6 +1288,27 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Asynchronously performs a text completion operation with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
+        """
         if system_prompt is None:
             system_prompt = [
                 Part.from_text(
@@ -592,7 +1334,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
 
         match prompt:
             case str():
-                user_message = DeveloperMessage(contents=[Part.from_text(prompt)])
+                user_message = UserMessage(contents=[Part.from_text(prompt)])
             case Prompt():
                 user_message = UserMessage(
                     contents=[Part.from_text(prompt.as_string())]
@@ -624,6 +1366,90 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             language=language,
             timeout=timeout,
         )
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Asynchronously conducts a chat-based interaction with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
+        """
+        ...
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Asynchronously conducts a chat-based interaction with a raw response.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw chat response (async).
+        """
+        ...
 
     async def chat_async(
         self,
@@ -929,7 +1755,102 @@ class SynapseCascade(msgspec.Struct, frozen=True):
     def of(
         cls, *synapses: Synapse | SynapseCascade, shuffle: bool = False
     ) -> SynapseCascade:
+        """
+        Class method to create a SynapseCascade instance.
+
+        :param synapses: Variable number of Synapse or SynapseCascade objects to include in the cascade.
+        :param shuffle: Whether to shuffle the order of synapses before each attempt.
+        :return: A new SynapseCascade instance.
+        """
         return cls(synapses=synapses, shuffle=shuffle)
+
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Synchronously attempts text completion using the Synapses in the cascade with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model.
+        """
+        ...
+
+    @overload
+    def complete(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Synchronously attempts text completion using the Synapses in the cascade with a raw response.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw response.
+        """
+        ...
 
     def complete(
         self,
@@ -951,6 +1872,27 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Synchronously attempts text completion using the Synapses in the cascade with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model.
+        """
         last_exception = None
         synapses = (
             self.synapses
@@ -963,10 +1905,30 @@ class SynapseCascade(msgspec.Struct, frozen=True):
 
         for synapse in synapses:
             try:
+                if response_model:
+                    return synapse.complete(
+                        prompt=prompt,
+                        system_prompt=system_prompt,
+                        response_model=response_model,
+                        n=n,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        max_retries=max_retries,
+                        top_p=top_p,
+                        top_k=top_k,
+                        stop_sequences=stop_sequences,
+                        cache_config=cache_config,
+                        trace_params=trace_params,
+                        tools=tools,
+                        general_web_search=general_web_search,
+                        language=language,
+                        timeout=timeout,
+                    )
+
                 return synapse.complete(
                     prompt=prompt,
                     system_prompt=system_prompt,
-                    response_model=response_model,
+                    response_model=None,
                     n=n,
                     temperature=temperature,
                     max_tokens=max_tokens,
@@ -989,6 +1951,90 @@ class SynapseCascade(msgspec.Struct, frozen=True):
             raise last_exception
         raise RuntimeError("All synapses failed for complete method.")
 
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Synchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
+        """
+        ...
+
+    @overload
+    def chat(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Synchronously conducts a chat-based interaction using the Synapses in the cascade with a raw response.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw chat response.
+        """
+        ...
+
     def chat(
         self,
         messages: Sequence[Message],
@@ -1008,6 +2054,26 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Synchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
+        """
         last_exception = None
         synapses = (
             self.synapses
@@ -1045,6 +2111,94 @@ class SynapseCascade(msgspec.Struct, frozen=True):
             raise last_exception
         raise RuntimeError("All synapses failed for chat method.")
 
+    @overload
+    async def complete_async(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Asynchronously attempts text completion using the Synapses in the cascade with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
+        """
+        ...
+
+    @overload
+    async def complete_async(
+        self,
+        prompt: str | Prompt | PartType | Sequence[PartType],
+        *,
+        system_prompt: Optional[str | Prompt | PartType | Sequence[PartType]] = None,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Asynchronously attempts text completion using the Synapses in the cascade with a raw response.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw response (async).
+        """
+        ...
+
     async def complete_async(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
@@ -1065,6 +2219,27 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Asynchronously attempts text completion using the Synapses in the cascade with a specified response model.
+
+        :param prompt: The user prompt for text completion.
+        :param system_prompt: Optional system prompt to guide the LLM.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
+        """
         last_exception = None
         synapses = (
             self.synapses
@@ -1077,10 +2252,30 @@ class SynapseCascade(msgspec.Struct, frozen=True):
 
         for synapse in synapses:
             try:
+                if response_model:
+                    return await synapse.complete_async(
+                        prompt=prompt,
+                        system_prompt=system_prompt,
+                        response_model=response_model,
+                        n=n,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        max_retries=max_retries,
+                        top_p=top_p,
+                        top_k=top_k,
+                        stop_sequences=stop_sequences,
+                        cache_config=cache_config,
+                        trace_params=trace_params,
+                        tools=tools,
+                        general_web_search=general_web_search,
+                        language=language,
+                        timeout=timeout,
+                    )
+
                 return await synapse.complete_async(
                     prompt=prompt,
                     system_prompt=system_prompt,
-                    response_model=response_model,
+                    response_model=None,
                     n=n,
                     temperature=temperature,
                     max_tokens=max_tokens,
@@ -1103,6 +2298,90 @@ class SynapseCascade(msgspec.Struct, frozen=True):
             raise last_exception
         raise RuntimeError("All synapses failed for complete_async method.")
 
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: type[S],
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[S]:
+        """
+        Asynchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
+        """
+        ...
+
+    @overload
+    async def chat_async(
+        self,
+        messages: Sequence[Message],
+        *,
+        response_model: None = None,
+        n: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        max_retries: Optional[Literal[1, 2, 3, 4, 5]] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        stop_sequences: Optional[Sequence[str]] = None,
+        cache_config: Optional[CacheConfig] = None,
+        trace_params: Optional[TraceParams] = None,
+        tools: Optional[Sequence[ToolInputType]] = None,
+        general_web_search: Optional[bool] = None,
+        language: Language = Language.ENGLISH,
+        timeout: Optional[float] = None,
+    ) -> ChatCompletion[RawResponse]:
+        """
+        Asynchronously conducts a chat-based interaction using the Synapses in the cascade with a raw response.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Defaults to None, indicating raw response.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's raw chat response (async).
+        """
+        ...
+
     async def chat_async(
         self,
         messages: Sequence[Message],
@@ -1122,6 +2401,26 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
+        """
+        Asynchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
+
+        :param messages: A sequence of Message objects representing the conversation history.
+        :param response_model: Response model class to structure the LLM's output.
+        :param n: Number of completion choices to generate.
+        :param temperature: Sampling temperature for generation (0.0 to 1.0).
+        :param max_tokens: Maximum number of tokens in the generated completion.
+        :param max_retries: Maximum number of retries in case of API errors (1 to 5).
+        :param top_p: Top-p sampling parameter.
+        :param top_k: Top-k sampling parameter.
+        :param stop_sequences: Sequences of tokens at which to stop generation.
+        :param cache_config: Configuration for caching responses.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param tools: Tools (functions) that the LLM can use.
+        :param general_web_search: Whether to enable general web search for the LLM.
+        :param language: Language for the LLM interaction.
+        :param timeout: Request timeout in seconds.
+        :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
+        """
         last_exception = None
         synapses = (
             self.synapses
@@ -1277,6 +2576,14 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         api_key: Optional[str] = None,
         langfuse: Optional[Langfuse] = None,
     ) -> TextTranscriptionSynapse:
+        """
+        Class method to create a TextTranscriptionSynapse instance.
+
+        :param model: The Transcription Model to use.
+        :param api_key: API key for the Transcription Model service, if required.
+        :param langfuse: Optional Langfuse client instance for observability.
+        :return: A new TextTranscriptionSynapse instance.
+        """
         return cls(
             model=model,
             api_key=api_key,
@@ -1292,6 +2599,17 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
     ) -> AudioTranscription:
+        """
+        Synchronously transcribes an audio file to text.
+
+        :param audio: The audio file content to transcribe.
+        :param temperature: Sampling temperature for transcription.
+        :param language: Language of the audio for transcription.
+        :param prompt: Optional prompt to guide the transcription.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param max_retries: Maximum number of retries in case of errors.
+        :return: An AudioTranscription object containing the transcribed text and related metadata.
+        """
         return run_sync(
             self.transcribe_async,
             audio=audio,
@@ -1311,6 +2629,17 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
     ) -> AudioTranscription:
+        """
+        Asynchronously transcribes an audio file to text.
+
+        :param audio: The audio file content to transcribe.
+        :param temperature: Sampling temperature for transcription.
+        :param language: Language of the audio for transcription.
+        :param prompt: Optional prompt to guide the transcription.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param max_retries: Maximum number of retries in case of errors.
+        :return: An AudioTranscription object containing the transcribed text and related metadata (async).
+        """
         debug_logger.debug("Entering transcribe_async method.")
 
         # Step 1: Initialize Trace Parameters
@@ -1558,6 +2887,13 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
         *synapses: TextTranscriptionSynapse | TextTranscriptionsSynapseCascade,
         shuffle: bool = False,
     ) -> TextTranscriptionsSynapseCascade:
+        """
+        Class method to create a TextTranscriptionsSynapseCascade instance.
+
+        :param synapses: Variable number of TextTranscriptionSynapse or TextTranscriptionsSynapseCascade objects.
+        :param shuffle: Whether to shuffle the order of synapses before each transcription attempt.
+        :return: A new TextTranscriptionsSynapseCascade instance.
+        """
         return cls(synapses=synapses, shuffle=shuffle)
 
     def transcribe(
@@ -1569,6 +2905,17 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
     ) -> AudioTranscription:
+        """
+        Synchronously attempts audio transcription using the transcription Synapses in the cascade.
+
+        :param audio: The audio file content to transcribe.
+        :param temperature: Sampling temperature for transcription.
+        :param language: Language of the audio for transcription.
+        :param prompt: Optional prompt to guide the transcription.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param max_retries: Maximum number of retries in case of errors.
+        :return: An AudioTranscription object containing the transcribed text and related metadata.
+        """
         last_exception = None
         synapses = (
             self.synapses
@@ -1604,6 +2951,17 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
         trace_params: Optional[TraceParams] = None,
         max_retries: int = 1,
     ) -> AudioTranscription:
+        """
+        Asynchronously attempts audio transcription using the transcription Synapses in the cascade.
+
+        :param audio: The audio file content to transcribe.
+        :param temperature: Sampling temperature for transcription.
+        :param language: Language of the audio for transcription.
+        :param prompt: Optional prompt to guide the transcription.
+        :param trace_params: Parameters for Langfuse tracing.
+        :param max_retries: Maximum number of retries in case of errors.
+        :return: An AudioTranscription object containing the transcribed text and related metadata (async).
+        """
         last_exception = None
         synapses = (
             self.synapses
