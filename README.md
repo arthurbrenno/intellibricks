@@ -1,15 +1,7 @@
-<p align="center">
-  <img src="/static/readme_images/logo.png" alt="IntelliBricks Logo" width="500" />
-</p>
-
 <h1 align="center">🧠🧱 IntelliBricks: Build Intelligent Apps, Effortlessly.</h1>
 
 <p align="center">
   <b>The Python-First Framework for Agentic & LLM-Powered Applications</b>
-</p>
-
-<p align="center">
- <img src="/static/readme_images/quick_overv.jpeg" alt="Quick Overview" width="700" />
 </p>
 
 ---
