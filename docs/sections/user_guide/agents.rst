@@ -243,10 +243,3 @@ When you run ``logging_agent``, you will see log messages before and after the L
 Summary
 
 IntelliBricks Agents provide a powerful and flexible way to build intelligent applications. They encapsulate task logic, LLM interactions, tool usage, and structured output handling, all within a clean and Pythonic framework. As you delve deeper into IntelliBricks, you'll discover how Agents become the central orchestrators of your AI-powered solutions.
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   synapses
-   files

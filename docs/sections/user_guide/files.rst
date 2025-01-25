@@ -110,10 +110,3 @@ Summary
 The ``intellibricks.files`` module provides the essential tools for representing and handling files in AI applications. The ``RawFile`` abstraction simplifies file loading, saving, and management. As file parsing capabilities are further developed, this module will become a cornerstone for building intelligent applications that can understand and process information from a wide range of file formats.
 
 Stay tuned for updates and enhancements to file parsing in IntelliBricks!
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   agents
-   synapses

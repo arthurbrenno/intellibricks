@@ -192,10 +192,3 @@ Similar to ``SynapseCascade``, IntelliBricks offers ``TextTranscriptionsSynapseC
 Summary
 
 IntelliBricks Synapses provide a robust and flexible way to interact with a wide range of LLMs and transcription services. They simplify model configuration, handle API communication, and offer advanced features like structured outputs and fault tolerance. By leveraging Synapses, you can easily integrate the power of LLMs into your intelligent applications without getting bogged down in low-level complexities.
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   agents
-   files

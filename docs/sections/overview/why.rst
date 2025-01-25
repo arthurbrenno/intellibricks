@@ -46,10 +46,3 @@ IntelliBricks is more than just a framework; it’s a partner in your journey to
 * **Community-Driven:** We believe in the power of community and collaboration. IntelliBricks is an open project, welcoming contributions and feedback to make it even better for everyone.
 
 **Ready to experience the IntelliBricks revolution?** Dive into the documentation, explore the examples, and start building your intelligent applications today. Let's build the future of AI, together, with Python at its heart.
-
-.. toctree::
-   :hidden:
-   :maxdepth: 2
-
-   installation
-   benchmarks
