@@ -13,13 +13,7 @@ Are you ready to build truly **intelligent applications** with the ease and clar
 
 **Welcome to IntelliBricks!**
 
-IntelliBricks is more than just another LLM framework. It's a **developer-centric toolkit**, crafted from the ground up to empower you to create sophisticated AI applications with **unprecedented simplicity**.  We believe that building with AI should feel as intuitive and natural as writing Python itself.
-
-IntelliBricks helps you overcome the common challenges of AI development:
-
-* **Complexity Overload**:  Simplify development with a streamlined, Python-first approach, reducing layers of abstraction.
-* **Unpredictable LLM Interactions**: Achieve reliable and structured outputs from Language Models using Python's type system.
-* **Boilerplate Blues**: Eliminate repetitive setup and focus on building *intelligence*, not infrastructure.
+... (rest of your intro content) ...
 
 Get Started Now!
 ----------------
@@ -28,10 +22,16 @@ Get Started Now!
 
    pip install intellibricks
 
+   # Example Synapse Usage (Add a very simple example here)
+   from intellibricks import Synapse
+   synapse = Synapse.of("openai/api/gpt-3.5-turbo") # Or any free model
+   response = synapse.complete("Say hello!")
+   print(response.text)
+
 Core Modules: Your Intelligent Toolkit
 ------------------------------------
 
-IntelliBricks is built around three core modules, each designed to be powerful individually and seamlessly integrated for building truly intelligent applications:
+IntelliBricks is built around three core modules...
 
 .. toctree::
    :maxdepth: 1
@@ -40,16 +40,9 @@ IntelliBricks is built around three core modules, each designed to be powerful i
    agents
    files
 
-
 🧱 `LLMs Module <llms>`: Speak Fluently with AI Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The ``intellibricks.llms`` module is your gateway to Language Model Models (LLMs).  It provides the tools to interact with various LLMs in a consistent and Pythonic manner.
-
-*   ✅ **Synapses**:  Smart adapters for connecting to different LLM providers (Google Gemini, OpenAI, Groq, and more). Switch models effortlessly!
-*   ✅ **Structured Outputs**: Define your data models in pure Python and get perfectly formatted responses from LLMs. Say goodbye to messy string parsing!
-*   ✅ **Chain of Thought**:  Leverage structured reasoning with the built-in ``ChainOfThought`` class for enhanced observability and debugging.
-*   ✅ **Observability**: Seamless integration with Langfuse for tracing, monitoring, and debugging your LLM interactions.
+... (Your LLMs module description - make it more benefit-driven and add a small code snippet example) ...
 
 .. button::
    :text: Explore the LLMs Module
@@ -58,12 +51,7 @@ The ``intellibricks.llms`` module is your gateway to Language Model Models (LLMs
 
 🤖 `Agents Module <agents>`: Craft Autonomous Intelligent Entities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The ``intellibricks.agents`` module empowers you to build sophisticated, autonomous agents capable of performing complex tasks. Agents orchestrate LLM interactions and leverage tools to achieve specific goals.
-
-*   ✅ **Agent Class**: The central building block for creating intelligent cores. Define tasks, instructions, metadata, and connect to Synapses.
-*   ✅ **Tool Calling**: Equip your agents with tools to interact with external systems, access data, and perform real-world actions.
-*   ✅ **Effortless API Generation**: Instantly turn your agents into production-ready REST APIs using FastAPI or Litestar with minimal code.
+... (Your Agents module description - make it more benefit-driven and add a small code snippet example) ...
 
 .. button::
    :text: Dive into the Agents Module
@@ -72,12 +60,7 @@ The ``intellibricks.agents`` module empowers you to build sophisticated, autonom
 
 🗂️ `Files Module <files>`: Intelligent File Handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The ``intellibricks.files`` module provides a robust way to handle and process files within your AI applications. Parse, extract, and understand content from various file types with ease.
-
-*   ✅ **RawFile Abstraction**: Represent files as ``RawFile`` objects, encapsulating content, name, and extension for easy manipulation.
-*   ✅ **Parsed Files**: Foundation for extracting structured information (text, images, tables) from files, making file data accessible to agents.
-*   ✅ **File Parsing Infrastructure**:  Laying the groundwork for integrating file parsers for diverse file formats in future releases.
+... (Your Files module description - make it more benefit-driven and add a small code snippet example) ...
 
 .. button::
    :text: Learn about the Files Module
@@ -86,33 +69,26 @@ The ``intellibricks.files`` module provides a robust way to handle and process f
 
 🏆 Why Choose IntelliBricks? The Intelligent Choice
 ---------------------------------------------------
-
-IntelliBricks stands out from other frameworks by prioritizing **Python as a First-Class Citizen**.
-
-*   🐍 **Python First**: Built with idiomatic Python, leveraging modern features for a truly Pythonic development experience.
-*   ✨ **Unmatched Simplicity & Clarity**: Designed to be intuitive and easy to use, reducing complexity and boilerplate.
-*   🧱 **Structured Outputs Out-of-the-Box**: Core strength in getting structured data from LLMs with blazingly fast and efficient definitions.
-*   🧠 **Focus on Intelligence**: Concentrate on building intelligent logic, not framework intricacies. IntelliBricks handles the plumbing.
+... (Your "Why Choose IntelliBricks?" section) ...
 
 🚀 Join the IntelliBricks Revolution!
 -------------------------------------
+... (Your "Join the IntelliBricks Revolution!" section) ...
 
-Ready to build truly intelligent applications, effortlessly?
 
-* **Get Started:** ``pip install intellibricks``
-* **Explore Examples:**  Dive into the :doc:`Quickstart <quickstart>` guide.
-* **Contribute:** IntelliBricks is community-driven!  See our contribution guidelines to get involved.
-* **Connect:** Reach out with questions, feedback, and ideas!
+.. toctree::
+   :caption: Getting Started
+   :hidden:
+   :maxdepth: 1
 
-Let's build the future of intelligent applications, together!
+   installation
+   quickstart
 
 .. toctree::
    :caption: User Guides
    :hidden:
    :maxdepth: 1
 
-   installation
-   quickstart
    agents
    llms
    files
