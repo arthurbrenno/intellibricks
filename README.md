@@ -148,7 +148,7 @@ The `intellibricks.agents` module empowers you to build sophisticated, autonomou
     import uvicorn
 
     agent = Agent(
-        task="Simple Chat Agent",
+        task="Chat",
         instructions=["Chat politely with the user."],
         metadata={"name": "ChatBot", "description": "A basic chatbot API."},
         synapse=Synapse.of("google/genai/gemini-pro-experimental"),
