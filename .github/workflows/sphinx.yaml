@@ -2,8 +2,8 @@ name: documentation
 
 on:
   push:
-    branches: [main] # or master, depending on your main branch name
-  workflow_dispatch: # Allows manual triggering
+    branches: [master]
+  workflow_dispatch:
 
 jobs:
   build-docs: # Or you can rename this to 'docs' to be consistent with previous examples
