@@ -37,7 +37,7 @@ def file_get_contents(filename: str) -> str:
     """
     Read the entire contents of a file and return it as a string.
     Supports various path scenarios and attempts to find the file
-    even if only a partial path is provided.
+    even if only a partial path is provided. Inspired by PHP.
 
     Args:
         filename (str): The path to the file to be read.
