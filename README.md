@@ -252,7 +252,7 @@ class CompletionResponse(BaseModel):
 *   **Python-First Purity:**  Clean, idiomatic Python.
 *   **Simpler Syntax:** More direct and intuitive structured output definition.
 *   **Blazing Fast:** Leverages `msgspec` for high-performance serialization, outperforming Pydantic.
-*   **Comprehensive Responses:**  `synapse.complete()` returns `AgentResponse` objects, providing not just parsed data but also full completion details (usage, timing, etc.).
+*   **Comprehensive Responses:**  `synapse.complete()` returns `ChatCompletion[RawResponse | T]` objects, providing not just parsed data but also full completion details (usage, timing, etc.).
 
 *Examples adapted from LangChain [docs](https://python.langchain.com/docs/how_to/structured_output/) and LlamaIndex [docs](https://docs.llamaindex.ai/en/stable/understanding/extraction/structured_llms/). IntelliBricks offers a more streamlined and efficient Python-centric approach.*
 
