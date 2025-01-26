@@ -225,7 +225,27 @@ response = llm.complete("...") # CompletionResponse
 
 ```
 
-*LlamaIndex's `structured_predict` requires defining PromptTemplates and returns the Pydantic object via `.structured_predict()`.  Their documentation even shows a more involved method using `LLMTextCompletionProgram` for lower-level control, highlighting potential complexity.  Like LangChain, it also uses Pydantic.*
+*Here is what LlamaIndex' returns:*
+```py
+class CompletionResponse(BaseModel):
+    """
+    Completion response.
+
+    Fields:
+        text: Text content of the response if not streaming, or if streaming,
+            the current extent of streamed text.
+        additional_kwargs: Additional information on the response(i.e. token
+            counts, function calling information).
+        raw: Optional raw JSON that was parsed to populate text, if relevant.
+        delta: New text that just streamed in (only relevant when streaming).
+    """
+
+    text: str
+    additional_kwargs: dict = Field(default_factory=dict)
+    raw: Optional[Any] = None # Could be anything. And could be None too. Nice.
+    logprobs: Optional[List[List[LogProb]]] = None
+    delta: Optional[str] = None
+```
 
 **IntelliBricks Advantage:**
 
