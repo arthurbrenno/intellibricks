@@ -15,7 +15,7 @@ IntelliBricks is the **Python-first toolkit** for crafting AI applications with 
 **Imagine this:**
 
 *   **Pythonic AI:** Write clean, intuitive Python – IntelliBricks handles the AI plumbing.
-*   **Structured Outputs, Instantly:** Python classes define your data, IntelliBricks gets you structured LLM responses.
+*   **Structured Outputs, Instantly:** msgspec.Struct classes define your data, IntelliBricks gets you structured LLM responses.
 *   **Agents that Understand:** Build autonomous agents with clear tasks, instructions, and your knowledge.
 *   **APIs in Minutes:**  Deploy agents as REST APIs with FastAPI or Litestar, effortlessly.
 *   **Context-Aware by Default:** Seamless RAG integration for informed, intelligent agents.
@@ -24,7 +24,7 @@ IntelliBricks is the **Python-first toolkit** for crafting AI applications with 
 
 *   **Complexity? Gone.** Streamlined, Python-first approach.
 *   **Framework Chaos? Controlled.** Predictable, structured outputs with Python types.
-*   **Boilerplate? Banished.** Focus on intelligence, not setup.
+*   **Boilerplate? Banished.** Focus on intelligence, predictability and observability. No more time setting the framework up.
 
 **Start in Seconds:**
 
@@ -50,8 +50,8 @@ Interact with Language Models in pure Python.
     from intellibricks import Synapse
 
     synapse = Synapse.of("google/genai/gemini-pro-experimental")
-    response = synapse.complete("Write a poem about Python.")
-    print(response.text)
+    completion = synapse.complete("Write a poem about Python.") # ChatCompletion[RawResponse]
+    print(completion.text)
     ```
 
 *   **Structured Outputs:** Define data models with Python classes using `msgspec.Struct`.
@@ -67,23 +67,32 @@ Interact with Language Models in pure Python.
 
     synapse = Synapse.of("google/genai/gemini-pro-experimental")
     prompt = "Summarize quantum computing article: [...]"
-    summary = synapse.complete(prompt, response_model=Summary)
+    completion = synapse.complete(prompt, response_model=Summary) # ChatCompletion[Summary]
 
-    print(summary.parsed.title)
-    print(summary.parsed.key_points)
+    print(completion.parsed.title)
+    print(completion.parsed.key_points)
     ```
 
 *   **Chain of Thought:** Structured reasoning with `ChainOfThought` for observability.
 
     ```python
     from intellibricks import Synapse, ChainOfThought
+    import msgspec
+
+    class Response(msgspec.Struct):
+        response: str
+        """just to show you can combine ChainOfThought and other structured classes too"""
 
     synapse = Synapse.of("google/genai/gemini-pro-experimental")
-    cot_response = synapse.complete("Solve riddle: Cities, no houses...", response_model=ChainOfThought[str])
+    cot_response = synapse.complete(
+        "Solve riddle: Cities, no houses...",
+        response_model=ChainOfThought[Response] # You can use ChainOfThoughts[str] too!
+    ) 
 
     for step in cot_response.parsed.steps:
         print(f"Step {step.step_number}: {step.explanation}")
-    print(cot_response.parsed.final_answer)
+
+    print(cot_response.parsed.final_answer) # Response
     ```
 
 *   **Langfuse Observability:** Built-in integration for tracing and debugging.
@@ -115,8 +124,8 @@ Craft agents to perform complex tasks.
         synapse=synapse,
     )
 
-    title = agent.run("Knight discovers dragon egg.")
-    print(f"Agent suggests: {title.text}")
+    agent_response = agent.run("Knight discovers dragon egg.") # AgentResponse[RawResponse]
+    print(f"Agent suggests: {agent_response.text}")
     ```
 
 *   **Tool Calling:** Equip agents with tools for real-world interaction.
@@ -127,7 +136,7 @@ Craft agents to perform complex tasks.
     import uvicorn
 
     agent = Agent(..., synapse=Synapse.of(...))
-    app = agent.fastapi_app
+    app = agent.fastapi_app # WIP, any bugs open an issue please!
     uvicorn.run(app, host="0.0.0.0", port=8000)
     ```
 
@@ -182,7 +191,7 @@ completion = synapse.complete(
     response_model=Summary
 ) # ChatCompletion[Summary]
 
-print(completion.parsed) # Summary
+print(completion.parsed) # Summary object
 ```
 
 **LangChain:**
@@ -199,7 +208,9 @@ class Joke(BaseModel):
 
 llm = ChatOpenAI(model="gpt-4o-mini")
 structured_llm = llm.with_structured_output(Joke)
-joke = structured_llm.invoke("Tell me a joke about cats") # Dict[Unknown, Unknown] | BaseModel
+joke = structured_llm.invoke(
+    "Tell me a joke about cats"
+) # Dict[Unknown, Unknown] | BaseModel
 
 print(joke) # Joke object directly
 ```
