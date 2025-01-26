@@ -68,7 +68,7 @@ def benchmark_intellibricks():
     model = GoogleLanguageModel(model_name="gemini-1.5-flash", vertexai=False)
 
     def run_benchmark():
-        model.complete(prompt, response_model=SummaryMsgspec)
+        response = model.complete(prompt, response_model=SummaryMsgspec)  # type: ignore # noqa
 
     # Warm-up runs
     for _ in range(NUM_WARMUP_RUNS):
@@ -81,12 +81,12 @@ def benchmark_intellibricks():
 def benchmark_langchain():
     from langchain_google_genai import ChatGoogleGenerativeAI
 
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash").with_structured_output(
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash").with_structured_output(  # type: ignore
         SummaryPydantic
     )
 
     def run_benchmark():
-        llm.invoke(prompt)
+        response = llm.invoke(prompt)  # type: ignore # noqa
 
     # Warm-up runs
     for _ in range(NUM_WARMUP_RUNS):
@@ -102,7 +102,7 @@ def benchmark_llamaindex():
     llm = Gemini(model="models/gemini-1.5-flash").as_structured_llm(SummaryPydantic)
 
     def run_benchmark():
-        llm.complete(prompt)
+        response = llm.complete(prompt)  # type: ignore # noqa
 
     # Warm-up runs
     for _ in range(NUM_WARMUP_RUNS):

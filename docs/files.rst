@@ -122,18 +122,16 @@ Let's demonstrate how to parse a PDF file to extract its content:
    parsed_txt_document = txt_parser.parse(raw_txt_file)
 
    # 4. Access parsed content (ParsedFile object)
-   if isinstance(parsed_pdf_document, ParsedFile):
-       print(f"Parsed document name: {parsed_pdf_document.name}")
-       for section in parsed_pdf_document.sections:
-           print(f"\nSection {section.number}:")
-           print(f"  Text (first 100 chars): {section.text[:100]}...")
-           # ... access other parsed content like images, items, etc.
+   print(f"Parsed document name: {parsed_pdf_document.name}")
+   for section in parsed_pdf_document.sections:
+      print(f"\nSection {section.number}:")
+      print(f"  Text (first 100 chars): {section.text[:100]}...")
+      # ... access other parsed content like images, items, etc.
 
-   if isinstance(parsed_txt_document, ParsedFile):
-       print(f"Parsed document name: {parsed_txt_document.name}")
-       for section in parsed_txt_document.sections:
-           print(f"\nSection {section.number}:")
-           print(f"  Text (first 100 chars): {section.text[:100]}...")
+   print(f"Parsed document name: {parsed_txt_document.name}")
+   for section in parsed_txt_document.sections:
+      print(f"\nSection {section.number}:")
+      print(f"  Text (first 100 chars): {section.text[:100]}...")
 
 
 **Handling Different File Types**

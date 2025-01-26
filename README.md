@@ -199,7 +199,7 @@ class Joke(BaseModel):
 
 llm = ChatOpenAI(model="gpt-4o-mini")
 structured_llm = llm.with_structured_output(Joke)
-joke = structured_llm.invoke("Tell me a joke about cats")
+joke = structured_llm.invoke("Tell me a joke about cats") # Dict[Unknown, Unknown] | BaseModel
 
 print(joke) # Joke object directly
 ```
@@ -210,7 +210,6 @@ print(joke) # Joke object directly
 
 ```python
 from llama_index.llms.openai import OpenAI
-from llama_index.core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 from datetime import datetime
 import json
@@ -221,11 +220,9 @@ class Invoice(BaseModel):
     line_items: list = Field(...)
 
 llm = OpenAI(model="gpt-4o")
-prompt = PromptTemplate("Extract invoice: {text}")
-response = llm.structured_predict(Invoice, prompt, text="[invoice text]")
+sllm = llm.as_structured_llm(output_cls=Invoice)
+response = llm.complete("...") # CompletionResponse
 
-json_output = response.model_dump_json() # Needs extra steps to get JSON
-print(json.dumps(json.loads(json_output), indent=2))
 ```
 
 *LlamaIndex's `structured_predict` requires defining PromptTemplates and returns the Pydantic object via `.structured_predict()`.  Their documentation even shows a more involved method using `LLMTextCompletionProgram` for lower-level control, highlighting potential complexity.  Like LangChain, it also uses Pydantic.*
