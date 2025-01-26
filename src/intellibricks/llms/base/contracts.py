@@ -174,11 +174,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
-        from intellibricks.llms.types import (
-            DeveloperMessage,
-            UserMessage,
-            Part,
-        )
+        from intellibricks.llms.types import DeveloperMessage, UserMessage, Part, Prompt
 
         if system_prompt is None:
             system_prompt = [
