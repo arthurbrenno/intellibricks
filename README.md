@@ -242,7 +242,7 @@ class CompletionResponse(BaseModel):
 
     text: str
     additional_kwargs: dict = Field(default_factory=dict)
-    raw: Optional[Any] = None # Could be anything. And could be None too. Nice.
+    raw: Optional[Any] = None # Could be anything and could be None too. Nice!
     logprobs: Optional[List[List[LogProb]]] = None
     delta: Optional[str] = None
 ```
