@@ -33,14 +33,15 @@ jobs:
       - name: Build Docs # Use your makefile to build docs
         run: make docs # This will execute 'make docs' in your root directory
 
-      - name: Create root index.html from landing page
+      - name: Prepare Deployment Directory
         run: |
-          mkdir -p docs/_build/html
-          cp docs/_static/landing.html docs/_build/html/index.html
+          mkdir -p deploy_output  # Create a staging directory
+          cp docs/_static/landing.html deploy_output/index.html # Copy landing.html to staging root as index.html
+          cp -r docs/_build/html/* deploy_output/docs # Copy ALL Sphinx output to staging/docs
 
       - name: Deploy to GitHub Pages # Using peaceiris/actions-gh-pages - a popular action
         uses: peaceiris/actions-gh-pages@v3
         if: github.ref == 'refs/heads/master'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/_build/html
+          publish_dir: ./deploy_output # Publish the staging directory

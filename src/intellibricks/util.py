@@ -8,7 +8,7 @@ from typing import (
     TypedDict,
 )
 from architecture import log
-
+ 
 import logging
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
