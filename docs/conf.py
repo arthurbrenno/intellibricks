@@ -37,3 +37,4 @@ html_theme_options = {
     "dark_logo": "logo-dark.svg",
 }
 html_static_path = ["_static"]
+html_output_path = "docs"

@@ -15,6 +15,17 @@ debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
 class CallerInfo(TypedDict):
+    """
+    A dictionary type representing information about the caller of a function.
+
+    Attributes:
+        caller_class (Optional[str]): The name of the class containing the caller.
+        caller_method (Optional[str]): The name of the method containing the caller.
+        filename (Optional[str]): The name of the file containing the caller.
+        line_number (Optional[int]): The line number in the file where the caller is located.
+        caller_id (Optional[str]): A unique identifier for the caller.
+    """
+
     caller_class: Optional[str]
     caller_method: Optional[str]
     filename: Optional[str]
