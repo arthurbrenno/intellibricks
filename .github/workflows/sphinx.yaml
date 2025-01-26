@@ -3,6 +3,9 @@ name: sphinx
 on:
   push:
     branches: [master]
+    paths:
+      - 'src/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -11,12 +14,12 @@ permissions:
   contents: write
 
 jobs:
-  build-docs: # Or you can rename this to 'docs' to be consistent with previous examples
+  build-docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13 # Matching your project's Python version
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
