@@ -1,0 +1,33 @@
+name: documentation
+
+on:
+  push:
+    branches: [main] # or master, depending on your main branch name
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  build-docs: # Or you can rename this to 'docs' to be consistent with previous examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13 # Matching your project's Python version
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install UV # Ensure UV is available
+        run: pip install --root-user-action=ignore --upgrade uv
+
+      - name: Install project dependencies for docs using uv # Use uv and dev dependencies
+        run: uv sync --only-dev
+
+      - name: Build Docs # Use your makefile to build docs
+        run: make docs # This will execute 'make docs' in your root directory
+
+      - name: Deploy to GitHub Pages # Using peaceiris/actions-gh-pages - a popular action
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/_build/html # Correct path to Sphinx output directory
