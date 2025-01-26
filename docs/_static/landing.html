@@ -266,7 +266,8 @@ completion = synapse.complete("Write a poem about Python.")
 print(completion.choices[0].message.contents)
 </code></pre>
                     </div>
-                    <a href="/docs/synapses.html" class="text-brand-secondary hover:underline">Learn more about LLMs Module →</a>
+                    <a href="/docs/synapses.html" class="text-brand-secondary hover:underline">Learn more about LLMs
+                        Module →</a>
                 </div>
 
                 <!-- Agents Module -->
@@ -298,7 +299,8 @@ agent_response = agent.run("Knight discovers dragon egg.")
 print(f"Agent suggests: {agent_response.text}")
 </code></pre>
                     </div>
-                    <a href="/docs/agents.html" class="text-brand-secondary hover:underline">Learn more about Agents Module
+                    <a href="/docs/agents.html" class="text-brand-secondary hover:underline">Learn more about Agents
+                        Module
                         →</a>
                 </div>
 
@@ -332,7 +334,8 @@ parser = PdfFileParser()
 parsed_file = parser.parse(raw_file) # ParsedFile
 </code></pre>
                     </div>
-                    <a href="/docs/files.html" class="text-brand-secondary hover:underline">Learn more about Files Module
+                    <a href="/docs/files.html" class="text-brand-secondary hover:underline">Learn more about Files
+                        Module
                         →</a>
                 </div>
             </div>
@@ -363,21 +366,26 @@ parsed_file = parser.parse(raw_file) # ParsedFile
                     <tbody>
                         <tr>
                             <td class="border border-gray-300 p-4 font-semibold">Python-First Purity</td>
-                            <td class="border border-gray-300 p-4">🐍 Clean, idiomatic Python</td>
-                            <td class="border border-gray-300 p-4">Pydantic-based</td>
-                            <td class="border border-gray-300 p-4">Pydantic-based, PromptTemplates</td>
+                            <td class="border border-gray-300 p-4">Uses modern python (e.g Default Generics) to predict
+                                AI structured responses</td>
+                            <td class="border border-gray-300 p-4">Responses are obscured by weak typing</td>
+                            <td class="border border-gray-300 p-4">Responses are obscured by weak typing</td>
                         </tr>
                         <tr>
                             <td class="border border-gray-300 p-4 font-semibold">Syntax Simplicity</td>
-                            <td class="border border-gray-300 p-4">✨ Direct, intuitive</td>
-                            <td class="border border-gray-300 p-4"><code>.with_structured_output()</code></td>
-                            <td class="border border-gray-300 p-4"><code>structured_predict</code>, PromptTemplates</td>
+                            <td class="border border-gray-300 p-4">Desired Outputs are passed in Agent's constructor.
+                            </td>
+                            <td class="border border-gray-300 p-4">
+                                <code>.with_structured_output(...) # (extra method)</code></td>
+                            <td class="border border-gray-300 p-4"><code>.as_structured_llm(...) # (extra method)</code>
+                            </td>
                         </tr>
                         <tr>
                             <td class="border border-gray-300 p-4 font-semibold">Performance</td>
-                            <td class="border border-gray-300 p-4">🚀 Blazing Fast with <code>msgspec</code></td>
-                            <td class="border border-gray-300 p-4">Pydantic</td>
-                            <td class="border border-gray-300 p-4">Pydantic</td>
+                            <td class="border border-gray-300 p-4">🚀 Blazing Fast enc/dec with <code>msgspec</code>
+                            </td>
+                            <td class="border border-gray-300 p-4">Slow Pydantic</td>
+                            <td class="border border-gray-300 p-4">Slow Pydantic</td>
                         </tr>
                         <tr>
                             <td class="border border-gray-300 p-4 font-semibold">Comprehensive Response</td>
