@@ -237,7 +237,7 @@ print(json.dumps(json.loads(json_output), indent=2))
 *   **Blazing Fast:** Leverages `msgspec` for high-performance serialization, outperforming Pydantic.
 *   **Comprehensive Responses:**  `synapse.complete()` returns `AgentResponse` objects, providing not just parsed data but also full completion details (usage, timing, etc.).
 
-*Examples adapted from LangChain [docs](https://python.langchain.com/docs/modules/model_io/output_parsers/structured) and LlamaIndex [docs](https://docs.llamaindex.ai/en/stable/module_guides/models/llms/structured_llms.html). IntelliBricks offers a more streamlined and efficient Python-centric approach.*
+*Examples adapted from LangChain [docs](https://python.langchain.com/docs/how_to/structured_output/) and LlamaIndex [docs](https://docs.llamaindex.ai/en/stable/understanding/extraction/structured_llms/). IntelliBricks offers a more streamlined and efficient Python-centric approach.*
 
 ---
 
@@ -246,7 +246,7 @@ print(json.dumps(json.loads(json_output), indent=2))
 Build intelligent applications, the Python way.
 
 *   **Get Started:** `pip install intellibricks`
-*   **Explore:** Dive into the [documentation](https://example.com).
+*   **Explore:** Dive into the [documentation](https://arthurbrenno.github.io/intellibricks/).
 *   **Contribute:**  It's community-driven!
 *   **Connect:**  Share feedback and ideas!
 
