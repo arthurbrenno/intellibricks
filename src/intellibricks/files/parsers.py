@@ -13,7 +13,7 @@ The module also includes a facade class, `IntellibricksFileParser`, which intell
 
 **Key Features:**
 
-*   **Extensibility:** Easily add support for new file types by creating new classes that inherit from `FileParser` and implement the `extract_contents_async` method.
+*   **Extensibility:** Easily add support for new file types by creating new classes that inherit from `FileParser` and implement the `parse_async` method.
 *   **Strategy-based Parsing:**  The `ParsingStrategy` enum allows you to control the level of detail and processing applied during parsing. Strategies can range from basic text extraction to advanced content analysis using AI agents.
 *   **AI-Powered Content Enrichment:** Integration with AI agents (specifically, visual and audio description agents) to generate rich textual descriptions for images, videos, and audio files when using higher parsing strategies.
 *   **Structured Output:** Parsers return a `ParsedFile` object, which contains structured content extracted from the file, including sections, text, Markdown representation, images, and items like tables.
@@ -30,7 +30,7 @@ The module also includes a facade class, `IntellibricksFileParser`, which intell
 
 **Getting Started:**
 
-To parse a file, you would typically use the `IntellibricksFileParser`. First, create a `RawFile` object representing the file you want to parse. Then, instantiate an `IntellibricksFileParser` and call the `extract_contents` or `extract_contents_async` method.
+To parse a file, you would typically use the `IntellibricksFileParser`. First, create a `RawFile` object representing the file you want to parse. Then, instantiate an `IntellibricksFileParser` and call the `parse` or `parse_async` method.
 
 **Example:**
 
@@ -51,7 +51,7 @@ async def main():
     )
 
     parser = IntellibricksFileParser(strategy=ParsingStrategy.DEFAULT)
-    parsed_file = await parser.extract_contents_async(raw_file)
+    parsed_file = await parser.parse_async(raw_file)
 
     print(f"Parsed file name: {parsed_file.name}")
     for section in parsed_file.sections:
@@ -130,7 +130,7 @@ class InvalidFileExtension(Exception):
 
         parser = IntellibricksFileParser(strategy=ParsingStrategy.DEFAULT)
         try:
-            parsed_file = await parser.extract_contents_async(raw_file)
+            parsed_file = await parser.parse_async(raw_file)
         except InvalidFileExtension as e:
             print(f"Error: {e}") # Output: Error: Unsupported file extension: unknown
 
@@ -149,9 +149,9 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
 
     **Key Features:**
 
-    *   **Abstract Base Class:** Cannot be instantiated directly. Subclasses must implement the abstract method `extract_contents_async`.
+    *   **Abstract Base Class:** Cannot be instantiated directly. Subclasses must implement the abstract method `parse_async`.
     *   **Strategy-Based Parsing:**  Includes a `strategy` attribute of type `ParsingStrategy` to control the parsing level.
-    *   **Synchronous and Asynchronous Interface:** Provides both synchronous (`extract_contents`) and asynchronous (`extract_contents_async`) methods for content extraction. The synchronous method is a wrapper around the asynchronous one, using `run_sync`.
+    *   **Synchronous and Asynchronous Interface:** Provides both synchronous (`parse`) and asynchronous (`parse_async`) methods for content extraction. The synchronous method is a wrapper around the asynchronous one, using `run_sync`.
 
     **Attributes:**
 
@@ -159,8 +159,8 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
 
     **Methods:**
 
-    *   `extract_contents(file: RawFile) -> ParsedFile`:
-        Synchronously extracts content from a `RawFile`. This method is a convenience wrapper around `extract_contents_async`.
+    *   `parse(file: RawFile) -> ParsedFile`:
+        Synchronously extracts content from a `RawFile`. This method is a convenience wrapper around `parse_async`.
 
         **Parameters:**
 
@@ -182,13 +182,13 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
         raw_file = RawFile.from_bytes(file_content, file_name, FileExtension.TXT)
 
         parser: FileParser = TxtFileParser(strategy=ParsingStrategy.DEFAULT)
-        parsed_file: ParsedFile = parser.extract_contents(raw_file)
+        parsed_file: ParsedFile = parser.parse(raw_file)
 
         print(f"Parsed file name: {parsed_file.name}") # Output: Parsed file name: document.txt
         print(f"Section 1 Text: {parsed_file.sections[0].text}") # Output: Section 1 Text: This is a text file content.
         ```
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         **Abstract method** that must be implemented by subclasses. Asynchronously extracts content from a `RawFile`.
 
         **Parameters:**
@@ -205,20 +205,20 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
 
         **Note:**
 
-        Subclasses should override `extract_contents_async` to provide specific parsing logic for their supported file types.
+        Subclasses should override `parse_async` to provide specific parsing logic for their supported file types.
     """
 
     strategy: ParsingStrategy = ParsingStrategy.DEFAULT
 
-    def extract_contents(
+    def parse(
         self,
         file: RawFile,
     ) -> ParsedFile:
         """Extracts content from the file."""
-        return run_sync(self.extract_contents_async, file)
+        return run_sync(self.parse_async, file)
 
     @abc.abstractmethod
-    async def extract_contents_async(
+    async def parse_async(
         self,
         file: RawFile,
     ) -> ParsedFile:
@@ -252,7 +252,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from the provided `RawFile`. This method determines the file type and delegates the actual parsing to the appropriate specialized parser.
 
         **Parameters:**
@@ -280,7 +280,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
             docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
 
             parser = IntellibricksFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_docx: ParsedFile = await parser.extract_contents_async(docx_file)
+            parsed_docx: ParsedFile = await parser.parse_async(docx_file)
 
             print(f"Parsed DOCX file name: {parsed_docx.name}")
             # Access parsed content from parsed_docx.sections
@@ -288,7 +288,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
             # Example with a TXT file
             txt_content = b"This is a plain text file."
             txt_file = RawFile.from_bytes(txt_content, "text.txt", FileExtension.TXT)
-            parsed_txt: ParsedFile = await parser.extract_contents_async(txt_file)
+            parsed_txt: ParsedFile = await parser.parse_async(txt_file)
 
             print(f"Parsed TXT file name: {parsed_txt.name}")
             # Access parsed content from parsed_txt.sections
@@ -313,7 +313,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
     """Agent used for generating textual descriptions of audio files, if the synapse supports it."""
 
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         match file.extension:
             # Word files
             case FileExtension.DOC | FileExtension.DOCX:
@@ -321,7 +321,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 return await OfficeFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             # PowerPoint
             case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
@@ -329,7 +329,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 return await OfficeFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             # Excel
             case FileExtension.XLS | FileExtension.XLSX:
@@ -337,14 +337,14 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 return await OfficeFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case FileExtension.TXT:
                 debug_logger.debug("Extracting contents from TXT file")
                 return await TxtFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             # Treat XML as plain text for now
             case FileExtension.XML:
@@ -352,14 +352,14 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 return await XMLFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case FileExtension.PDF:
                 debug_logger.debug("Extracting contents from PDF file")
                 return await PDFFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             # Static images (PNG, JPG, TIFF, BMP)
             case (
@@ -373,42 +373,42 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 return await StaticImageFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case FileExtension.GIF:
                 debug_logger.debug("Extracting contents from animated image file")
                 return await AnimatedImageFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case FileExtension.PKT:
                 debug_logger.debug("Extracting contents from PKT file")
                 return await PKTFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case FileExtension.ALG:
                 debug_logger.debug("Extracting contents from ALG file")
                 return await AlgFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case FileExtension.ZIP | FileExtension.RAR | FileExtension.PKZ:
                 debug_logger.debug("Extracting contents from compressed file")
                 return await CompressedFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case FileExtension.DWG:
                 debug_logger.debug("Extracting contents from DWG file")
                 return await DWGFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
             case (
                 FileExtension.FLAC
                 | FileExtension.MP3
@@ -423,13 +423,13 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
                 return await AudioFileParser(
                     strategy=self.strategy,
                     audio_description_agent=self.audio_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
             case FileExtension.MP4:
                 debug_logger.debug("Extracting contents from video file")
                 return await VideoFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
             case _:
                 raise InvalidFileExtension(
                     f"Unsupported file extension: {file.extension}"
@@ -453,7 +453,7 @@ class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from an XML `RawFile`.
 
         **Parameters:**
@@ -476,7 +476,7 @@ class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
             xml_file = RawFile.from_bytes(xml_content, "data.xml", FileExtension.XML)
 
             parser = XMLFileParser(strategy=ParsingStrategy.DEFAULT)
-            parsed_xml: ParsedFile = await parser.extract_contents_async(xml_file)
+            parsed_xml: ParsedFile = await parser.parse_async(xml_file)
 
             section = parsed_xml.sections[0]
             print(f"Section 1 - Raw XML Text:\n{section.text}")
@@ -502,7 +502,7 @@ class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
     """
 
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         raw_xml = file.contents.decode("utf-8", errors="replace")
         md_content = self.xml_to_md(raw_xml)
 
@@ -582,7 +582,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts and parses the contents of a compressed `RawFile`.
 
         **Parameters:**
@@ -617,7 +617,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
             zip_file = RawFile.from_bytes(zip_content, "archive.zip", FileExtension.ZIP)
 
             parser = CompressedFileParser(strategy=ParsingStrategy.DEFAULT)
-            parsed_zip: ParsedFile = await parser.extract_contents_async(zip_file)
+            parsed_zip: ParsedFile = await parser.parse_async(zip_file)
 
             print(f"Parsed ZIP file name: {parsed_zip.name}")
             for parsed_child_file in parsed_zip.parsed_files:
@@ -636,7 +636,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
     """
 
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         import tempfile
         import zipfile
 
@@ -679,9 +679,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
                                 strategy=self.strategy,
                                 visual_description_agent=self.visual_description_agent,
                             )
-                            child_parsed = await parser.extract_contents_async(
-                                child_raw_file
-                            )
+                            child_parsed = await parser.parse_async(child_raw_file)
                             parsed_files.append(child_parsed)
 
                 case FileExtension.RAR:
@@ -707,9 +705,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
                                 strategy=self.strategy,
                                 visual_description_agent=self.visual_description_agent,
                             )
-                            child_parsed = await parser.extract_contents_async(
-                                child_raw_file
-                            )
+                            child_parsed = await parser.parse_async(child_raw_file)
                             parsed_files.append(child_parsed)
 
                 case _:
@@ -744,7 +740,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a DWG `RawFile`.
 
         **Parameters:**
@@ -773,7 +769,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
             dwg_file = RawFile.from_bytes(dwg_content, "drawing.dwg", FileExtension.DWG)
 
             parser = DWGFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_dwg: ParsedFile = await parser.extract_contents_async(dwg_file)
+            parsed_dwg: ParsedFile = await parser.parse_async(dwg_file)
 
             print(f"Parsed DWG file name: {parsed_dwg.name}")
             for section in parsed_dwg.sections:
@@ -792,7 +788,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
 
     @ensure_module_installed("aspose-cad", "intellibricks[files]")
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         """
         DWG files are kind of tricky. To parse them, Intellibricks converts them to PDF first,
         then takes a "screenshot" of each page of the PDF and uses GenAI to describe the images.
@@ -833,7 +829,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
                 visual_description_agent=self.visual_description_agent,
             )
 
-            parsed_files = [await parser.extract_contents_async(f) for f in raw_files]
+            parsed_files = [await parser.parse_async(f) for f in raw_files]
             sections = [
                 section
                 for parsed_file in parsed_files
@@ -890,7 +886,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a Packet Tracer `RawFile`.
 
         **Parameters:**
@@ -914,7 +910,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
             pkt_file = RawFile.from_bytes(pkt_content, "network.pkt", FileExtension.PKT)
 
             parser = PKTFileParser(strategy=ParsingStrategy.DEFAULT)
-            parsed_pkt: ParsedFile = await parser.extract_contents_async(pkt_file)
+            parsed_pkt: ParsedFile = await parser.parse_async(pkt_file)
 
             section = parsed_pkt.sections[0]
             print(f"Parsed PKT file name: {parsed_pkt.name}")
@@ -942,7 +938,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
     """
 
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{file.name}"
             file.save_to_file(file_path)
@@ -1010,7 +1006,7 @@ class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from an ALG `RawFile`.
 
         **Parameters:**
@@ -1034,7 +1030,7 @@ class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
             alg_file = RawFile.from_bytes(alg_content, "algorithm.alg", FileExtension.ALG)
 
             parser = AlgFileParser(strategy=ParsingStrategy.DEFAULT)
-            parsed_alg: ParsedFile = await parser.extract_contents_async(alg_file)
+            parsed_alg: ParsedFile = await parser.parse_async(alg_file)
 
             section = parsed_alg.sections[0]
             print(f"Parsed ALG file name: {parsed_alg.name}")
@@ -1051,11 +1047,11 @@ class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
     """
 
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         return await TxtFileParser(
             strategy=self.strategy,
             visual_description_agent=self.visual_description_agent,
-        ).extract_contents_async(file)
+        ).parse_async(file)
 
 
 class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
@@ -1078,7 +1074,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a PDF `RawFile`.
 
         **Parameters:**
@@ -1102,7 +1098,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
             pdf_file = RawFile.from_bytes(pdf_content, "document.pdf", FileExtension.PDF)
 
             parser = PDFFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_pdf: ParsedFile = await parser.extract_contents_async(pdf_file)
+            parsed_pdf: ParsedFile = await parser.parse_async(pdf_file)
 
             print(f"Parsed PDF file name: {parsed_pdf.name}")
             for section in parsed_pdf.sections:
@@ -1121,7 +1117,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
 
     @ensure_module_installed("pypdf", "intellibricks[files]")
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         from pypdf import PdfReader
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1196,7 +1192,7 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from an Office document `RawFile`. This method determines the specific Office file type and delegates the parsing to the corresponding parser.
 
         **Parameters:**
@@ -1224,7 +1220,7 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
             docx_file = RawFile.from_bytes(docx_content, "report.docx", FileExtension.DOCX)
 
             parser = OfficeFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_office: ParsedFile = await parser.extract_contents_async(docx_file)
+            parsed_office: ParsedFile = await parser.parse_async(docx_file)
 
             print(f"Parsed Office file name: {parsed_office.name}")
             # Access parsed content from parsed_office.sections
@@ -1232,7 +1228,7 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
             # Example with an XLSX file
             xlsx_content = b"..." # Your XLSX file content here
             xlsx_file = RawFile.from_bytes(xlsx_content, "data.xlsx", FileExtension.XLSX)
-            parsed_excel: ParsedFile = await parser.extract_contents_async(xlsx_file)
+            parsed_excel: ParsedFile = await parser.parse_async(xlsx_file)
 
             print(f"Parsed Excel file name: {parsed_excel.name}")
             # Access parsed content from parsed_excel.sections
@@ -1248,7 +1244,7 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
     *   Ensure that the necessary dependencies for each specific Office parser (e.g., `docx`, `pptx`, `openpyxl`) are installed if you plan to parse those formats.
     """
 
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         extension = file.extension
         match extension:
             # Word
@@ -1256,21 +1252,21 @@ class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
                 return await DocxFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             # PowerPoint (including .ppt, .pptx, .pptm)
             case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
                 return await PptxFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             # Excel (including .xls, .xlsx)
             case FileExtension.XLS | FileExtension.XLSX:
                 return await ExcelFileParser(
                     strategy=self.strategy,
                     visual_description_agent=self.visual_description_agent,
-                ).extract_contents_async(file)
+                ).parse_async(file)
 
             case _:
                 raise ValueError(f"Unsupported Office extension: {extension}")
@@ -1296,7 +1292,7 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a DOCX `RawFile`.
 
         **Parameters:**
@@ -1320,7 +1316,7 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
             docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
 
             parser = DocxFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_docx: ParsedFile = await parser.extract_contents_async(docx_file)
+            parsed_docx: ParsedFile = await parser.parse_async(docx_file)
 
             print(f"Parsed DOCX file name: {parsed_docx.name}")
             section = parsed_docx.sections[0]
@@ -1339,7 +1335,7 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
 
     @ensure_module_installed("docx", "intellibricks[files]")
     @override
-    async def extract_contents_async(
+    async def parse_async(
         self,
         file: RawFile,
     ) -> ParsedFile:
@@ -1439,7 +1435,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a PowerPoint `RawFile`.
 
         **Parameters:**
@@ -1467,7 +1463,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
             pptx_file = RawFile.from_bytes(pptx_content, "presentation.pptx", FileExtension.PPTX)
 
             parser = PptxFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_pptx: ParsedFile = await parser.extract_contents_async(pptx_file)
+            parsed_pptx: ParsedFile = await parser.parse_async(pptx_file)
 
             print(f"Parsed PPTX file name: {parsed_pptx.name}")
             for section in parsed_pptx.sections:
@@ -1490,7 +1486,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
 
     @ensure_module_installed("pptx", "intellibricks[files]")
     @override
-    async def extract_contents_async(
+    async def parse_async(
         self,
         file: RawFile,
     ) -> ParsedFile:
@@ -1675,7 +1671,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from an Excel `RawFile`.
 
         **Parameters:**
@@ -1699,7 +1695,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
             xlsx_file = RawFile.from_bytes(xlsx_content, "data.xlsx", FileExtension.XLSX)
 
             parser = ExcelFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_excel: ParsedFile = await parser.extract_contents_async(xlsx_file)
+            parsed_excel: ParsedFile = await parser.parse_async(xlsx_file)
 
             print(f"Parsed Excel file name: {parsed_excel.name}")
             for section in parsed_excel.sections:
@@ -1719,7 +1715,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
 
     @ensure_module_installed("openpyxl", "intellibricks[files]")
     @override
-    async def extract_contents_async(
+    async def parse_async(
         self,
         file: RawFile,
     ) -> ParsedFile:
@@ -1830,7 +1826,7 @@ class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a TXT `RawFile`.
 
         **Parameters:**
@@ -1854,7 +1850,7 @@ class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
             txt_file = RawFile.from_bytes(txt_content, "document.txt", FileExtension.TXT)
 
             parser = TxtFileParser(strategy=ParsingStrategy.DEFAULT)
-            parsed_txt: ParsedFile = await parser.extract_contents_async(txt_file)
+            parsed_txt: ParsedFile = await parser.parse_async(txt_file)
 
             section = parsed_txt.sections[0]
             print(f"Parsed TXT file name: {parsed_txt.name}")
@@ -1871,7 +1867,7 @@ class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
     """
 
     @override
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         text_content = file.contents.decode("utf-8", errors="replace")
 
         page_content = SectionContent(
@@ -1914,7 +1910,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a static image `RawFile`.
 
         **Parameters:**
@@ -1938,7 +1934,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
             png_file = RawFile.from_bytes(png_content, "image.png", FileExtension.PNG)
 
             parser = StaticImageFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_image: ParsedFile = await parser.extract_contents_async(png_file)
+            parsed_image: ParsedFile = await parser.parse_async(png_file)
 
             section = parsed_image.sections[0]
             print(f"Parsed Image file name: {parsed_image.name}")
@@ -1958,7 +1954,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
     """
 
     @override
-    async def extract_contents_async(
+    async def parse_async(
         self,
         file: RawFile,
     ) -> ParsedFile:
@@ -2057,7 +2053,7 @@ class AnimatedImageFileParser(
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from an animated GIF `RawFile`.
 
         **Parameters:**
@@ -2081,7 +2077,7 @@ class AnimatedImageFileParser(
             gif_file = RawFile.from_bytes(gif_content, "animation.gif", FileExtension.GIF)
 
             parser = AnimatedImageFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_gif: ParsedFile = await parser.extract_contents_async(gif_file)
+            parsed_gif: ParsedFile = await parser.parse_async(gif_file)
 
             print(f"Parsed GIF file name: {parsed_gif.name}")
             for section in parsed_gif.sections:
@@ -2101,7 +2097,7 @@ class AnimatedImageFileParser(
     """
 
     @override
-    async def extract_contents_async(
+    async def parse_async(
         self,
         file: RawFile,
     ) -> ParsedFile:
@@ -2229,7 +2225,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from an audio `RawFile`.
 
         **Parameters:**
@@ -2268,7 +2264,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
                 strategy=ParsingStrategy.DEFAULT,
                 audio_description_agent=audio_agent # Provide the audio agent
             )
-            parsed_audio: ParsedFile = await parser.extract_contents_async(mp3_file)
+            parsed_audio: ParsedFile = await parser.parse_async(mp3_file)
 
             section = parsed_audio.sections[0]
             print(f"Parsed Audio file name: {parsed_audio.name}")
@@ -2290,7 +2286,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
     *   The output `ParsedFile` contains a single section with the audio transcription.
     """
 
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         if self.audio_description_agent is None:
             raise ValueError("No audio description agent provided.")
 
@@ -2425,7 +2421,7 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a video `RawFile`.
 
         **Parameters:**
@@ -2463,7 +2459,7 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
                 strategy=ParsingStrategy.DEFAULT,
                 visual_description_agent=visual_agent # Provide the visual agent
             )
-            parsed_video: ParsedFile = await parser.extract_contents_async(mp4_file)
+            parsed_video: ParsedFile = await parser.parse_async(mp4_file)
 
             section = parsed_video.sections[0]
             print(f"Parsed Video file name: {parsed_video.name}")
@@ -2480,7 +2476,7 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
     *   The output `ParsedFile` contains a single section with the AI-generated video description.
     """
 
-    async def extract_contents_async(self, file: RawFile) -> ParsedFile:
+    async def parse_async(self, file: RawFile) -> ParsedFile:
         if self.visual_description_agent is None:
             raise ValueError("No visual description agent provided.")
 
@@ -2533,7 +2529,7 @@ class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):
 
     **Methods:**
 
-    *   `extract_contents_async(file: RawFile) -> ParsedFile`:
+    *   `parse_async(file: RawFile) -> ParsedFile`:
         Asynchronously extracts content from a `RawFile` and converts it to Markdown using Markitdown.
 
         **Parameters:**
@@ -2557,7 +2553,7 @@ class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):
             docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
 
             parser = MarkitdownFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_markdown: ParsedFile = await parser.extract_contents_async(docx_file)
+            parsed_markdown: ParsedFile = await parser.parse_async(docx_file)
 
             section = parsed_markdown.sections[0]
             print(f"Parsed file name (as Markdown): {parsed_markdown.name}")
@@ -2578,7 +2574,7 @@ class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):
     model: Optional[str] = None
 
     @ensure_module_installed("markitdown", "intellibricks[files]")
-    async def extract_contents_async(
+    async def parse_async(
         self,
         file: RawFile,
     ) -> ParsedFile:

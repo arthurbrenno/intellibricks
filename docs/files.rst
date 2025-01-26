@@ -118,8 +118,8 @@ Let's demonstrate how to parse a PDF file to extract its content:
    txt_parser = TxtFileParser()
 
    # 3. Extract content using the parser
-   parsed_pdf_document = pdf_parser.extract_contents(raw_pdf_file)
-   parsed_txt_document = txt_parser.extract_contents(raw_txt_file)
+   parsed_pdf_document = pdf_parser.parse(raw_pdf_file)
+   parsed_txt_document = txt_parser.parse(raw_txt_file)
 
    # 4. Access parsed content (ParsedFile object)
    if isinstance(parsed_pdf_document, ParsedFile):
@@ -142,7 +142,7 @@ To parse different file types, you would:
 
 1. Create a ``RawFile`` object for your file.
 2. Instantiate the appropriate parser class based on the file type (e.g., ``PdfFileParser`` for PDFs, ``DocxFileParser`` for DOCX files - when available).
-3. Call the ``extract_contents()`` method of the parser, passing the ``RawFile`` object as input.
+3. Call the ``parse()`` method of the parser, passing the ``RawFile`` object as input.
 4. Work with the returned ``ParsedFile`` object to access the extracted structured content.
 
 **Parsed File Structure**
@@ -165,7 +165,7 @@ The output of file parsing is a ``ParsedFile`` object, which contains:
    raw_pdf_file = RawFile.from_file_path("document.pdf")
    pdf_parser = PdfFileParser()
 
-   parsed_document = pdf_parser.extract_contents(raw_pdf_file)
+   parsed_document = pdf_parser.parse(raw_pdf_file)
 
    print(f"Parsed document: {parsed_document.name}")
    for section in parsed_document.sections:

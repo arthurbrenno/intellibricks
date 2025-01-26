@@ -39,7 +39,22 @@ Explore the `RawFile` class and the `intellibricks.parsers` module to learn more
 from architecture.data.files import FileExtension
 
 from .parsed_files import ParsedFile
-from .parsers import FileParser
+from .parsers import (
+    FileParser,
+    IntellibricksFileParser,
+    PDFFileParser,
+    OfficeFileParser,
+    ExcelFileParser,
+    CompressedFileParser,
+    XMLFileParser,
+    DWGFileParser,
+    PKTFileParser,
+    DocxFileParser,
+    PptxFileParser,
+    StaticImageFileParser,
+    AnimatedImageFileParser,
+    TxtFileParser,
+)
 from .raw_file import RawFile
 
 __all__: list[str] = [
@@ -47,4 +62,17 @@ __all__: list[str] = [
     "FileParser",
     "FileExtension",
     "RawFile",
+    "IntellibricksFileParser",
+    "PDFFileParser",
+    "OfficeFileParser",
+    "ExcelFileParser",
+    "CompressedFileParser",
+    "XMLFileParser",
+    "DWGFileParser",
+    "PKTFileParser",
+    "DocxFileParser",
+    "PptxFileParser",
+    "StaticImageFileParser",
+    "AnimatedImageFileParser",
+    "TxtFileParser",
 ]

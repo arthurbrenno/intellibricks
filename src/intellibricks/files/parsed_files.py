@@ -50,7 +50,7 @@ from intellibricks.files import (
 # Assume you have a RawFile object (e.g., from reading a text file)
 raw_file = RawFile.from_bytes(b"Sample text content", "example.txt", FileExtension.TXT)
 parser = TxtFileParser()
-parsed_file = parser.extract_contents(raw_file)
+parsed_file = parser.parse(raw_file)
 
 # Accessing parsed content
 if isinstance(parsed_file, ParsedFile):
