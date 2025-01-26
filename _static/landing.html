@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliBricks: Build Intelligent Apps, Python-First</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Brand Colors - more refined and perhaps a bit calmer */
+        .brand-primary { color: #6d28d9; /* Indigo-600 - Deeper primary */ }
+        .brand-secondary { color: #3b82f6; /* Blue-500 - Standard Blue */ }
+        .brand-accent { color: #10b981; /* Teal-500 - Calmer Accent Green */ }
+        .brand-text-dark { color: #374151; /* Gray-800 - Darker text for contrast */ }
+        .brand-text-light { color: #6b7280; /* Gray-500 - Lighter text for secondary info */ }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+
+    <!-- Hero Section - More Engaging -->
+    <header class="bg-white shadow-lg py-24">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
+            <h1 class="text-5xl md:text-6xl font-extrabold brand-primary mb-6 tracking-tight leading-tight">
+                Stop Wrestling with AI Boilerplate.<br> <span class="brand-accent">Start Building Intelligence.</span>
+            </h1>
+            <p class="text-xl md:text-2xl brand-text-dark mb-10 leading-relaxed">
+                IntelliBricks is the Python-first toolkit designed to streamline AI application development. Focus on your intelligent logic, not framework complexity.
+            </p>
+            <div class="space-x-4">
+                <a href="#features" class="inline-block bg-brand-secondary hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 text-lg">
+                    Explore Features
+                </a>
+                <a href="https://arthurbrenno.github.io/intellibricks/" target="_blank" class="inline-block bg-gray-300 hover:bg-gray-400 brand-text-dark font-bold py-3 px-8 rounded-full transition duration-300 text-lg">
+                    Documentation →
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Problem and Solution Section -->
+    <section id="problem-solution" class="py-24 bg-gray-100">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold brand-text-dark mb-4 tracking-tight">The AI Development Pain Points, Solved.</h2>
+                <p class="text-lg brand-text-light leading-relaxed">
+                    Building AI applications can be complex. IntelliBricks simplifies the process, addressing common frustrations developers face.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Complexity Overload -->
+                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-4xl brand-primary mb-4">🤯</div>
+                    <h3 class="text-xl font-semibold brand-text-dark mb-2">Complexity Overload</h3>
+                    <p class="brand-text-light">Traditional AI frameworks often introduce unnecessary layers of abstraction. IntelliBricks offers a streamlined, Python-first approach to reduce complexity and cognitive load.</p>
+                </div>
+
+                <!-- Unpredictable LLM Interactions -->
+                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-4xl brand-primary mb-4">🤔</div>
+                    <h3 class="text-xl font-semibold brand-text-dark mb-2">Unpredictable LLM Outputs</h3>
+                    <p class="brand-text-light">Achieving reliable and structured outputs from Language Models can be challenging. IntelliBricks leverages Python's type system to ensure predictable and well-formatted responses, every time.</p>
+                </div>
+
+                <!-- Boilerplate Blues -->
+                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300 md:col-span-2 lg:col-span-1">
+                    <div class="text-4xl brand-primary mb-4">⚙️</div>
+                    <h3 class="text-xl font-semibold brand-text-dark mb-2">Boilerplate Blues</h3>
+                    <p class="brand-text-light">Repetitive setup and configuration can stifle creativity. IntelliBricks eliminates boilerplate, allowing you to focus on building intelligent logic, not wrestling with infrastructure.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Modules Section - Detailed with Code Snippets -->
+    <section id="features" class="py-24">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold brand-text-dark mb-4 tracking-tight">Core Modules: Intelligent Building Blocks for Your AI Applications</h2>
+                <p class="text-lg brand-text-light leading-relaxed">
+                    IntelliBricks is structured around three core modules, each designed for power, flexibility, and seamless integration, empowering you to build sophisticated AI applications with ease.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                <!-- LLMs Module - Expanded -->
+                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-5xl brand-secondary mb-6">🧱</div>
+                    <h3 class="text-xl font-semibold brand-text-dark mb-4">LLMs Module: Speak Fluently with AI Models</h3>
+                    <p class="brand-text-light mb-6">Your gateway to Language Model Models (LLMs). Interact with various LLMs in a consistent and Pythonic manner. Synapses for effortless model switching, structured outputs for reliable data, and built-in observability for debugging.</p>
+                    <ul class="list-disc list-inside brand-text-light mb-6">
+                        <li><strong>Synapses:</strong> Connect to Google Gemini, OpenAI, Groq, and more with one line of code.</li>
+                        <li><strong>Structured Outputs:</strong> Define data models with Python classes using <code>msgspec.Struct</code>.</li>
+                        <li><strong>Chain of Thought:</strong> Structured reasoning with <code>ChainOfThought</code> for enhanced observability.</li>
+                        <li><strong>Langfuse Observability:</strong> Built-in integration for tracing and debugging.</li>
+                    </ul>
+                    <div class="mb-4">
+                        <pre class="bg-gray-100 p-4 rounded-md text-sm overflow-x-auto"><code class="language-python">
+from intellibricks import Synapse
+
+synapse = Synapse.of("google/genai/gemini-pro-experimental")
+response = synapse.complete("Write a poem about Python.")
+print(response.text)
+                        </code></pre>
+                    </div>
+                    <a href="docs/llms" class="text-brand-secondary hover:underline">Learn more about LLMs Module →</a>
+                </div>
+
+                <!-- Agents Module - Expanded -->
+                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-5xl brand-secondary mb-6">🤖</div>
+                    <h3 class="text-xl font-semibold brand-text-dark mb-4">Agents Module: Craft Autonomous Intelligent Entities</h3>
+                    <p class="brand-text-light mb-6">Empower yourself to build sophisticated, autonomous agents capable of performing complex tasks. Agents orchestrate LLM interactions and leverage tools to achieve specific goals, turning your intelligent logic into reality.</p>
+                    <ul class="list-disc list-inside brand-text-light mb-6">
+                        <li><strong>Agent Class:</strong> Define tasks, instructions, metadata, and connect to Synapses.</li>
+                        <li><strong>Tool Calling:</strong> Equip agents with tools for real-world interaction and function calling.</li>
+                        <li><strong>Instant APIs:</strong> Turn agents into REST APIs with FastAPI/Litestar effortlessly.</li>
+                        <li><strong>Context-Aware Agents:</strong> Seamless RAG integration for informed, intelligent agents.</li>
+                    </ul>
+                    <div class="mb-4">
+                        <pre class="bg-gray-100 p-4 rounded-md text-sm overflow-x-auto"><code class="language-python">
+from intellibricks import Agent, Synapse
+
+synapse = Synapse.of("openai/api/gpt-4o")
+agent = Agent(..., synapse=synapse)
+title = agent.run("Knight discovers dragon egg.")
+print(f"Agent suggests: {title.text}")
+                        </code></pre>
+                    </div>
+                    <a href="docs/agents" class="text-brand-secondary hover:underline">Learn more about Agents Module →</a>
+                </div>
+
+                <!-- Files Module - Expanded -->
+                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-5xl brand-secondary mb-6">🗂️</div>
+                    <h3 class="text-xl font-semibold brand-text-dark mb-4">Files Module: Intelligent File Handling</h3>
+                    <p class="brand-text-light mb-6">Provides a robust way to handle and process files within your AI applications. Parse, extract, and understand content from various file types with ease, making file data seamlessly accessible to your agents and workflows.</p>
+                    <ul class="list-disc list-inside brand-text-light mb-6">
+                        <li><strong>RawFile Abstraction:</strong> Represent files as <code>RawFile</code> objects for easy manipulation.</li>
+                        <li><strong>Parsed Files:</strong> Foundation for extracting structured information (text, images, tables).</li>
+                        <li><strong>File Parsing Infrastructure:</strong> Laying groundwork for integrating file parsers for diverse formats.</li>
+                        <li><strong>Intelligent File Workflows:</strong> Process files within your AI pipelines effortlessly.</li>
+                    </ul>
+                    <div class="mb-4">
+                        <pre class="bg-gray-100 p-4 rounded-md text-sm overflow-x-auto"><code class="language-python">
+from intellibricks.files import RawFile
+
+raw_file = RawFile.from_file_path("document.pdf")
+print(f"File Name: {raw_file.name}")
+print(f"File Extension: {raw_file.extension}")
+                        </code></pre>
+                    </div>
+                    <a href="docs/files" class="text-brand-secondary hover:underline">Learn more about Files Module →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Structured Outputs Deep Dive -->
+    <section id="structured-outputs" class="py-24 bg-gray-50">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold brand-text-dark mb-8 tracking-tight">Structured Outputs: Data, Defined by You.</h2>
+            <p class="text-lg brand-text-light leading-relaxed mb-12">
+                Getting structured data from LLMs is critical for building robust applications. IntelliBricks makes it Pythonically simple and blazingly fast. See how we compare:
+            </p>
+
+            <!-- Comparison Table (Simplified for one-page, could be more visual on separate page) -->
+            <div class="overflow-x-auto mb-16">
+                <table class="min-w-full border-collapse border border-gray-300 bg-white">
+                    <thead>
+                        <tr>
+                            <th class="border border-gray-300 p-4">Feature</th>
+                            <th class="border border-gray-300 p-4">IntelliBricks</th>
+                            <th class="border border-gray-300 p-4">LangChain</th>
+                            <th class="border border-gray-300 p-4">LlamaIndex</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="border border-gray-300 p-4 font-semibold">Python-First Purity</td>
+                            <td class="border border-gray-300 p-4">🐍 Clean, idiomatic Python</td>
+                            <td class="border border-gray-300 p-4">Pydantic-based</td>
+                            <td class="border border-gray-300 p-4">Pydantic-based, PromptTemplates</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-4 font-semibold">Syntax Simplicity</td>
+                            <td class="border border-gray-300 p-4">✨ Direct, intuitive</td>
+                            <td class="border border-gray-300 p-4"><code>.with_structured_output()</code></td>
+                            <td class="border border-gray-300 p-4"><code>structured_predict</code>, PromptTemplates</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-4 font-semibold">Performance</td>
+                            <td class="border border-gray-300 p-4">🚀 Blazing Fast with <code>msgspec</code></td>
+                            <td class="border border-gray-300 p-4">Pydantic</td>
+                            <td class="border border-gray-300 p-4">Pydantic</td>
+                        </tr>
+                        <tr>
+                            <td class="border border-gray-300 p-4 font-semibold">Comprehensive Response</td>
+                            <td class="border border-gray-300 p-4">✅ <code>AgentResponse</code> with full completion details</td>
+                            <td class="border border-gray-300 p-4">Pydantic object only</td>
+                            <td class="border border-gray-300 p-4">Pydantic object, extra steps for JSON</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="text-lg brand-text-light leading-relaxed">
+                IntelliBricks offers a more streamlined, efficient, and Python-centric approach to structured outputs, ensuring you get not just the data, but the full context of the LLM's response.
+            </p>
+        </div>
+    </section>
+
+    <!-- Why Choose IntelliBricks Section - Elaborated -->
+    <section id="why-choose" class="py-24">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold brand-text-dark mb-12 tracking-tight">🏆 The IntelliBricks Advantage: Python-First Intelligence</h2>
+            <p class="text-lg brand-text-light leading-relaxed mb-16">
+                IntelliBricks is not just another framework; it's a philosophy. We believe in empowering developers with tools that feel natural, intuitive, and deeply Pythonic. Here’s why IntelliBricks is the intelligent choice for your next AI application:
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+                <!-- Python First - Elaborated -->
+                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-5xl brand-primary mb-6">🐍</div>
+                    <h4 class="text-xl font-semibold brand-text-dark mb-4">Idiomatic Python at its Core</h4>
+                    <p class="brand-text-light leading-relaxed mb-6">Built with idiomatic Python, IntelliBricks leverages modern Python features for a development experience that feels fluid and natural. No steep learning curves, no framework jargon – just clean, modern Python.</p>
+                    <p class="text-sm brand-text-dark font-semibold">Benefit:</p>
+                    <p class="text-sm brand-text-light">Write AI applications using the language you love, without fighting against framework conventions.</p>
+                </div>
+
+                <!-- Simplicity & Clarity - Elaborated -->
+                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-5xl brand-primary mb-6">✨</div>
+                    <h4 class="text-xl font-semibold brand-text-dark mb-4">Unmatched Simplicity and Clarity</h4>
+                    <p class="brand-text-light leading-relaxed mb-6">Designed for intuitiveness and ease of use, IntelliBricks dramatically reduces complexity and boilerplate. Focus on your application's intelligence, not intricate framework mechanics. Develop with clarity and confidence.</p>
+                    <p class="text-sm brand-text-dark font-semibold">Benefit:</p>
+                    <p class="text-sm brand-text-light">Get up and running quickly, iterate faster, and maintain your codebase with ease.</p>
+                </div>
+
+                <!-- Structured Outputs Out-of-the-Box - Elaborated -->
+                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-5xl brand-primary mb-6">🧱</div>
+                    <h4 class="text-xl font-semibold brand-text-dark mb-4">Structured Outputs as a Core Strength</h4>
+                    <p class="brand-text-light leading-relaxed mb-6">Harness the power of structured data effortlessly. Define your data models with Python classes and let IntelliBricks ensure perfectly formatted responses from LLMs, leveraging <code>msgspec</code> for blazing-fast performance.</p>
+                    <p class="text-sm brand-text-dark font-semibold">Benefit:</p>
+                    <p class="text-sm brand-text-light">Eliminate messy string parsing and work directly with clean, validated data structures.</p>
+                </div>
+
+                <!-- Focus on Intelligence, Not Infrastructure - Elaborated -->
+                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                    <div class="text-5xl brand-primary mb-6">🧠</div>
+                    <h4 class="text-xl font-semibold brand-text-dark mb-4">Focus on Building Intelligence, Not Infrastructure</h4>
+                    <p class="brand-text-light leading-relaxed mb-6">IntelliBricks handles the plumbing, so you can concentrate on what truly matters: building intelligent logic. Spend less time on framework intricacies and more time crafting smart, innovative applications that solve real-world problems.</p>
+                    <p class="text-sm brand-text-dark font-semibold">Benefit:</p>
+                    <p class="text-sm brand-text-light">Maximize your development efficiency and bring intelligent solutions to life faster.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Get Started Section - Stronger Call to Action -->
+    <section id="get-started" class="py-32 bg-brand-primary">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">Ready to Build Intelligent Applications, Effortlessly?</h2>
+            <p class="text-xl text-gray-100 leading-relaxed mb-12">
+                Join the IntelliBricks revolution and experience the future of AI development, the Python way. Get started in seconds and unleash your AI potential today!
+            </p>
+
+            <div class="mb-10">
+                <code class="bg-gray-800 bg-opacity-75 px-6 py-3 rounded-md text-white text-lg shadow-md inline-block">pip install intellibricks</code>
+            </div>
+            <div class="space-x-4">
+                <a href="https://pypi.org/project/intellibricks/" target="_blank" class="inline-block bg-brand-accent hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 text-lg shadow-lg">
+                    Get Started on PyPI →
+                </a>
+                <a href="https://github.com/arthurbrenno/intellibricks" target="_blank" class="inline-block bg-white hover:bg-gray-100 brand-text-dark font-bold py-3 px-8 rounded-full transition duration-300 text-lg shadow-lg">
+                    View on GitHub →
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer - Updated -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
+            <p class="brand-text-light mb-4">© 2025 Intellibricks, Inc. All rights reserved.</p>
+            <nav class="space-x-6">
+                <a href="https://arthurbrenno.github.io/intellibricks/" target="_blank" class="text-gray-300 hover:text-white transition duration-200">Documentation</a>
+                <a href="#get-started" class="text-gray-300 hover:text-white transition duration-200">Get Started</a>
+                <!-- Add more links as needed (e.g., blog, community, etc.) -->
+            </nav>
+            <p class="mt-6 text-sm text-gray-400">
+                Built with ❤️ for the Python AI community.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Optional: Add some simple Javascript for syntax highlighting if you want the code blocks to look nicer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script>hljs.highlightAll();</script>
+
+</body>
+</html>
