@@ -364,8 +364,8 @@
 <span class="n">txt_parser</span> <span class="o">=</span> <span class="n">TxtFileParser</span><span class="p">()</span>
 
 <span class="c1"># 3. Extract content using the parser</span>
-<span class="n">parsed_pdf_document</span> <span class="o">=</span> <span class="n">pdf_parser</span><span class="o">.</span><span class="n">extract_contents</span><span class="p">(</span><span class="n">raw_pdf_file</span><span class="p">)</span>
-<span class="n">parsed_txt_document</span> <span class="o">=</span> <span class="n">txt_parser</span><span class="o">.</span><span class="n">extract_contents</span><span class="p">(</span><span class="n">raw_txt_file</span><span class="p">)</span>
+<span class="n">parsed_pdf_document</span> <span class="o">=</span> <span class="n">pdf_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">raw_pdf_file</span><span class="p">)</span>
+<span class="n">parsed_txt_document</span> <span class="o">=</span> <span class="n">txt_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">raw_txt_file</span><span class="p">)</span>
 
 <span class="c1"># 4. Access parsed content (ParsedFile object)</span>
 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_pdf_document</span><span class="p">,</span> <span class="n">ParsedFile</span><span class="p">):</span>
@@ -387,7 +387,7 @@
 <ol class="arabic simple">
 <li><p>Create a <code class="docutils literal notranslate"><span class="pre">RawFile</span></code> object for your file.</p></li>
 <li><p>Instantiate the appropriate parser class based on the file type (e.g., <code class="docutils literal notranslate"><span class="pre">PdfFileParser</span></code> for PDFs, <code class="docutils literal notranslate"><span class="pre">DocxFileParser</span></code> for DOCX files - when available).</p></li>
-<li><p>Call the <code class="docutils literal notranslate"><span class="pre">extract_contents()</span></code> method of the parser, passing the <code class="docutils literal notranslate"><span class="pre">RawFile</span></code> object as input.</p></li>
+<li><p>Call the <code class="docutils literal notranslate"><span class="pre">parse()</span></code> method of the parser, passing the <code class="docutils literal notranslate"><span class="pre">RawFile</span></code> object as input.</p></li>
 <li><p>Work with the returned <code class="docutils literal notranslate"><span class="pre">ParsedFile</span></code> object to access the extracted structured content.</p></li>
 </ol>
 <p><strong>Parsed File Structure</strong></p>
@@ -411,7 +411,7 @@
 <span class="n">raw_pdf_file</span> <span class="o">=</span> <span class="n">RawFile</span><span class="o">.</span><span class="n">from_file_path</span><span class="p">(</span><span class="s2">&quot;document.pdf&quot;</span><span class="p">)</span>
 <span class="n">pdf_parser</span> <span class="o">=</span> <span class="n">PdfFileParser</span><span class="p">()</span>
 
-<span class="n">parsed_document</span> <span class="o">=</span> <span class="n">pdf_parser</span><span class="o">.</span><span class="n">extract_contents</span><span class="p">(</span><span class="n">raw_pdf_file</span><span class="p">)</span>
+<span class="n">parsed_document</span> <span class="o">=</span> <span class="n">pdf_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">raw_pdf_file</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parsed document: </span><span class="si">{</span><span class="n">parsed_document</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">parsed_document</span><span class="o">.</span><span class="n">sections</span><span class="p">:</span>
