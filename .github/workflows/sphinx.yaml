@@ -35,7 +35,7 @@ jobs:
 
       - name: Prepare Deployment Directory
         run: |
-          mkdir -p deploy_output  # Create a staging directory
+          mkdir -p deploy_output/docs  # Create deploy_output and docs subdirectory in one go
           cp docs/_static/landing.html deploy_output/index.html # Copy landing.html to staging root as index.html
           cp -r docs/_build/html/* deploy_output/docs # Copy ALL Sphinx output to staging/docs
 
