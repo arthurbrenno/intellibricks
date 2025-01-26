@@ -1,4 +1,4 @@
-name: documentation
+name: sphinx
 
 on:
   push:
@@ -16,11 +16,11 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install UV # Ensure UV is available
-        run: pip install --root-user-action=ignore --upgrade uv
+      - name: Install PIP
+        run: pip install --root-user-action=ignore --upgrade pip
 
-      - name: Install project dependencies for docs using uv # Use uv and dev dependencies
-        run: uv sync --only-dev
+      - name: Install project dependencies for docs using pip # Use uv and dev dependencies
+        run: pip install sphinx furo
 
       - name: Build Docs # Use your makefile to build docs
         run: make docs # This will execute 'make docs' in your root directory
