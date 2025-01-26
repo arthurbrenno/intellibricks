@@ -177,10 +177,12 @@ class Summary(msgspec.Struct, frozen=True):
     key_points: list[str]
 
 synapse = Synapse.of("google/genai/gemini-pro-experimental")
-prompt = "Summarize article: [...]"
-summary = synapse.complete(prompt, response_model=Summary)
+completion = synapse.complete(
+    "Summarize article: [...]",
+    response_model=Summary
+) # ChatCompletion[Summary]
 
-print(summary.parsed)
+print(completion.parsed) # Summary
 ```
 
 **LangChain:**
