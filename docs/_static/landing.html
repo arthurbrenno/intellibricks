@@ -259,7 +259,7 @@
                     <div class="mb-4">
                         <pre class="language-python">
 <code class="language-python">
-from intellibricks import Synapse
+from intellibricks.llms import Synapse
 
 synapse = Synapse.of("google/genai/gemini-pro-experimental")
 completion = synapse.complete("Write a poem about Python.")
@@ -291,7 +291,8 @@ print(completion.choices[0].message.contents)
                     <div class="mb-4">
                         <pre class="language-python">
 <code class="language-python">
-from intellibricks import Agent, Synapse
+from intellibricks.agents import Agent
+from intellibricks.llms import Synapse
 
 synapse = Synapse.of("openai/api/gpt-4o")
 agent = Agent(..., synapse=synapse)
