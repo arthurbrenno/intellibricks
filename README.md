@@ -44,7 +44,7 @@ pip install intellibricks
 
 IntelliBricks is built around three core modules, designed for power and seamless integration:
 
-### 🧠 LLMs Module:  Speak Python to AI
+### 🧠 LLMs Module: Integrate easilly with AI providers
 
 Interact with Language Models in pure Python.
 
@@ -111,7 +111,7 @@ Interact with Language Models in pure Python.
     ```
     ![Langfuse](static/readme_images/langfuse_view.jpeg)
 
-### 🤖 Agents Module:  Build Autonomous Intelligence
+### 🤖 Agents Module: Build Autonomous Intelligence
 
 Craft agents to perform complex tasks.
 
