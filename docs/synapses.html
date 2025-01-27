@@ -281,7 +281,7 @@
 <p>Synapses are typically initialized using the static factory method <code class="docutils literal notranslate"><span class="pre">Synapse.of()</span></code>, which simplifies configuration based on model identifiers.</p>
 <p><strong>Basic Synapse Initialization</strong></p>
 <p>To initialize a Synapse for Google Gemini Pro:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synapse</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.llms</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synapse</span>
 
 <span class="n">gemini_synapse</span> <span class="o">=</span> <span class="n">Synapse</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="s2">&quot;google/genai/gemini-pro-experimental&quot;</span><span class="p">)</span>
 
@@ -392,7 +392,7 @@
 </ul>
 <p><strong>TextTranscriptionsSynapseCascade for Fault-Tolerant Transcriptions</strong></p>
 <p>Similar to <code class="docutils literal notranslate"><span class="pre">SynapseCascade</span></code>, IntelliBricks offers <code class="docutils literal notranslate"><span class="pre">TextTranscriptionsSynapseCascade</span></code> for fault-tolerant audio transcriptions.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks</span><span class="w"> </span><span class="kn">import</span> <span class="n">TextTranscriptionsSynapseCascade</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.llms</span><span class="w"> </span><span class="kn">import</span> <span class="n">TextTranscriptionsSynapseCascade</span>
 
 <span class="n">transcription_cascade</span> <span class="o">=</span> <span class="n">TextTranscriptionsSynapseCascade</span><span class="p">(</span>
     <span class="n">synapses</span><span class="o">=</span><span class="p">[</span>

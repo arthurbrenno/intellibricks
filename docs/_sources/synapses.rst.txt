@@ -29,7 +29,7 @@ To initialize a Synapse for Google Gemini Pro:
 
 .. code-block:: python
 
-   from intellibricks import Synapse
+   from intellibricks.llms import Synapse
 
    gemini_synapse = Synapse.of("google/genai/gemini-pro-experimental")
 
@@ -162,7 +162,7 @@ Similar to ``SynapseCascade``, IntelliBricks offers ``TextTranscriptionsSynapseC
 
 .. code-block:: python
 
-   from intellibricks import TextTranscriptionsSynapseCascade
+   from intellibricks.llms import TextTranscriptionsSynapseCascade
 
    transcription_cascade = TextTranscriptionsSynapseCascade(
        synapses=[

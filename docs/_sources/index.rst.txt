@@ -29,7 +29,7 @@ Get Started Now!
    pip install intellibricks
 
    # Example Synapse Usage - Get a quick taste!
-   from intellibricks import Synapse
+   from intellibricks.llms import Synapse
    synapse = Synapse.of("openai/api/gpt-3.5-turbo") # Or any free model
    response = synapse.complete("Say hello in a funny way!")
    print(f"IntelliBricks says: {response.text}")
@@ -83,7 +83,8 @@ The ``intellibricks.agents`` module empowers you to build sophisticated, autonom
 .. code-block:: python
    :caption: Example: Creating a Simple Agent
 
-   from intellibricks import Agent, Synapse
+   from intellibricks.agents import Agent
+   from intellibricks.llms import Synapse
 
    synapse = Synapse.of("openai/api/gpt-4o")
    agent = Agent(

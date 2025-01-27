@@ -282,7 +282,8 @@
 <p>Let’s explore how to create and configure Agents in IntelliBricks with Python code examples.</p>
 <p><strong>Basic Agent Creation</strong></p>
 <p>Here’s how to create a basic Agent that generates creative story titles, similar to the Quickstart example, but with more detailed explanations.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">Synapse</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.llms</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synapse</span>
 
 <span class="c1"># 1. Initialize a Synapse (connection to an LLM)</span>
 <span class="n">synapse</span> <span class="o">=</span> <span class="n">Synapse</span><span class="o">.</span><span class="n">of</span><span class="p">(</span><span class="s2">&quot;openai/api/gpt-4o&quot;</span><span class="p">)</span>
@@ -410,7 +411,8 @@
 <p>Agent API Endpoints (FastAPI and Litestar)**</p>
 <p>IntelliBricks makes it incredibly easy to expose your Agents as REST APIs using FastAPI or Litestar.</p>
 <p><strong>FastAPI Example:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">Synapse</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.llms</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synapse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uvicorn</span>
 
 <span class="c1"># ... (Define your agent as in previous examples, e.g., title_agent) ...</span>
@@ -424,7 +426,8 @@
 </div>
 <p>Now, your <code class="docutils literal notranslate"><span class="pre">title_agent</span></code> is available as an API endpoint. You can send POST requests to <code class="docutils literal notranslate"><span class="pre">/agents/creativetitleagent/completions</span></code> (path is derived from agent metadata name) with a JSON payload containing the input for the agent.</p>
 <p><strong>Litestar Example:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">Synapse</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.llms</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synapse</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">litestar</span><span class="w"> </span><span class="kn">import</span> <span class="n">Litestar</span>
 
 <span class="c1"># ... (Define your agent, e.g., summary_agent with response_model) ...</span>
@@ -441,8 +444,8 @@
 <p>Agent Lifecycle: <code class="docutils literal notranslate"><span class="pre">_before_run</span></code> and <code class="docutils literal notranslate"><span class="pre">_after_run</span></code> Methods</p>
 <p>For advanced customization, Agents support <code class="docutils literal notranslate"><span class="pre">_before_run</span></code>, <code class="docutils literal notranslate"><span class="pre">_after_run</span></code>, and their asynchronous counterparts <code class="docutils literal notranslate"><span class="pre">_before_run_async</span></code>, <code class="docutils literal notranslate"><span class="pre">_after_run_async</span></code> methods. These methods allow you to inject custom logic at the start and end of the Agent’s <code class="docutils literal notranslate"><span class="pre">run</span></code> or <code class="docutils literal notranslate"><span class="pre">run_async</span></code> execution.</p>
 <p>Example: Logging Agent Runs</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">Synapse</span><span class="p">,</span> <span class="n">AgentResponse</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.llms.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span><span class="p">,</span> <span class="n">RawResponse</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">AgentResponse</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.llms</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span><span class="p">,</span> <span class="n">RawResponse</span><span class="p">,</span> <span class="n">Synapse</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">LoggingAgent</span><span class="p">(</span><span class="n">Agent</span><span class="p">[</span><span class="n">RawResponse</span><span class="p">]):</span> <span class="c1"># Or any other response model</span>
