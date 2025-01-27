@@ -3043,7 +3043,7 @@ class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True)
 
     def __add__(self, other: ChatCompletion[T]) -> ChatCompletion[T]:
         return ChatCompletion(
-            elapsed_time=self.elapsed_time + other.elapsed_time,
+            elapsed_time=round(self.elapsed_time + other.elapsed_time, 2),
             id=uuid.uuid4().__str__(),
             model=self.model,
             system_fingerprint=self.system_fingerprint,
@@ -3780,7 +3780,7 @@ class AudioTranscription(msgspec.Struct, frozen=True, kw_only=True):
                 merged_segments.append(new_segment)
 
         return AudioTranscription(
-            elapsed_time=merged_elapsed_time,
+            elapsed_time=round(merged_elapsed_time, 2),
             text=merged_text,
             segments=merged_segments,
             cost=merged_cost,

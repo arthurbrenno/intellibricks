@@ -216,7 +216,7 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
         )
 
         completion = ChatCompletion(
-            elapsed_time=timeit.default_timer() - now,
+            elapsed_time=round(timeit.default_timer() - now, 2),
             id=cerebras_completion.id,
             object="chat.completion",
             created=cerebras_completion.created,
@@ -412,7 +412,7 @@ class CerebrasLanguageModel(LanguageModel, frozen=True):
 #         )
 
 #         completion = ChatCompletion(
-#             elapsed_time=timeit.default_timer() - now,
+#             elapsed_time=round(timeit.default_timer() - now, 2),
 #             id=cerebras_completion.id,
 #             object="chat.completion",
 #             created=cerebras_completion.created,

@@ -385,7 +385,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
         )
 
         completion = ChatCompletion(
-            elapsed_time=timeit.default_timer() - now,
+            elapsed_time=round(timeit.default_timer() - now, 2),
             choices=choices,
             usage=usage,
             model=cast(

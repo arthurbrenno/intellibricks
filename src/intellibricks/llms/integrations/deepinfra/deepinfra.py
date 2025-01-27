@@ -389,7 +389,7 @@ class DeepInfraLanguageModel(LanguageModel, frozen=True):
         total_cost = input_cost + output_cost
 
         chat_completion = ChatCompletion(
-            elapsed_time=timeit.default_timer() - now,
+            elapsed_time=round(timeit.default_timer() - now, 2),
             id=openai_completion.id,
             object=openai_completion.object,
             created=openai_completion.created,

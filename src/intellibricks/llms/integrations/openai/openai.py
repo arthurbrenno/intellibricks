@@ -286,7 +286,7 @@ class OpenAILanguageModel(LanguageModel, frozen=True):
         completion_tokens_details = usage.completion_tokens_details if usage else None
 
         chat_completion = ChatCompletion(
-            elapsed_time=timeit.default_timer() - now,
+            elapsed_time=round(timeit.default_timer() - now, 2),
             id=openai_completion.id,
             object=openai_completion.object,
             created=openai_completion.created,
@@ -393,7 +393,7 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
                         len(chunk) / 1000
                     )  # Convert milliseconds to seconds
                     chunk_transcription = AudioTranscription(
-                        elapsed_time=chunk_elapsed_time,
+                        elapsed_time=round(chunk_elapsed_time, 2),
                         text=transcription.text,
                         segments=segments,
                         cost=0.0,
@@ -431,7 +431,7 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
             )
 
         return AudioTranscription(
-            elapsed_time=timeit.default_timer() - now,
+            elapsed_time=round(timeit.default_timer() - now, 2),
             text=transcription.text,
             segments=segments,
             cost=0.0,

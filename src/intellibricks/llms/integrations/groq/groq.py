@@ -255,7 +255,7 @@ class GroqLanguageModel(LanguageModel, frozen=True):
         # Calculate total cost
         total_cost = input_cost + output_cost
         chat_completion = ChatCompletion(
-            elapsed_time=timeit.default_timer() - now,
+            elapsed_time=round(timeit.default_timer() - now, 2),
             id=groq_completion.id,
             object=groq_completion.object,
             created=groq_completion.created,
@@ -343,7 +343,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
                         len(chunk) / 1000
                     )  # Convert milliseconds to seconds
                     chunk_transcription = AudioTranscription(
-                        elapsed_time=chunk_elapsed_time,
+                        elapsed_time=round(chunk_elapsed_time, 2),
                         text=transcription.text,
                         segments=segments,
                         cost=0.0,
@@ -382,7 +382,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
             )
 
         return AudioTranscription(
-            elapsed_time=timeit.default_timer() - now,
+            elapsed_time=round(timeit.default_timer() - now, 2),
             text=transcription.text,
             segments=segments,
             cost=0.0,
