@@ -1,6 +1,7 @@
-<div style="text-align: center;">
+<p align="center">
   <img src="/docs/_static/logo.png" alt="Logo" width="400" />
-</div>
+</p>
+
 
 
 <h1 align="center">Start Building Intelligence.</h1>
