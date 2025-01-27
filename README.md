@@ -4,7 +4,7 @@
 
 
 
-<h1 align="center">Start Building Intelligence.</h1>
+<h1 align="center">Start Building Intelligence</h1>
 
 <p align="center">
   <b>The Python-first Framework for Agentic & LLM-Powered Applications</b>
