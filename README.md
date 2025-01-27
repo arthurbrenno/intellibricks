@@ -1,7 +1,7 @@
-<h1 align="center">🧠🧱 IntelliBricks: Build Intelligent Apps, Python-First</h1>
+<h1 align="center">🧠🧱 Intellibricks: Start Building Intelligence</h1>
 
 <p align="center">
-  <b>The Python Framework for Agentic & LLM-Powered Applications</b>
+  <b>The Python-first Framework for Agentic & LLM-Powered Applications</b>
 </p>
 
 ---
