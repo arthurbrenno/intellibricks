@@ -31,7 +31,8 @@ Here's how to create a basic Agent that generates creative story titles, similar
 
 .. code-block:: python
 
-   from intellibricks import Agent, Synapse
+   from intellibricks.agents import Agent
+   from intellibricks.llms import Synapse
 
    # 1. Initialize a Synapse (connection to an LLM)
    synapse = Synapse.of("openai/api/gpt-4o")
@@ -173,7 +174,8 @@ IntelliBricks makes it incredibly easy to expose your Agents as REST APIs using 
 
 .. code-block:: python
 
-   from intellibricks import Agent, Synapse
+   from intellibricks.agents import Agent
+   from intellibricks.llms import Synapse
    import uvicorn
 
    # ... (Define your agent as in previous examples, e.g., title_agent) ...
@@ -190,7 +192,8 @@ Now, your ``title_agent`` is available as an API endpoint. You can send POST req
 
 .. code-block:: python
 
-   from intellibricks import Agent, Synapse
+   from intellibricks.agents import Agent
+   from intellibricks.llms import Synapse
    from litestar import Litestar
 
    # ... (Define your agent, e.g., summary_agent with response_model) ...
@@ -212,8 +215,8 @@ Example: Logging Agent Runs
 
 .. code-block:: python
 
-   from intellibricks import Agent, Synapse, AgentResponse
-   from intellibricks.llms.types import Message, RawResponse
+   from intellibricks.agents import Agent, AgentResponse
+   from intellibricks.llms import Message, RawResponse, Synapse
    from typing import Optional
 
    class LoggingAgent(Agent[RawResponse]): # Or any other response model

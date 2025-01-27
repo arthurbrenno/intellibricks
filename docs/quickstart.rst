@@ -17,7 +17,8 @@ Start by importing the required classes from IntelliBricks:
 
 .. code-block:: python
 
-   from intellibricks import Agent, Synapse
+   from intellibricks.agents import Agent
+   from intellibricks.llms import Synapse
 
 Step 3: Initialize a Synapse
 ----------------------------

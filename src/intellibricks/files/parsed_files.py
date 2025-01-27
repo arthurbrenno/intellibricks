@@ -77,7 +77,7 @@ from typing import Annotated, Any, Optional, Sequence, cast
 import msgspec
 from architecture.utils import run_sync
 
-from intellibricks import ChainOfThought, Synapse, TraceParams
+from intellibricks.llms import ChainOfThought, Synapse, TraceParams
 
 
 class Image(msgspec.Struct, frozen=True):

@@ -48,7 +48,7 @@ To begin building with IntelliBricks, you can start by creating a `Synapse` to c
 **Example (Basic Synapse Usage):**
 
 ```python
-from intellibricks import Synapse
+from intellibricks.llms import Synapse
 
 # Create a Synapse instance
 my_synapse = Synapse("openai/api/gpt-4o")
@@ -60,49 +60,3 @@ print(response.message.content)
 
 For more detailed information, explore the individual modules and class documentations within the `intellibricks` package.
 """
-from .llms import (
-    Synapse,
-    ChatCompletion,
-    AssistantMessage,
-    DeveloperMessage,
-    UserMessage,
-    MessageChoice,
-    TraceParams,
-    Usage,
-    Prompt,
-    MessageType,
-    SynapseCascade,
-    TextTranscriptionSynapse,
-    ChainOfThought,
-    TextPart,
-    ImageFilePart,
-    AudioFilePart,
-    VideoFilePart,
-    WebsitePart,
-)
-from .files import RawFile
-
-from .agents import Agent
-
-__all__: list[str] = [
-    "Synapse",
-    "ChatCompletion",
-    "Usage",
-    "AssistantMessage",
-    "DeveloperMessage",
-    "UserMessage",
-    "MessageChoice",
-    "TraceParams",
-    "Prompt",
-    "Agent",
-    "RawFile",
-    "MessageType",
-    "SynapseCascade",
-    "TextTranscriptionSynapse",
-    "ChainOfThought",
-    "TextPart",
-    "ImageFilePart",
-    "AudioFilePart",
-    "VideoFilePart",
-    "WebsitePart",
-]

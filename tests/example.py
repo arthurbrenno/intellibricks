@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 import msgspec
 from dotenv import load_dotenv
 
-from intellibricks import (
+from intellibricks.llms import (
     AssistantMessage,
     ChainOfThought,
     DeveloperMessage,

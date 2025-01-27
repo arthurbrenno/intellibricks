@@ -1,8 +1,8 @@
-import uvicorn
 import msgspec
+import uvicorn
 
-
-from intellibricks import Agent, Synapse
+from intellibricks.agents import Agent
+from intellibricks.llms import Synapse
 
 
 def get_weather(city: str) -> str:

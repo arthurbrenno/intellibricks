@@ -47,7 +47,7 @@ Interact with Language Models in pure Python.
 *   **Synapses:** Connect to Google Gemini, OpenAI, Groq, and more with one line of code.
 
     ```python
-    from intellibricks import Synapse
+    from intellibricks.llms import Synapse
 
     synapse = Synapse.of("google/genai/gemini-pro-experimental")
     completion = synapse.complete("Write a poem about Python.") # ChatCompletion[RawResponse]
@@ -59,7 +59,7 @@ Interact with Language Models in pure Python.
     ```python
     import msgspec
     from typing import Annotated, Sequence
-    from intellibricks import Synapse
+    from intellibricks.llms import Synapse
 
     class Summary(msgspec.Struct, frozen=True):
         title: Annotated[str, msgspec.Meta(title="Title", description="Summary Title")]
@@ -76,7 +76,7 @@ Interact with Language Models in pure Python.
 *   **Chain of Thought:** Structured reasoning with `ChainOfThought` for observability.
 
     ```python
-    from intellibricks import Synapse, ChainOfThought
+    from intellibricks.llms import Synapse, ChainOfThought
     import msgspec
 
     class Response(msgspec.Struct):
@@ -98,7 +98,7 @@ Interact with Language Models in pure Python.
 *   **Langfuse Observability:** Built-in integration for tracing and debugging.
 
     ```python
-    from intellibricks import Synapse
+    from intellibricks.llms import Synapse
     from langfuse import Langfuse
 
     synapse = Synapse.of(..., langfuse=Langfuse())
@@ -114,7 +114,8 @@ Craft agents to perform complex tasks.
 *   **Agent Class:** Define tasks, instructions, and connect to Synapses.
 
     ```python
-    from intellibricks import Agent, Synapse
+    from intellibricks.agents import Agent
+    from intellibricks.llms import Synapse
 
     synapse = Synapse.of("google/genai/gemini-pro-experimental")
     agent = Agent(
@@ -132,7 +133,8 @@ Craft agents to perform complex tasks.
 *   **Instant APIs:** Turn agents into REST APIs with FastAPI/Litestar.
 
     ```python
-    from intellibricks import Agent, Synapse
+    from intellibricks.agents import Agent
+    from intellibricks.llms import Synapse
     import uvicorn
 
     agent = Agent(..., synapse=Synapse.of(...))
@@ -179,7 +181,7 @@ Getting structured data from LLMs is critical. Here's how IntelliBricks compares
 
 ```python
 import msgspec
-from intellibricks import Synapse
+from intellibricks.llms import Synapse
 
 class Summary(msgspec.Struct, frozen=True):
     title: str
