@@ -7,174 +7,145 @@
     <title>Intellibricks: Build Intelligent Apps, Python-First</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        /* Brand Colors - Refined and Calmer + Gradients */
-        .brand-primary {
-            color: #6d28d9;
-            /* Indigo-600 - Deeper primary */
-        }
+        /* Enhanced Brand Colors */
+        .brand-primary { color: #6d28d9; }
+        .brand-secondary { color: #3b82f6; }
+        .brand-accent { color: #10b981; }
+        .brand-text-dark { color: #1f2937; }
+        .brand-text-light { color: #6b7280; }
 
-        .brand-secondary {
-            color: #3b82f6;
-            /* Blue-500 - Standard Blue */
-        }
-
-        .brand-accent {
-            color: #10b981;
-            /* Teal-500 - Calmer Accent Green */
-        }
-
-        .brand-text-dark {
-            color: #374151;
-            /* Gray-800 - Darker text for contrast */
-        }
-
-        .brand-text-light {
-            color: #6b7280;
-            /* Gray-500 - Lighter text for secondary info */
-        }
-
-        /* Gradient Text for Hero Title */
+        /* Animated Hero Gradient */
         .hero-title-gradient {
-            background: linear-gradient(90deg, #6d28d9, #3b82f6);
-            /* Indigo to Blue gradient */
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-fill-color: transparent;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 8s ease infinite;
+            background-size: 200% 200%;
         }
 
-        /* Enhanced Button Styles */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Enhanced Buttons */
         .btn-primary {
-            background-color: #3b82f6;
-            /* Blue-500 */
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
-            font-weight: bold;
-            padding-top: 0.75rem;
-            /* py-3 in Tailwind */
-            padding-bottom: 0.75rem;
-            padding-left: 2rem;
-            /* px-8 in Tailwind */
-            padding-right: 2rem;
+            padding: 0.75rem 2rem;
             border-radius: 9999px;
-            /* rounded-full in Tailwind */
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            /* Subtle shadow */
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(50, 132, 255, 0.2);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary:hover {
-            background-color: #2563eb;
-            /* Blue-700 hover */
-            transform: scale(1.03);
-            /* Slight scale up on hover */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            /* Enhanced shadow on hover */
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
         }
 
         .btn-secondary {
-            background-color: #e5e7eb;
-            /* Gray-200 - light gray */
-            color: #374151;
-            /* brand-text-dark */
-            font-weight: bold;
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-            padding-left: 2rem;
-            padding-right: 2rem;
+            background: linear-gradient(135deg, #e5e7eb, #f3f4f6);
+            color: #1f2937;
+            padding: 0.75rem 2rem;
             border-radius: 9999px;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(209, 213, 219, 0.5);
         }
 
-        .btn-secondary:hover {
-            background-color: #d4d6da;
-            /* Gray-300 hover */
-            transform: scale(1.03);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        /* Enhanced Cards */
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            border-radius: 1rem;
         }
 
-        /* Section Separator - subtle line */
-        section {
-            border-bottom: 1px solid #e0e0e0;
-            /* Light gray line */
-            padding-bottom: 24px;
-            /* py-24 equivalent spacing */
-            margin-bottom: 24px;
-            /* py-24 equivalent spacing */
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
         }
 
-        section:last-child {
-            border-bottom: none;
-            /* No separator on the last section */
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        /* Enhanced Code Block Styling */
+        /* Glowing Code Blocks */
         pre {
-            background-color: #f3f4f6;
-            /* Gray-100 */
-            border-radius: 0.5rem;
-            /* rounded-md */
-            padding: 1.5rem;
-            /* Slightly more padding */
-            overflow-x: auto;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-            /* Inset shadow for depth */
-            border: 1px solid #e5e7eb;
-            /* Gray-200 border */
+            background: #1f2937;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.1);
         }
 
-        /* Hero Background Gradient */
-        header.hero-gradient-bg {
-            background: linear-gradient(135deg, #f9f9fb, #ffffff);
-            /* Very subtle off-white gradient */
+        /* Get Started Section */
+        #get-started {
+            background: linear-gradient(135deg, #4f46e5, #6d28d9);
+            position: relative;
+            overflow: hidden;
         }
 
-        /* Smooth Scrolling (Optional - Add to body if desired) */
-        html {
-            scroll-behavior: smooth;
+        #get-started::before {
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
         }
 
-        /* Slightly bolder headings */
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-weight: 700;
-            /* bold */
+        .install-code {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.2);
         }
 
-        /* Enhance card hover shadows */
-        .shadow-md:hover {
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            /* Deeper hover shadow */
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn-primary, .btn-secondary {
+            min-width: 260px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
         }
     </style>
 </head>
 
 <body class="bg-gray-50 font-sans antialiased">
 
-    <!-- Hero Section - More Engaging with Gradient Background -->
-    <header class="hero-gradient-bg shadow-lg py-24">
-        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
-            <h1 class="text-5xl md:text-6xl font-extrabold hero-title-gradient mb-6 tracking-tight leading-tight">
-                <span class="brand-accent">Start Building Intelligence.</span>
-            </h1>
-            <p class="text-xl md:text-2xl brand-text-dark mb-10 leading-relaxed">
-                Intellibricks is the Python-first toolkit designed to streamline AI application development. Focus on
-                your logic, not framework complexity.
-            </p>
-            <div class="space-x-4">
-                <a href="#features" class="btn-primary inline-block transition duration-300 text-lg">
-                    Explore Features
-                </a>
-                <a href="docs/index.html" target="_blank"
-                    class="btn-secondary inline-block transition duration-300 text-lg">
-                    Documentation →
-                </a>
+    <!-- Hero Section -->
+    <header class="relative py-32 overflow-hidden">
+        
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-blue-100 opacity-95"></div>
+        
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center relative">
+            <div class="max-w-4xl mx-auto">
+                <h1 class="text-5xl md:text-6xl font-extrabold hero-title-gradient mb-6 tracking-tight leading-tight">
+                    <span class="inline-block">Start Building Intelligence.</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-700 mb-10 leading-relaxed">
+                    Intellibricks is the Python-first toolkit designed to streamline AI application development. Focus on
+                    your logic, not framework complexity.
+                </p>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <a href="#features" class="btn-primary inline-block text-lg px-8 py-4">
+                        Explore Features
+                    </a>
+                    <a href="docs/index.html" target="_blank" 
+                       class="btn-secondary inline-block text-lg px-8 py-4">
+                        Documentation →
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -193,7 +164,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 <!-- Complexity Overload -->
-                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-4xl brand-primary mb-4">🤯</div>
                     <h3 class="text-xl font-semibold brand-text-dark mb-2">Complexity Overload</h3>
                     <p class="brand-text-light">Traditional AI frameworks often introduce unnecessary layers of
@@ -202,7 +173,7 @@
                 </div>
 
                 <!-- Unpredictable LLM Interactions -->
-                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-4xl brand-primary mb-4">🤔</div>
                     <h3 class="text-xl font-semibold brand-text-dark mb-2">Unpredictable LLM Outputs</h3>
                     <p class="brand-text-light">Achieving reliable and structured outputs from Language Models can be
@@ -211,8 +182,7 @@
                 </div>
 
                 <!-- Boilerplate Blues -->
-                <div
-                    class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300 md:col-span-2 lg:col-span-1">
+                <div class="feature-card p-8 rounded-xl md:col-span-2 lg:col-span-1">
                     <div class="text-4xl brand-primary mb-4">⚙️</div>
                     <h3 class="text-xl font-semibold brand-text-dark mb-2">Boilerplate Blues</h3>
                     <p class="brand-text-light">Repetitive setup and configuration can stifle creativity. Intellibricks
@@ -223,7 +193,7 @@
         </div>
     </section>
 
-    <!-- Core Modules Section - Detailed with Code Snippets -->
+    <!-- Core Modules Section -->
     <section id="features" class="py-24">
         <div class="container mx-auto px-6 md:px-12 lg:px-24">
             <div class="text-center mb-16">
@@ -235,13 +205,11 @@
                 </p>
             </div>
 
-            <!-- Vertical stack layout -->
             <div class="grid grid-cols-1 gap-12">
                 <!-- LLMs Module -->
-                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl brand-secondary mb-6">🧱</div>
-                    <h3 class="text-xl font-semibold brand-text-dark mb-4">LLMs Module: Speak Fluently with AI Models
-                    </h3>
+                    <h3 class="text-xl font-semibold brand-text-dark mb-4">LLMs Module: Speak Fluently with AI Models</h3>
                     <p class="brand-text-light mb-6">Your gateway to Language Model Models (LLMs). Interact with various
                         LLMs in a consistent and Pythonic manner. Synapses for effortless model switching, structured
                         outputs for reliable data, and built-in observability for debugging.</p>
@@ -271,7 +239,7 @@ print(completion.choices[0].message.contents)
                 </div>
 
                 <!-- Agents Module -->
-                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl brand-secondary mb-6">🤖</div>
                     <h3 class="text-xl font-semibold brand-text-dark mb-4">Agents Module: Craft Autonomous Intelligent
                         Entities</h3>
@@ -301,12 +269,11 @@ print(f"Agent suggests: {agent_response.text}")
 </code></pre>
                     </div>
                     <a href="/docs/agents.html" class="text-brand-secondary hover:underline">Learn more about Agents
-                        Module
-                        →</a>
+                        Module →</a>
                 </div>
 
                 <!-- Files Module -->
-                <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl brand-secondary mb-6">🗂️</div>
                     <h3 class="text-xl font-semibold brand-text-dark mb-4">Files Module: Intelligent File Handling</h3>
                     <p class="brand-text-light mb-6">Provides a robust way to handle and process files within your AI
@@ -336,8 +303,7 @@ parsed_file = parser.parse(raw_file) # ParsedFile
 </code></pre>
                     </div>
                     <a href="/docs/files.html" class="text-brand-secondary hover:underline">Learn more about Files
-                        Module
-                        →</a>
+                        Module →</a>
                 </div>
             </div>
         </div>
@@ -353,7 +319,6 @@ parsed_file = parser.parse(raw_file) # ParsedFile
                 Pythonically simple and blazingly fast. See how we compare:
             </p>
 
-            <!-- Comparison Table (Simplified for one-page, could be more visual on separate page) -->
             <div class="overflow-x-auto mb-16">
                 <table class="min-w-full border-collapse border border-gray-300 bg-white">
                     <thead>
@@ -408,20 +373,18 @@ parsed_file = parser.parse(raw_file) # ParsedFile
         </div>
     </section>
 
-    <!-- Why Choose Intellibricks Section - Elaborated -->
+    <!-- Why Choose Intellibricks Section -->
     <section id="why-choose" class="py-24">
         <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
             <h2 class="text-3xl md:text-4xl font-bold brand-text-dark mb-12 tracking-tight">🏆 The Intellibricks
-                Advantage: Python-First Intelligence</h2>
+                Advantage: Python-First Framework</h2>
             <p class="text-lg brand-text-light leading-relaxed mb-16">
-                Intellibricks is not just another framework; it's a philosophy. We believe in empowering developers with
-                tools that feel natural, intuitive, and deeply Pythonic. Here’s why Intellibricks is the intelligent
-                choice for your next AI application:
+                We believe in empowering developers with tools that feel natural, intuitive, and deeply Pythonic.
+                Here’s why Intellibricks is the intelligent choice for your next AI application:
             </p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-                <!-- Python First - Elaborated -->
-                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl brand-primary mb-6">🐍</div>
                     <h4 class="text-xl font-semibold brand-text-dark mb-4">Idiomatic Python at its Core</h4>
                     <p class="brand-text-light leading-relaxed mb-6">Built with idiomatic Python, Intellibricks
@@ -432,8 +395,7 @@ parsed_file = parser.parse(raw_file) # ParsedFile
                         fighting against framework conventions.</p>
                 </div>
 
-                <!-- Simplicity & Clarity - Elaborated -->
-                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl brand-primary mb-6">✨</div>
                     <h4 class="text-xl font-semibold brand-text-dark mb-4">Unmatched Simplicity and Clarity</h4>
                     <p class="brand-text-light leading-relaxed mb-6">Designed for intuitiveness and ease of use,
@@ -444,8 +406,7 @@ parsed_file = parser.parse(raw_file) # ParsedFile
                         codebase with ease.</p>
                 </div>
 
-                <!-- Structured Outputs Out-of-the-Box - Elaborated -->
-                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl brand-primary mb-6">🧱</div>
                     <h4 class="text-xl font-semibold brand-text-dark mb-4">Structured Outputs as a Core Strength</h4>
                     <p class="brand-text-light leading-relaxed mb-6">Harness the power of structured data effortlessly.
@@ -456,8 +417,7 @@ parsed_file = parser.parse(raw_file) # ParsedFile
                         validated data structures.</p>
                 </div>
 
-                <!-- Focus on Intelligence, Not Infrastructure - Elaborated -->
-                <div class="p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition duration-300">
+                <div class="feature-card p-8 rounded-xl">
                     <div class="text-5xl brand-primary mb-6">🧠</div>
                     <h4 class="text-xl font-semibold brand-text-dark mb-4">Focus on Building Intelligence, Not
                         Infrastructure</h4>
@@ -473,34 +433,36 @@ parsed_file = parser.parse(raw_file) # ParsedFile
         </div>
     </section>
 
-    <!-- Get Started Section - Stronger Call to Action -->
-    <section id="get-started" class="py-32 bg-brand-primary">
-        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
-            <h2 class="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tight">Ready to Build Intelligent
-                Applications, Effortlessly?</h2>
-            <p class="text-xl text-gray-100 leading-relaxed mb-12">
-                Join the Intellibricks revolution and experience the future of AI development, the Python way. Get
-                started in seconds and unleash your AI potential today!
-            </p>
+    <!-- Get Started Section -->
+    <section id="get-started" class="relative py-32 text-white">
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-blue-700"></div>
+        <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center relative z-10">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Ready to Build Intelligent Applications?</h2>
+                <p class="text-xl text-blue-100 leading-relaxed mb-12">
+                    Join the Intellibricks revolution and experience the future of AI development, the Python way.
+                </p>
 
-            <div class="mb-10">
-                <code
-                    class="bg-gray-800 bg-opacity-75 px-6 py-3 rounded-md text-white text-lg shadow-md inline-block">pip install intellibricks</code>
-            </div>
-            <div class="space-x-4">
-                <a href="https://pypi.org/project/intellibricks/" target="_blank"
-                    class="btn-primary inline-block transition duration-300 text-lg shadow-lg">
-                    Get Started on PyPI →
-                </a>
-                <a href="https://github.com/arthurbrenno/intellibricks" target="_blank"
-                    class="btn-secondary inline-block transition duration-300 text-lg shadow-lg">
-                    View on GitHub →
-                </a>
+                <div class="mb-10">
+                    <code class="install-code px-8 py-4 rounded-lg text-white text-lg font-mono inline-block bg-blue-800/30">
+                        pip install intellibricks
+                    </code>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <a href="https://pypi.org/project/intellibricks/" target="_blank"
+                        class="btn-primary inline-block text-lg shadow-lg px-8 py-4 border border-blue-300/30">
+                        Get Started on PyPI →
+                    </a>
+                    <a href="https://github.com/arthurbrenno/intellibricks" target="_blank"
+                        class="btn-secondary inline-block text-lg shadow-lg px-8 py-4 bg-white/10 hover:bg-white/20">
+                        View on GitHub →
+                    </a>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer - Updated -->
+    <!-- Footer -->
     <footer class="bg-gray-800 text-white py-12">
         <div class="container mx-auto px-6 md:px-12 lg:px-24 text-center">
             <p class="brand-text-light mb-4">© 2025 Intellibricks, Inc. All rights reserved.</p>
@@ -508,7 +470,6 @@ parsed_file = parser.parse(raw_file) # ParsedFile
                 <a href="docs/index.html" target="_blank"
                     class="text-gray-300 hover:text-white transition duration-200">Documentation</a>
                 <a href="#get-started" class="text-gray-300 hover:text-white transition duration-200">Get Started</a>
-                <!-- Add more links as needed (e.g., blog, community, etc.) -->
             </nav>
             <p class="mt-6 text-sm text-gray-400">
                 Built with ❤️ for the Python AI community.
@@ -516,7 +477,7 @@ parsed_file = parser.parse(raw_file) # ParsedFile
         </div>
     </footer>
 
-    <!-- Optional: Add some simple Javascript for syntax highlighting if you want the code blocks to look nicer -->
+    <!-- Syntax Highlighting -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script>hljs.highlightAll();</script>
