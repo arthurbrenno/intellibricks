@@ -1,4 +1,9 @@
-<h1 align="center">🧠🧱 Intellibricks: Start Building Intelligence</h1>
+<div style="text-align: center;">
+  <img src="/docs/_static/logo.png" alt="Logo" width="400" />
+</div>
+
+
+<h1 align="center">Start Building Intelligence.</h1>
 
 <p align="center">
   <b>The Python-first Framework for Agentic & LLM-Powered Applications</b>
