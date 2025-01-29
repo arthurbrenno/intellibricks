@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable, TYPE_CHECKING
 
-from intellibricks.files.parsed_files import ParsedFile
 from intellibricks.rag.types import (
     Context,
     IngestionInfo,
     Query,
 )
+
+if TYPE_CHECKING:
+    from intellibricks.files.parsed_files import ParsedFile
 
 
 @runtime_checkable
