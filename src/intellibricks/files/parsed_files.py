@@ -42,13 +42,12 @@ from intellibricks.files import (
     TextPageItem,
     Image,
     PageItem,
-    FileExtension,
     RawFile,
     TxtFileParser
 )
 
 # Assume you have a RawFile object (e.g., from reading a text file)
-raw_file = RawFile.from_bytes(b"Sample text content", "example.txt", FileExtension.TXT)
+raw_file = RawFile.from_bytes(b"Sample text content", "txt")
 parser = TxtFileParser()
 parsed_file = parser.parse(raw_file)
 

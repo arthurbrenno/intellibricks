@@ -111,7 +111,7 @@ from typing import (
 
 import msgspec
 from architecture import dp, log
-from architecture.data.files import FileExtension, find_extension
+from architecture.data.files import find_extension, ext_to_mime, bytes_to_mime
 from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms.util import (
@@ -675,7 +675,6 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     @classmethod
     def from_image(cls, image: Image) -> ImageFilePart:
         ensure_module_installed("PIL.Image", "pillow")
-        from intellibricks.files.utils import detect_mime_type
 
         buffered = BytesIO()
         image.save(buffered, format="JPEG")
@@ -686,14 +685,13 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
         image_bytes = image_str.encode("utf-8")
         return ImageFilePart(
             data=image_str.encode("utf-8"),
-            mime_type=detect_mime_type(image_bytes),
+            mime_type=bytes_to_mime(image_bytes),
         )
 
     @classmethod
     def from_openai_part(
         cls, openai_part: OpenAIChatCompletionContentPartParam
     ) -> Part:
-        from intellibricks.files.utils import detect_mime_type
         from intellibricks.llms.util import is_url
 
         match openai_part["type"]:
@@ -707,7 +705,7 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                 image_url_bytes = url_or_base_64.encode("utf-8")
                 return ImageFilePart(
                     data=image_url_bytes,
-                    mime_type=detect_mime_type(image_url_bytes),
+                    mime_type=bytes_to_mime(image_url_bytes),
                 )
             case "input_audio":
                 input_audio_bytes = base64.b64decode(openai_part["input_audio"]["data"])  # type: ignore
@@ -1113,7 +1111,7 @@ class FilePart(Part, frozen=True, tag="file"):
 
         # Determine the file extension from the URL
         try:
-            extension: FileExtension = find_extension(url=url)
+            extension = find_extension(url=url)
         except ValueError as e:
             raise ValueError(
                 f"Could not determine file extension from URL: {url}"
@@ -1121,7 +1119,7 @@ class FilePart(Part, frozen=True, tag="file"):
 
         # Convert the extension to its corresponding MIME type
         try:
-            mime_type_str = extension.as_mime_type()
+            mime_type_str = ext_to_mime(extension)
         except ValueError as e:
             raise ValueError(
                 f"Could not determine MIME type for extension {extension}"
@@ -1307,18 +1305,58 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
         >>> ImageFilePart(data=b"...", mime_type=MimeType.image_jpeg)
     """
 
+    def to_png(self) -> "ImageFilePart":
+        """Convert the image to PNG format."""
+        from PIL import Image
+
+        image = Image.open(BytesIO(self.data))
+        buffered = BytesIO()
+        image.save(buffered, format="PNG")
+        return ImageFilePart(data=buffered.getvalue(), mime_type="image/png")
+
+    def to_jpeg(self) -> "ImageFilePart":
+        """Convert the image to JPEG format."""
+        from PIL import Image
+
+        image = Image.open(BytesIO(self.data))
+        buffered = BytesIO()
+        image.save(buffered, format="JPEG")
+        return ImageFilePart(data=buffered.getvalue(), mime_type="image/jpeg")
+
+    def is_png(self) -> bool:
+        """Check if the image is in PNG format."""
+        return self.mime_type == "image/png"
+
+    def is_jpeg(self) -> bool:
+        """Check if the image is in JPEG format."""
+        return self.mime_type == "image/jpeg" or self.mime_type == "image/jpg"
+
+    def is_gif(self) -> bool:
+        """Check if the image is in GIF format."""
+        return self.mime_type == "image/gif"
+
+    def is_webp(self) -> bool:
+        """Check if the image is in WebP format."""
+        return self.mime_type == "image/webp"
+
     @ensure_module_installed("anthropic.types.image_block_param", "anthropic")
     @override
     def to_anthropic_part(self) -> ContentBlockParam:
         ensure_module_installed("anthropic.types.image_block_param", "anthropic")
         from anthropic.types.image_block_param import ImageBlockParam, Source
 
+        is_supported = any(
+            [self.is_png(), self.is_jpeg(), self.is_gif(), self.is_webp()]
+        )
+
         if not self.data:
             raise ValueError("Image data (bytes) is required.")
 
         return ImageBlockParam(
             source=Source(
-                data=base64.b64encode(self.data).decode("utf-8", errors="replace"),
+                data=base64.b64encode(
+                    self.data if is_supported else self.to_png().data
+                ).decode("utf-8", errors="replace"),
                 media_type=cast(
                     Literal["image/jpeg", "image/png", "image/gif", "image/webp"],
                     self.mime_type,
@@ -1336,9 +1374,13 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
             ImageURL,
         )
 
+        is_supported = self.is_png()
+
         return ChatCompletionContentPartImageParam(
             image_url=ImageURL(
-                url=base64.b64encode(self.data).decode("utf-8", errors="replace")
+                url=base64.b64encode(
+                    self.data if is_supported else self.to_png().data
+                ).decode("utf-8", errors="replace")
             ),
             type="image_url",
         )
@@ -1351,9 +1393,13 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
             ImageURL,
         )
 
+        is_supported = any([self.is_png(), self.is_jpeg()])
+
+        data = self.data if is_supported else self.to_png().data
+
         return ChatCompletionContentPartImageParam(
             image_url=ImageURL(
-                url=self.data.decode("utf-8", errors="replace"), detail="auto"
+                url=data.decode("utf-8", errors="replace"), detail="auto"
             ),
             type="image_url",
         )
@@ -1363,7 +1409,12 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
     def to_google_part(self) -> GenAIPart:
         from google.genai.types import Part as GenAIPart
 
-        return GenAIPart.from_bytes(data=self.data, mime_type=self.mime_type)
+        is_supported = any([self.is_png(), self.is_jpeg()])
+
+        return GenAIPart.from_bytes(
+            data=self.data if is_supported else self.to_png().data,
+            mime_type=self.mime_type,
+        )
 
     @ensure_module_installed("cerebras", "cerebras-cloud-sdk")
     @override

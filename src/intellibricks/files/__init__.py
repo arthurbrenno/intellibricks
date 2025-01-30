@@ -36,14 +36,11 @@ print(f"File extension: {raw_file.extension}")
 Explore the `RawFile` class and the `intellibricks.parsers` module to learn more about file handling and parsing capabilities within IntelliBricks.
 """
 
-from architecture.data.files import FileExtension
-
 from .parsed_files import ParsedFile
 from .parsers import (
     FileParser,
     IntellibricksFileParser,
     PDFFileParser,
-    OfficeFileParser,
     ExcelFileParser,
     CompressedFileParser,
     XMLFileParser,
@@ -60,11 +57,9 @@ from .raw_file import RawFile
 __all__: list[str] = [
     "ParsedFile",
     "FileParser",
-    "FileExtension",
     "RawFile",
     "IntellibricksFileParser",
     "PDFFileParser",
-    "OfficeFileParser",
     "ExcelFileParser",
     "CompressedFileParser",
     "XMLFileParser",

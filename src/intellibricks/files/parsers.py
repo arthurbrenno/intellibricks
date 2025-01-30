@@ -35,8 +35,8 @@ To parse a file, you would typically use the `IntellibricksFileParser`. First, c
 **Example:**
 
 ```python
-from architecture.data.files import RawFile, FileExtension
-from parsers import IntellibricksFileParser, ParsingStrategy
+from architecture.data.files import RawFile
+from intellibricks.files.parsers IntellibricksFileParser, ParsingStrategy
 import asyncio
 
 async def main():
@@ -45,9 +45,8 @@ async def main():
     file_name = "example.txt"
 
     raw_file = RawFile.from_bytes(
-        data=file_contents,
-        name=file_name,
-        extension=FileExtension.TXT
+        file_contents,
+        extension="txt"
     )
 
     parser = IntellibricksFileParser(strategy=ParsingStrategy.DEFAULT)
@@ -77,12 +76,12 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Never, Optional, Sequence, cast, override
+from typing import Callable, Never, Optional, Sequence, cast, override
 from xml.etree.ElementTree import Element
 
 import msgspec
 from architecture import dp, log
-from architecture.data.files import FileExtension, RawFile, find_extension
+from architecture.data.files import RawFile, find_extension, bytes_to_mime
 from architecture.utils.decorators import ensure_module_installed
 from architecture.utils.functions import run_sync
 from openai import OpenAI
@@ -96,12 +95,57 @@ from intellibricks.llms.types import (
     VideoFilePart,
     VisualMediaDescription,
 )
-from .utils import detect_mime_type
+
 from .constants import ParsingStrategy
 from .parsed_files import Image, ParsedFile, SectionContent, TablePageItem
 
+
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 exception_logger = log.create_logger(__name__, level=logging.ERROR)
+
+_parser_registry: dict[str, type[IntellibricksFileParser]] = {}
+
+
+def _parses(
+    *extensions: str,
+) -> Callable[[type[IntellibricksFileParser]], type[IntellibricksFileParser]]:
+    """
+    Decorator to register a file parser class for specific file extensions.
+
+    This decorator is used to register a file parser class for specific file extensions.
+    It adds the parser class to the global parser registry, allowing the `IntellibricksFileParser`
+    to automatically select the correct parser based on the file extension. Should be
+    used internally only by concrete intellibricks parser classes.
+
+    **Parameters:**
+
+    *   `extensions` (str): One or more file extensions that the parser class supports.
+
+    **Returns:**
+
+    *   `Callable[[type[IntellibricksFileParser]], type[IntellibricksFileParser]]`: A decorator function that registers the parser class.
+
+    **Example:**
+
+    ```python
+    from intellibricks.files.parsers import IntellibricksFileParser, parses
+
+    @_parses("txt")
+    class CustomTxtFileParser(IntellibricksFileParser):
+        async def parse_async(self, file: RawFile) -> ParsedFile:
+            # Add parsing logic here
+            pass
+    ```
+    """
+
+    def decorator(
+        parser_cls: type[IntellibricksFileParser],
+    ) -> type[IntellibricksFileParser]:
+        for extension in extensions:
+            _parser_registry[extension] = parser_cls
+        return parser_cls
+
+    return decorator
 
 
 class InvalidFileExtension(Exception):
@@ -114,8 +158,8 @@ class InvalidFileExtension(Exception):
     **Example:**
 
     ```python
-    from architecture.data.files import RawFile, FileExtension
-    from parsers import IntellibricksFileParser, InvalidFileExtension, ParsingStrategy
+    from architecture.data.files import RawFile
+    from intellibricks.files.parsers import IntellibricksFileParser, InvalidFileExtension, ParsingStrategy
     import asyncio
 
     async def main():
@@ -124,7 +168,7 @@ class InvalidFileExtension(Exception):
         raw_file = RawFile.from_bytes(
             data=file_contents,
             name=file_name,
-            extension=FileExtension.UNKNOWN # Or any extension not explicitly handled
+            extension="intellibricks_is_the_best"
         )
 
         parser = IntellibricksFileParser(strategy=ParsingStrategy.DEFAULT)
@@ -172,13 +216,13 @@ class FileParser(msgspec.Struct, frozen=True, tag_field="type"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import TxtFileParser, FileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers TxtFileParser, FileParser, ParsedFile, ParsingStrategy
 
         # Assume you have raw file content and name
         file_content = b"This is a text file content."
         file_name = "document.txt"
-        raw_file = RawFile.from_bytes(file_content, file_name, FileExtension.TXT)
+        raw_file = RawFile.from_bytes(file_content, "txt")
 
         parser: FileParser = TxtFileParser(strategy=ParsingStrategy.DEFAULT)
         parsed_file: ParsedFile = parser.parse(raw_file)
@@ -269,14 +313,14 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import IntellibricksFileParser, ParsingStrategy, ParsedFile
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers IntellibricksFileParser, ParsingStrategy, ParsedFile
         import asyncio
 
         async def main():
             # Example with a DOCX file (assuming you have docx_content in bytes)
             docx_content = b"..." # Your DOCX file content here
-            docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
+            docx_file = RawFile.from_bytes(docx_content, "docx")
 
             parser = IntellibricksFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_docx: ParsedFile = await parser.parse_async(docx_file)
@@ -286,7 +330,7 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
 
             # Example with a TXT file
             txt_content = b"This is a plain text file."
-            txt_file = RawFile.from_bytes(txt_content, "text.txt", FileExtension.TXT)
+            txt_file = RawFile.from_bytes(txt_content, "txt")
             parsed_txt: ParsedFile = await parser.parse_async(txt_file)
 
             print(f"Parsed TXT file name: {parsed_txt.name}")
@@ -313,128 +357,19 @@ class IntellibricksFileParser(FileParser, frozen=True, tag="intellibricks"):
 
     @override
     async def parse_async(self, file: RawFile) -> ParsedFile:
-        match file.extension:
-            # Word files
-            case FileExtension.DOC | FileExtension.DOCX:
-                debug_logger.debug("Extracting contents from Word file")
-                return await OfficeFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
+        parser_cls = _parser_registry.get(file.extension)
 
-            # PowerPoint
-            case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
-                debug_logger.debug("Extracting contents from PowerPoint file")
-                return await OfficeFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
+        if not parser_cls:
+            raise InvalidFileExtension(f"Unsupported extension: {file.extension}")
 
-            # Excel
-            case FileExtension.XLS | FileExtension.XLSX:
-                debug_logger.debug("Extracting contents from Excel file")
-                return await OfficeFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case FileExtension.TXT:
-                debug_logger.debug("Extracting contents from TXT file")
-                return await TxtFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            # Treat XML as plain text for now
-            case FileExtension.XML:
-                debug_logger.debug("Extracting contents from XML file")
-                return await XMLFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case FileExtension.PDF:
-                debug_logger.debug("Extracting contents from PDF file")
-                return await PDFFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            # Static images (PNG, JPG, TIFF, BMP)
-            case (
-                FileExtension.JPEG
-                | FileExtension.PNG
-                | FileExtension.TIFF
-                | FileExtension.BMP
-                | FileExtension.JPG
-            ):
-                debug_logger.debug("Extracting contents from static image file")
-                return await StaticImageFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case FileExtension.GIF:
-                debug_logger.debug("Extracting contents from animated image file")
-                return await AnimatedImageFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case FileExtension.PKT:
-                debug_logger.debug("Extracting contents from PKT file")
-                return await PKTFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case FileExtension.ALG:
-                debug_logger.debug("Extracting contents from ALG file")
-                return await AlgFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case FileExtension.ZIP | FileExtension.RAR | FileExtension.PKZ:
-                debug_logger.debug("Extracting contents from compressed file")
-                return await CompressedFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case FileExtension.DWG:
-                debug_logger.debug("Extracting contents from DWG file")
-                return await DWGFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-            case (
-                FileExtension.FLAC
-                | FileExtension.MP3
-                | FileExtension.MPEG
-                | FileExtension.MPGA
-                | FileExtension.M4A
-                | FileExtension.OGG
-                | FileExtension.WAV
-                | FileExtension.WEBM
-            ):
-                debug_logger.debug("Extracting contents from audio file")
-                return await AudioFileParser(
-                    strategy=self.strategy,
-                    audio_description_agent=self.audio_description_agent,
-                ).parse_async(file)
-            case FileExtension.MP4:
-                debug_logger.debug("Extracting contents from video file")
-                return await VideoFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-            case _:
-                raise InvalidFileExtension(
-                    f"Unsupported file extension: {file.extension}"
-                )
+        return await parser_cls(
+            strategy=self.strategy,
+            visual_description_agent=self.visual_description_agent,
+            audio_description_agent=self.audio_description_agent,
+        ).parse_async(file)
 
 
+@_parses("xml")
 class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
     """
     Parser for XML files (.xml).
@@ -466,13 +401,13 @@ class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import XMLFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers XMLFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             xml_content = b"..."
-            xml_file = RawFile.from_bytes(xml_content, "data.xml", FileExtension.XML)
+            xml_file = RawFile.from_bytes(xml_content, "xml")
 
             parser = XMLFileParser(strategy=ParsingStrategy.DEFAULT)
             parsed_xml: ParsedFile = await parser.parse_async(xml_file)
@@ -558,6 +493,7 @@ class XMLFileParser(IntellibricksFileParser, frozen=True, tag="xml"):
         return "\n".join(lines)
 
 
+@_parses("zip", "rar", "pkz")
 class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed"):
     """
     Parser for compressed archive files (ZIP, RAR, PKZ).
@@ -599,8 +535,8 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import CompressedFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers CompressedFileParser, ParsedFile, ParsingStrategy
         import asyncio
         import zipfile
         import io
@@ -613,7 +549,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
                 zf.writestr("image.png", b"PNG Content Here") # Replace with actual PNG bytes
 
             zip_content = buffer.getvalue()
-            zip_file = RawFile.from_bytes(zip_content, "archive.zip", FileExtension.ZIP)
+            zip_file = RawFile.from_bytes(zip_content, "zip")
 
             parser = CompressedFileParser(strategy=ParsingStrategy.DEFAULT)
             parsed_zip: ParsedFile = await parser.parse_async(zip_file)
@@ -651,7 +587,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
 
             # Decide how to open the archive based on extension
             match file.extension:
-                case FileExtension.ZIP | FileExtension.PKZ:
+                case "zip" | "pkz":
                     # Treat PKZ exactly like ZIP for demo purposes
                     with zipfile.ZipFile(tmp.name, "r") as zip_ref:
                         # Iterate over files inside the archive
@@ -681,7 +617,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
                             child_parsed = await parser.parse_async(child_raw_file)
                             parsed_files.append(child_parsed)
 
-                case FileExtension.RAR:
+                case "rar":
                     with rarfile.RarFile(tmp.name, "r") as rar_ref:
                         for info in rar_ref.infolist():
                             """Type of "isdir" is unknownPylancereportUnknownMemberType"""
@@ -717,6 +653,7 @@ class CompressedFileParser(IntellibricksFileParser, frozen=True, tag="compressed
         return ParsedFile.from_parsed_files(parsed_files)
 
 
+@_parses("dwg")
 class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
     """
     Parser for DWG (Drawing) files (.dwg).
@@ -758,14 +695,14 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import DWGFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers DWGFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have dwg_content in bytes
             dwg_content = b"..." # Your DWG file content in bytes
-            dwg_file = RawFile.from_bytes(dwg_content, "drawing.dwg", FileExtension.DWG)
+            dwg_file = RawFile.from_bytes(dwg_content, "dwg")
 
             parser = DWGFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_dwg: ParsedFile = await parser.parse_async(dwg_file)
@@ -818,7 +755,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
 
             raw_files = [
                 RawFile.from_bytes(
-                    data=img, name=f"{file.name}_{i}.png", extension=FileExtension.PNG
+                    data=img, name=f"{file.name}_{i}.png", extension="png"
                 )
                 for i, img in enumerate(image_bytes_list)
             ]
@@ -869,6 +806,7 @@ class DWGFileParser(IntellibricksFileParser, frozen=True, tag="dwg"):
         return image_bytes_list
 
 
+@_parses("pkt")
 class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
     """
     Parser for Packet Tracer files (.pkt, .pka).
@@ -899,14 +837,14 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import PKTFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers PKTFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have pkt_content in bytes
             pkt_content = b"..." # Your PKT file content in bytes
-            pkt_file = RawFile.from_bytes(pkt_content, "network.pkt", FileExtension.PKT)
+            pkt_file = RawFile.from_bytes(pkt_content, "pkt")
 
             parser = PKTFileParser(strategy=ParsingStrategy.DEFAULT)
             parsed_pkt: ParsedFile = await parser.parse_async(pkt_file)
@@ -990,69 +928,7 @@ class PKTFileParser(IntellibricksFileParser, frozen=True, tag="pkt"):
         return xml_data
 
 
-class AlgFileParser(IntellibricksFileParser, frozen=True, tag="alg"):
-    """
-    Parser for ALG files (.alg).
-
-    This parser treats ALG files as plain text files. It delegates the parsing to the `TxtFileParser`,
-    effectively extracting the content as plain text.
-
-    **Key Features:**
-
-    *   **ALG File Support:** Handles .alg files.
-    *   **Plain Text Extraction:** Extracts the content as plain text, similar to how `TxtFileParser` works.
-    *   **Simple Text-Based Output:** Provides a `ParsedFile` with a single section containing the text content.
-
-    **Methods:**
-
-    *   `parse_async(file: RawFile) -> ParsedFile`:
-        Asynchronously extracts content from an ALG `RawFile`.
-
-        **Parameters:**
-
-        *   `file` (RawFile): The `RawFile` object representing the ALG file.
-
-        **Returns:**
-
-        *   `ParsedFile`: A `ParsedFile` object with a single section containing the plain text content of the ALG file.
-
-        **Example:**
-
-        ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import AlgFileParser, ParsedFile, ParsingStrategy
-        import asyncio
-
-        async def main():
-            # Assume you have alg_content in bytes
-            alg_content = b"This is content of an ALG file."
-            alg_file = RawFile.from_bytes(alg_content, "algorithm.alg", FileExtension.ALG)
-
-            parser = AlgFileParser(strategy=ParsingStrategy.DEFAULT)
-            parsed_alg: ParsedFile = await parser.parse_async(alg_file)
-
-            section = parsed_alg.sections[0]
-            print(f"Parsed ALG file name: {parsed_alg.name}")
-            print(f"Section 1 - Text Content:\n{section.text}")
-
-        if __name__ == "__main__":
-            asyncio.run(main())
-        ```
-
-    **Usage Notes:**
-
-    *   Assumes ALG files are plain text based. If ALG files have a more complex structure, a dedicated parser might be needed.
-    *   Uses `TxtFileParser` internally for actual text extraction.
-    """
-
-    @override
-    async def parse_async(self, file: RawFile) -> ParsedFile:
-        return await TxtFileParser(
-            strategy=self.strategy,
-            visual_description_agent=self.visual_description_agent,
-        ).parse_async(file)
-
-
+@_parses("pdf")
 class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
     """
     Parser for PDF files (.pdf).
@@ -1087,14 +963,14 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import PDFFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers PDFFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have pdf_content in bytes
             pdf_content = b"..." # Your PDF file content in bytes
-            pdf_file = RawFile.from_bytes(pdf_content, "document.pdf", FileExtension.PDF)
+            pdf_file = RawFile.from_bytes(pdf_content, "pdf")
 
             parser = PDFFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_pdf: ParsedFile = await parser.parse_async(pdf_file)
@@ -1134,7 +1010,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
                 ):
                     for image_num, image in enumerate(page.images):
                         agent_input = ImageFilePart(
-                            mime_type=detect_mime_type(image.data), data=image.data
+                            mime_type=bytes_to_mime(image.data), data=image.data
                         )
                         agent_response = await self.visual_description_agent.run_async(
                             agent_input
@@ -1170,108 +1046,8 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
             )
 
 
-class OfficeFileParser(IntellibricksFileParser, frozen=True, tag="office"):
-    """
-    Facade parser for Microsoft Office documents (Word, PowerPoint, Excel).
-
-    This class acts as a dispatcher for different Office file formats. It does not parse files directly
-    but instead delegates the parsing to the appropriate specialized parser based on the file extension.
-
-    **Supported Formats:**
-
-    *   Word documents (.doc, .docx) - Handled by `DocxFileParser`.
-    *   PowerPoint presentations (.ppt, .pptx, .pptm) - Handled by `PptxFileParser`.
-    *   Excel spreadsheets (.xls, .xlsx) - Handled by `ExcelFileParser`.
-
-    **Key Features:**
-
-    *   **Office Format Dispatch:**  Automatically selects the correct parser for different Office file types.
-    *   **Facade Pattern:** Simplifies Office document parsing by providing a single entry point.
-    *   **Strategy and Agent Passthrough:**  Passes the `strategy` and AI agents (visual description agent) to the delegated parsers.
-
-    **Methods:**
-
-    *   `parse_async(file: RawFile) -> ParsedFile`:
-        Asynchronously extracts content from an Office document `RawFile`. This method determines the specific Office file type and delegates the parsing to the corresponding parser.
-
-        **Parameters:**
-
-        *   `file` (RawFile): The `RawFile` object representing the Office document.
-
-        **Returns:**
-
-        *   `ParsedFile`: A `ParsedFile` object containing the extracted content, as processed by the specific Office document parser.
-
-        **Raises:**
-
-        *   `ValueError`: If the file extension is not a supported Office file type.
-
-        **Example:**
-
-        ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import OfficeFileParser, ParsedFile, ParsingStrategy
-        import asyncio
-
-        async def main():
-            # Example with a DOCX file (assuming you have docx_content in bytes)
-            docx_content = b"..." # Your DOCX file content here
-            docx_file = RawFile.from_bytes(docx_content, "report.docx", FileExtension.DOCX)
-
-            parser = OfficeFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
-            parsed_office: ParsedFile = await parser.parse_async(docx_file)
-
-            print(f"Parsed Office file name: {parsed_office.name}")
-            # Access parsed content from parsed_office.sections
-
-            # Example with an XLSX file
-            xlsx_content = b"..." # Your XLSX file content here
-            xlsx_file = RawFile.from_bytes(xlsx_content, "data.xlsx", FileExtension.XLSX)
-            parsed_excel: ParsedFile = await parser.parse_async(xlsx_file)
-
-            print(f"Parsed Excel file name: {parsed_excel.name}")
-            # Access parsed content from parsed_excel.sections
-
-        if __name__ == "__main__":
-            asyncio.run(main())
-        ```
-
-    **Usage Notes:**
-
-    *   Use this class when you need to parse various types of Office documents without knowing the exact format beforehand.
-    *   It simplifies the process by hiding the complexity of selecting the correct parser for each Office file type.
-    *   Ensure that the necessary dependencies for each specific Office parser (e.g., `docx`, `pptx`, `openpyxl`) are installed if you plan to parse those formats.
-    """
-
-    async def parse_async(self, file: RawFile) -> ParsedFile:
-        extension = file.extension
-        match extension:
-            # Word
-            case FileExtension.DOC | FileExtension.DOCX:
-                return await DocxFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            # PowerPoint (including .ppt, .pptx, .pptm)
-            case FileExtension.PPT | FileExtension.PPTX | FileExtension.PPTM:
-                return await PptxFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            # Excel (including .xls, .xlsx)
-            case FileExtension.XLS | FileExtension.XLSX:
-                return await ExcelFileParser(
-                    strategy=self.strategy,
-                    visual_description_agent=self.visual_description_agent,
-                ).parse_async(file)
-
-            case _:
-                raise ValueError(f"Unsupported Office extension: {extension}")
-
-
-class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
+@_parses("doc", "docx")
+class DocxFileParser(IntellibricksFileParser, frozen=True, tag="docx"):
     """
     Parser for DOCX (Microsoft Word) files (.docx, .doc).
 
@@ -1305,14 +1081,14 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import DocxFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers DocxFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have docx_content in bytes
             docx_content = b"..." # Your DOCX file content in bytes
-            docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
+            docx_file = RawFile.from_bytes(docx_content, "docx")
 
             parser = DocxFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_docx: ParsedFile = await parser.parse_async(docx_file)
@@ -1371,9 +1147,7 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
             if self.visual_description_agent and self.strategy == ParsingStrategy.HIGH:
                 for idx, image in enumerate(doc_images, start=1):
                     agent_input = ImageFilePart(
-                        mime_type=detect_mime_type(
-                            image[1]
-                        ),  # or detect from extension
+                        mime_type=bytes_to_mime(image[1]),  # or detect from extension
                         data=image[1],
                     )
                     agent_response = await self.visual_description_agent.run_async(
@@ -1407,7 +1181,8 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
             )
 
 
-class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
+@_parses("ppt", "pptx", "pptm")
+class PptxFileParser(IntellibricksFileParser, frozen=True, tag="pptx"):
     """
     Parser for PowerPoint files (.pptx, .ppt, .pptm).
 
@@ -1454,14 +1229,14 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import PptxFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers PptxFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have pptx_content in bytes
             pptx_content = b"..." # Your PPTX file content in bytes
-            pptx_file = RawFile.from_bytes(pptx_content, "presentation.pptx", FileExtension.PPTX)
+            pptx_file = RawFile.from_bytes(pptx_content, "pptx")
 
             parser = PptxFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_pptx: ParsedFile = await parser.parse_async(pptx_file)
@@ -1499,7 +1274,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{file.name}"
-            if file.extension in {FileExtension.PPT, FileExtension.PPTM}:
+            if file.extension in {"ppt", "pptm"}:
                 converted_pptx_file = self._convert_to_pptx(file)
                 converted_pptx_file.save_to_file(file_path)
             else:
@@ -1540,7 +1315,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
                     image_descriptions: list[str] = []
                     for img_idx, image_obj in enumerate(_slide_images, start=1):
                         agent_input = ImageFilePart(
-                            mime_type=detect_mime_type(image_obj[1]),
+                            mime_type=bytes_to_mime(image_obj[1]),
                             data=image_obj[1],
                         )
                         agent_response = await self.visual_description_agent.run_async(
@@ -1645,7 +1420,8 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
             return RawFile.from_file_path(output_path)
 
 
-class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
+@_parses("xls", "xlsx")
+class ExcelFileParser(IntellibricksFileParser, frozen=True, tag="excel"):
     """
     Parser for Excel files (.xlsx, .xls).
 
@@ -1686,14 +1462,14 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import ExcelFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers ExcelFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have xlsx_content in bytes
             xlsx_content = b"..." # Your XLSX file content in bytes
-            xlsx_file = RawFile.from_bytes(xlsx_content, "data.xlsx", FileExtension.XLSX)
+            xlsx_file = RawFile.from_bytes(xlsx_content, "xlsx")
 
             parser = ExcelFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_excel: ParsedFile = await parser.parse_async(xlsx_file)
@@ -1771,7 +1547,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                     image_descriptions: list[str] = []
                     for img_idx, image_obj in enumerate(sheet_images, start=1):
                         agent_input = ImageFilePart(
-                            mime_type=detect_mime_type(image_obj[1]),
+                            mime_type=bytes_to_mime(image_obj[1]),
                             data=image_obj[1],
                         )
                         agent_response = await self.visual_description_agent.run_async(
@@ -1812,6 +1588,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
             )
 
 
+@_parses("txt", "alg")
 class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
     """
     Parser for plain text files (.txt).
@@ -1841,14 +1618,14 @@ class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import TxtFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers TxtFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have txt_content in bytes
             txt_content = b"This is a sample text file."
-            txt_file = RawFile.from_bytes(txt_content, "document.txt", FileExtension.TXT)
+            txt_file = RawFile.from_bytes(txt_content, "txt")
 
             parser = TxtFileParser(strategy=ParsingStrategy.DEFAULT)
             parsed_txt: ParsedFile = await parser.parse_async(txt_file)
@@ -1883,6 +1660,7 @@ class TxtFileParser(IntellibricksFileParser, frozen=True, tag="txt"):
         )
 
 
+@_parses("png", "jpeg", "tiff", "bmp", "jpg", "jp2")
 class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_image"):
     """
     Parser for static image files (PNG, JPEG, TIFF, BMP, JPG).
@@ -1925,14 +1703,14 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import StaticImageFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers StaticImageFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have png_content in bytes
             png_content = b"..." # Your PNG file content in bytes
-            png_file = RawFile.from_bytes(png_content, "image.png", FileExtension.PNG)
+            png_file = RawFile.from_bytes(png_content, "png")
 
             parser = StaticImageFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_image: ParsedFile = await parser.parse_async(png_file)
@@ -1966,7 +1744,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
             file.save_to_file(file_path)
 
             # Determine the extension
-            extension = file.extension.value.lower()  # e.g. "png", "jpg", "tiff"
+            extension = file.extension
 
             # Convert to PNG if TIFF
             if extension in {"tiff", "tif"}:
@@ -1984,7 +1762,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
 
                 # Use the converted PNG bytes
                 image_bytes = converted_bytes
-                current_mime_type = detect_mime_type(image_bytes)
+                current_mime_type = bytes_to_mime(image_bytes)
             else:
                 # No conversion needed
                 image_bytes = file.contents
@@ -2030,6 +1808,7 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
             )
 
 
+@_parses("gif")
 class AnimatedImageFileParser(
     IntellibricksFileParser, frozen=True, tag="animated_image"
 ):
@@ -2068,14 +1847,14 @@ class AnimatedImageFileParser(
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import AnimatedImageFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers AnimatedImageFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have gif_content in bytes
             gif_content = b"..." # Your GIF file content in bytes
-            gif_file = RawFile.from_bytes(gif_content, "animation.gif", FileExtension.GIF)
+            gif_file = RawFile.from_bytes(gif_content, "gif")
 
             parser = AnimatedImageFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_gif: ParsedFile = await parser.parse_async(gif_file)
@@ -2110,7 +1889,7 @@ class AnimatedImageFileParser(
 
             # Safety check: only proceed if it's a .gif
             # or you can attempt detection based on file headers
-            extension = file.extension.value.lower()
+            extension = file.extension
             if extension not in {"gif"}:
                 raise ValueError("AnimatedImageFileParser only supports .gif files.")
 
@@ -2163,7 +1942,7 @@ class AnimatedImageFileParser(
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     agent_input = ImageFilePart(
-                        mime_type=detect_mime_type(png_bytes),
+                        mime_type=bytes_to_mime(png_bytes),
                         data=png_bytes,
                     )
                     agent_response = await self.visual_description_agent.run_async(
@@ -2194,6 +1973,7 @@ class AnimatedImageFileParser(
             )
 
 
+@_parses("flac", "mp3", "mpeg", "mpga", "m4a", "ogg", "wav", "webm")
 class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
     """
     Parser for audio files (FLAC, MP3, MPEG, MPGA, M4A, OGG, WAV, WEBM).
@@ -2245,8 +2025,8 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import AudioFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers AudioFileParser, ParsedFile, ParsingStrategy
         from intellibricks.agents import Agent
         from intellibricks.llms.mock_llm import MockLLM  # Example Mock LLM
         from intellibricks.llms.types import ChainOfThought, AudioDescription
@@ -2255,7 +2035,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
         async def main():
             # Assume you have mp3_content in bytes
             mp3_content = b"..." # Your MP3 file content in bytes
-            mp3_file = RawFile.from_bytes(mp3_content, "audio.mp3", FileExtension.MP3)
+            mp3_file = RawFile.from_bytes(mp3_content, "mp3")
 
             # Mock audio description agent for example
             mock_llm = MockLLM[ChainOfThought[AudioDescription]](...) # Configure MockLLM as needed
@@ -2292,16 +2072,16 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             raise ValueError("No audio description agent provided.")
 
         file_contents: bytes = file.contents
-        file_extension: FileExtension = file.extension
+        file_extension = file.extension
 
         if file_extension in {
-            FileExtension.FLAC,
-            FileExtension.MPEG,
-            FileExtension.MPGA,
-            FileExtension.M4A,
-            FileExtension.OGG,
-            FileExtension.WAV,
-            FileExtension.WEBM,
+            "flac",
+            "mpeg",
+            "mpga",
+            "m4a",
+            "ogg",
+            "wav",
+            "webm",
         }:
             import aiofiles.os as aios
             from aiofiles import open as aio_open
@@ -2311,7 +2091,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             # Generate unique temporary filenames
             input_temp = os.path.join(
                 tempfile.gettempdir(),
-                f"input_{os.urandom(8).hex()}.{file_extension.value}",
+                f"input_{os.urandom(8).hex()}.{file_extension}",
             )
             output_temp = os.path.join(
                 tempfile.gettempdir(), f"output_{os.urandom(8).hex()}.mp3"
@@ -2362,7 +2142,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             await aios.remove(output_temp)
 
         transcription = self.audio_description_agent.run(
-            AudioFilePart(data=file_contents, mime_type=detect_mime_type(file_contents))
+            AudioFilePart(data=file_contents, mime_type=bytes_to_mime(file_contents))
         )
 
         return ParsedFile(
@@ -2400,6 +2180,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             raise RuntimeError()
 
 
+@_parses("mp4")
 class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
     """
     Parser for video files (.mp4).
@@ -2440,8 +2221,8 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import VideoFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers VideoFileParser, ParsedFile, ParsingStrategy
         from intellibricks.agents import Agent
         from intellibricks.llms.mock_llm import MockLLM  # Example Mock LLM
         from intellibricks.llms.types import ChainOfThought, VisualMediaDescription
@@ -2450,7 +2231,7 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
         async def main():
             # Assume you have mp4_content in bytes
             mp4_content = b"..." # Your MP4 file content in bytes
-            mp4_file = RawFile.from_bytes(mp4_content, "video.mp4", FileExtension.MP4)
+            mp4_file = RawFile.from_bytes(mp4_content, "video.mp4", "mp4)
 
             # Mock visual description agent for example
             mock_llm = MockLLM[ChainOfThought[VisualMediaDescription]](...) # Configure MockLLM as needed
@@ -2482,12 +2263,12 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
             raise ValueError("No visual description agent provided.")
 
         extension = file.extension
-        if extension != FileExtension.MP4:
+        if extension != "mp4":
             raise ValueError("VideoFileParser only supports .mp4 files.")
 
         file_contents = file.contents
         visual_media_description = await self.visual_description_agent.run_async(
-            VideoFilePart(data=file_contents, mime_type=detect_mime_type(file_contents))
+            VideoFilePart(data=file_contents, mime_type=bytes_to_mime(file_contents))
         )
 
         return ParsedFile(
@@ -2544,14 +2325,14 @@ class MarkitdownFileParser(FileParser, frozen=True, tag="markitdown"):
         **Example:**
 
         ```python
-        from architecture.data.files import RawFile, FileExtension
-        from parsers import MarkitdownFileParser, ParsedFile, ParsingStrategy
+        from architecture.data.files import RawFile
+        from intellibricks.files.parsers MarkitdownFileParser, ParsedFile, ParsingStrategy
         import asyncio
 
         async def main():
             # Assume you have docx_content in bytes (or any format markitdown supports)
             docx_content = b"..." # Your DOCX file content in bytes
-            docx_file = RawFile.from_bytes(docx_content, "document.docx", FileExtension.DOCX)
+            docx_file = RawFile.from_bytes(docx_content, "document.docx", "docx")
 
             parser = MarkitdownFileParser(strategy=ParsingStrategy.HIGH) # Or DEFAULT, MEDIUM, FAST
             parsed_markdown: ParsedFile = await parser.parse_async(docx_file)
