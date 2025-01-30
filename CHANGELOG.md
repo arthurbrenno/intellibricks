@@ -1,5 +1,7 @@
 # Changelog
 
-## v0.7.22
+## v0.7.23
 
-- This is the first, official, version of Intellibricks. After finishing up all the modules and documentation for the first release, I've hard reset the version numbers to provide a fresh start. Now, all commits/versions will follow the proper semantic version rules. I chose 0.7.22 because It's a special date for me :D
+- feat: added a new image description caching mechanism to PptxFileParser, DocxFilePaser and PdfFileParser. 
+
+Note: this will be released as a patch because I'll be accumulating features to release in a single feature release. (and because I need it now in work lol)
