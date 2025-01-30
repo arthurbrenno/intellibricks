@@ -993,6 +993,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
     @ensure_module_installed("pypdf", "intellibricks[files]")
     @override
     async def parse_async(self, file: RawFile) -> ParsedFile:
+        import hashlib
         from pypdf import PdfReader
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1001,21 +1002,37 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
 
             reader = PdfReader(file_path)
             section_contents: list[SectionContent] = []
+            image_cache: dict[str, tuple[str, str]] = {}
+
             for page_num, page in enumerate(reader.pages):
                 page_images: list[Image] = []
                 image_descriptions: list[str] = []
+
                 if (
                     self.visual_description_agent
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     for image_num, image in enumerate(page.images):
-                        agent_input = ImageFilePart(
-                            mime_type=bytes_to_mime(image.data), data=image.data
-                        )
-                        agent_response = await self.visual_description_agent.run_async(
-                            agent_input
-                        )
-                        image_md: str = agent_response.parsed.final_answer.md
+                        image_bytes = image.data
+                        image_hash = hashlib.sha256(image_bytes).hexdigest()
+
+                        if image_hash in image_cache:
+                            cached_md, cached_ocr = image_cache[image_hash]
+                            image_md = cached_md
+                            ocr_text = cached_ocr
+                        else:
+                            agent_input = ImageFilePart(
+                                mime_type=bytes_to_mime(image.data), data=image.data
+                            )
+                            agent_response = (
+                                await self.visual_description_agent.run_async(
+                                    agent_input
+                                )
+                            )
+                            image_md = agent_response.parsed.final_answer.md
+                            ocr_text = agent_response.parsed.final_answer.ocr_text
+                            image_cache[image_hash] = (image_md, ocr_text)
+
                         image_descriptions.append(
                             f"Page Image {image_num + 1}: {image_md}"
                         )
@@ -1023,12 +1040,11 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
                             Image(
                                 contents=image.data,
                                 name=image.name,
-                                ocr_text=agent_response.parsed.final_answer.ocr_text,
+                                ocr_text=ocr_text,
                             )
                         )
 
                 page_text = [page.extract_text(), "".join(image_descriptions)]
-
                 md = "".join(page_text)
                 section_content = SectionContent(
                     number=page_num + 1,
@@ -1036,12 +1052,10 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
                     md=md,
                     images=page_images,
                 )
-
                 section_contents.append(section_content)
 
-            file_name = file.name
             return ParsedFile(
-                name=file_name,
+                name=file.name,
                 sections=section_contents,
             )
 
@@ -1114,70 +1128,71 @@ class DocxFileParser(IntellibricksFileParser, frozen=True, tag="docx"):
         self,
         file: RawFile,
     ) -> ParsedFile:
-        import tempfile
-
-        from docx import Document  # python-docx
+        import hashlib
+        from docx import Document
 
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{file.name}"
             file.save_to_file(file_path)
 
             document = Document(file_path)
+            image_cache: dict[str, tuple[str, str]] = {}  # (md, ocr_text)
 
-            # Extract all text from paragraphs
-            paragraph_texts: list[str] = []
-            for paragraph in document.paragraphs:
-                if paragraph.text.strip():
-                    paragraph_texts.append(paragraph.text)
+            paragraph_texts = [p.text for p in document.paragraphs if p.text.strip()]
             doc_text = "\n".join(paragraph_texts)
 
-            # Extract all images
             doc_images: list[tuple[str, bytes]] = []
-            for rel in document.part._rels.values():  # type: ignore
-                # Relationship is image-based if it references an image part
+            for rel in document.part._rels.values():  # type: ignore[reportPrivateUsage]
                 if "image" in rel.reltype:
                     image_part = rel.target_part
-                    image_name = image_part.partname.split("/")[-1]  # e.g. "image1.png"
+                    image_name = image_part.partname.split("/")[-1]
                     image_bytes = image_part.blob
                     doc_images.append((image_name, image_bytes))
 
-            # If high-level strategy, describe images
-            document_images: list[Image] = []
+            final_images: list[Image] = []
             image_descriptions: list[str] = []
             if self.visual_description_agent and self.strategy == ParsingStrategy.HIGH:
-                for idx, image in enumerate(doc_images, start=1):
-                    agent_input = ImageFilePart(
-                        mime_type=bytes_to_mime(image[1]),  # or detect from extension
-                        data=image[1],
-                    )
-                    agent_response = await self.visual_description_agent.run_async(
-                        agent_input
-                    )
-                    image_md = agent_response.parsed.final_answer.md
+                for idx, (image_name, image_bytes) in enumerate(doc_images, start=1):
+                    image_hash = hashlib.sha256(image_bytes).hexdigest()
+
+                    if image_hash in image_cache:
+                        cached_md, cached_ocr = image_cache[image_hash]
+                        image_md = cached_md
+                        ocr_text = cached_ocr
+                    else:
+                        agent_input = ImageFilePart(
+                            mime_type=bytes_to_mime(image_bytes),
+                            data=image_bytes,
+                        )
+                        agent_response = await self.visual_description_agent.run_async(
+                            agent_input
+                        )
+                        image_md = agent_response.parsed.final_answer.md
+                        ocr_text = agent_response.parsed.final_answer.ocr_text
+                        image_cache[image_hash] = (image_md, ocr_text)
+
                     image_descriptions.append(f"Docx Image {idx}: {image_md}")
-                    document_images.append(
+                    final_images.append(
                         Image(
-                            name=image[0],
-                            contents=image[1],
-                            ocr_text=agent_response.parsed.final_answer.ocr_text,
+                            name=image_name,
+                            contents=image_bytes,
+                            ocr_text=ocr_text,
                         )
                     )
 
-                # Append the images' descriptions to the main text
                 if image_descriptions:
                     doc_text += "\n\n" + "\n".join(image_descriptions)
 
-            # Create a single SectionContent (DOCX has no true "pages" by default)
-            section_content = SectionContent(
-                number=1,
-                text=doc_text,
-                md=doc_text,
-                images=document_images,
-            )
-
             return ParsedFile(
                 name=file.name,
-                sections=[section_content],
+                sections=[
+                    SectionContent(
+                        number=1,
+                        text=doc_text,
+                        md=doc_text,
+                        images=final_images,
+                    )
+                ],
             )
 
 
@@ -1271,6 +1286,7 @@ class PptxFileParser(IntellibricksFileParser, frozen=True, tag="pptx"):
         from pptx.presentation import Presentation as PptxPresentation
         from pptx.shapes.autoshape import Shape
         from pptx.shapes.picture import Picture
+        import hashlib
 
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = f"{temp_dir}/{file.name}"
@@ -1281,57 +1297,58 @@ class PptxFileParser(IntellibricksFileParser, frozen=True, tag="pptx"):
                 file.save_to_file(file_path)
 
             prs: PptxPresentation = Presentation(file_path)
-
             sections: list[SectionContent] = []
+            processed_images: dict[str, tuple[str, str]] = {}
 
             for slide_index, slide in enumerate(prs.slides, start=1):
-                # We'll store text from shapes and images
                 slide_texts: list[str] = []
-                _slide_images: list[tuple[str, bytes]] = []
+                slide_images: list[tuple[str, bytes, str]] = []  # (name, data, hash)
 
-                # Examine each shape
                 for shape in slide.shapes:
-                    # If shape has a text frame, cast to Shape
                     if shape.has_text_frame:
                         shape_with_text = cast(Shape, shape)
                         text_str: str = shape_with_text.text
                         slide_texts.append(text_str)
 
-                    # If shape is a picture, cast to Picture
                     if shape.shape_type == MSO_SHAPE_TYPE.PICTURE:
                         picture_shape = cast(Picture, shape)
                         image_blob: bytes = picture_shape.image.blob
-                        image_name: str = shape.name or f"slide_{slide_index}_img"
-                        _slide_images.append((image_name, image_blob))
+                        image_hash = hashlib.sha256(image_blob).hexdigest()
+                        image_name: str = shape.name or f"slide_{slide_index}_img_{image_hash[:8]}"
+                        slide_images.append((image_name, image_blob, image_hash))
 
                 combined_text: str = "\n".join(slide_texts)
+                final_images: list[Image] = []
+                image_descriptions: list[str] = []
 
-                slide_images: list[Image] = []
-                # If strategy is HIGH, we generate image descriptions
-                if (
-                    self.visual_description_agent
-                    and self.strategy == ParsingStrategy.HIGH
-                ):
-                    image_descriptions: list[str] = []
-                    for img_idx, image_obj in enumerate(_slide_images, start=1):
+                if self.visual_description_agent and self.strategy == ParsingStrategy.HIGH:
+                    for img_idx, (image_name, image_blob, image_hash) in enumerate(slide_images, start=1):
+                        is_cached = image_hash in processed_images
+                        if is_cached:
+                            cached_md, cached_ocr = processed_images[image_hash]
+                            image_descriptions.append(f"Slide {slide_index} - Image {img_idx}: {cached_md}")
+                            final_images.append(Image(
+                                name=image_name,
+                                contents=image_blob,
+                                ocr_text=cached_ocr
+                            ))
+                            continue
+
                         agent_input = ImageFilePart(
-                            mime_type=bytes_to_mime(image_obj[1]),
-                            data=image_obj[1],
+                            mime_type=bytes_to_mime(image_blob),
+                            data=image_blob,
                         )
-                        agent_response = await self.visual_description_agent.run_async(
-                            agent_input
-                        )
+                        agent_response = await self.visual_description_agent.run_async(agent_input)
                         image_md: str = agent_response.parsed.final_answer.md
-                        image_descriptions.append(
-                            f"Slide {slide_index} - Image {img_idx}: {image_md}"
-                        )
-                        slide_images.append(
-                            Image(
-                                name=image_obj[0],
-                                contents=image_obj[1],
-                                ocr_text=agent_response.parsed.final_answer.ocr_text,
-                            )
-                        )
+                        image_ocr = agent_response.parsed.final_answer.ocr_text
+                        
+                        processed_images[image_hash] = (image_md, image_ocr)
+                        image_descriptions.append(f"Slide {slide_index} - Image {img_idx}: {image_md}")
+                        final_images.append(Image(
+                            name=image_name,
+                            contents=image_blob,
+                            ocr_text=image_ocr
+                        ))
 
                     if image_descriptions:
                         combined_text += "\n\n" + "\n".join(image_descriptions)
@@ -1340,7 +1357,7 @@ class PptxFileParser(IntellibricksFileParser, frozen=True, tag="pptx"):
                     number=slide_index,
                     text=combined_text,
                     md=combined_text,
-                    images=slide_images,
+                    images=final_images,
                 )
                 sections.append(section_content)
 
