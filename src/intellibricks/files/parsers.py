@@ -93,11 +93,10 @@ from intellibricks.llms.types import (
     AudioFilePart,
     ChainOfThought,
     ImageFilePart,
-    MimeType,
     VideoFilePart,
     VisualMediaDescription,
 )
-
+from .utils import detect_mime_type
 from .constants import ParsingStrategy
 from .parsed_files import Image, ParsedFile, SectionContent, TablePageItem
 
@@ -1135,7 +1134,7 @@ class PDFFileParser(IntellibricksFileParser, frozen=True, tag="pdf"):
                 ):
                     for image_num, image in enumerate(page.images):
                         agent_input = ImageFilePart(
-                            mime_type=MimeType.image_png, data=image.data
+                            mime_type=detect_mime_type(image.data), data=image.data
                         )
                         agent_response = await self.visual_description_agent.run_async(
                             agent_input
@@ -1372,7 +1371,9 @@ class DocxFileParser(OfficeFileParser, frozen=True, tag="docx"):
             if self.visual_description_agent and self.strategy == ParsingStrategy.HIGH:
                 for idx, image in enumerate(doc_images, start=1):
                     agent_input = ImageFilePart(
-                        mime_type=MimeType.image_png,  # or detect from extension
+                        mime_type=detect_mime_type(
+                            image[1]
+                        ),  # or detect from extension
                         data=image[1],
                     )
                     agent_response = await self.visual_description_agent.run_async(
@@ -1539,7 +1540,7 @@ class PptxFileParser(OfficeFileParser, frozen=True, tag="pptx"):
                     image_descriptions: list[str] = []
                     for img_idx, image_obj in enumerate(_slide_images, start=1):
                         agent_input = ImageFilePart(
-                            mime_type=MimeType.image_png,
+                            mime_type=detect_mime_type(image_obj[1]),
                             data=image_obj[1],
                         )
                         agent_response = await self.visual_description_agent.run_async(
@@ -1770,7 +1771,7 @@ class ExcelFileParser(OfficeFileParser, frozen=True, tag="excel"):
                     image_descriptions: list[str] = []
                     for img_idx, image_obj in enumerate(sheet_images, start=1):
                         agent_input = ImageFilePart(
-                            mime_type=MimeType.image_png,
+                            mime_type=detect_mime_type(image_obj[1]),
                             data=image_obj[1],
                         )
                         agent_response = await self.visual_description_agent.run_async(
@@ -1983,19 +1984,19 @@ class StaticImageFileParser(IntellibricksFileParser, frozen=True, tag="static_im
 
                 # Use the converted PNG bytes
                 image_bytes = converted_bytes
-                current_mime_type = MimeType.image_png
+                current_mime_type = detect_mime_type(image_bytes)
             else:
                 # No conversion needed
                 image_bytes = file.contents
 
                 # For demonstration, pick your MIME by extension
                 if extension in {"png", "bmp"}:
-                    current_mime_type = MimeType.image_png
+                    current_mime_type = "image/" + extension
                 elif extension in {"jpg", "jpeg"}:
-                    current_mime_type = MimeType.image_jpeg
+                    current_mime_type = "image/jpeg"
                 else:
                     # Fallback to PNG or raise an error if you want
-                    current_mime_type = MimeType.image_png
+                    current_mime_type = "image/png"
 
             # Create an Image object
 
@@ -2162,7 +2163,7 @@ class AnimatedImageFileParser(
                     and self.strategy == ParsingStrategy.HIGH
                 ):
                     agent_input = ImageFilePart(
-                        mime_type=MimeType.image_png,
+                        mime_type=detect_mime_type(png_bytes),
                         data=png_bytes,
                     )
                     agent_response = await self.visual_description_agent.run_async(
@@ -2361,7 +2362,7 @@ class AudioFileParser(IntellibricksFileParser, frozen=True, tag="audio"):
             await aios.remove(output_temp)
 
         transcription = self.audio_description_agent.run(
-            AudioFilePart(data=file_contents, mime_type=MimeType.audio_mp3)
+            AudioFilePart(data=file_contents, mime_type=detect_mime_type(file_contents))
         )
 
         return ParsedFile(
@@ -2486,7 +2487,7 @@ class VideoFileParser(IntellibricksFileParser, frozen=True, tag="video"):
 
         file_contents = file.contents
         visual_media_description = await self.visual_description_agent.run_async(
-            VideoFilePart(data=file_contents, mime_type=MimeType.video_mp4)
+            VideoFilePart(data=file_contents, mime_type=detect_mime_type(file_contents))
         )
 
         return ParsedFile(

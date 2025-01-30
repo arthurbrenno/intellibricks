@@ -85,9 +85,6 @@ import inspect
 import logging
 import re
 import uuid
-
-# from abc import ABC, abstractmethod
-from enum import Enum
 from io import BytesIO
 from itertools import chain
 from typing import (
@@ -546,111 +543,6 @@ class GenerationConfig(msgspec.Struct, frozen=True, kw_only=True):
     ] = msgspec.field(default=None)
 
 
-class MimeType(str, Enum):
-    """Enumeration of supported media MIME types.
-
-    Values:
-        # ... existing entries ...
-        image_gif: GIF image format
-        image_webp: WebP image format
-        image_bmp: BMP image format
-        image_tiff: TIFF image format
-        image_svg_xml: SVG vector image
-        image_apng: Animated PNG format
-        image_heic: HEIC image format
-        image_heif: HEIF image format
-        image_psd: Photoshop document
-        application_pdf: PDF document
-        application_zip: ZIP archive
-        application_tar: TAR archive
-        application_gzip: GZIP compressed file
-        application_7z: 7-Zip archive
-        application_doc: Microsoft Word (legacy)
-        application_docx: Microsoft Word document
-        application_xls: Microsoft Excel (legacy)
-        application_xlsx: Microsoft Excel spreadsheet
-        application_ppt: Microsoft PowerPoint (legacy)
-        application_pptx: Microsoft PowerPoint presentation
-        text_plain: Plain text file
-        text_csv: CSV data
-        text_html: HTML document
-        text_markdown: Markdown document
-        text_css: CSS stylesheet
-        application_js: JavaScript file
-        video_mkv: Matroska video format
-        video_flv: Flash video format
-        video_mpeg: MPEG video format
-        audio_ogg: Ogg Vorbis audio
-        audio_flac: FLAC audio
-        audio_aac: AAC audio
-        audio_weba: WebM audio
-        font_ttf: TrueType font
-        font_woff2: WOFF2 font
-        application_epub: EPUB ebook
-        application_exe: Windows executable
-
-    Example:
-        >>> MimeType.image_jpeg
-        'image/jpeg'
-    """
-
-    image_jpeg = "image/jpeg"
-    image_png = "image/png"
-    audio_mp3 = "audio/mp3"
-    audio_wav = "audio/wav"
-    video_mp4 = "video/mp4"
-    video_avi = "video/avi"
-    video_mov = "video/mov"
-    video_webm = "video/webm"
-    image_gif = "image/gif"
-    image_webp = "image/webp"
-    image_bmp = "image/bmp"
-    image_tiff = "image/tiff"
-    image_svg_xml = "image/svg+xml"
-    image_apng = "image/apng"
-    image_heic = "image/heic"
-    image_heif = "image/heif"
-    image_psd = "image/vnd.adobe.photoshop"
-    application_pdf = "application/pdf"
-    application_zip = "application/zip"
-    application_tar = "application/x-tar"
-    application_gzip = "application/gzip"
-    application_7z = "application/x-7z-compressed"
-    application_doc = "application/msword"
-    application_docx = (
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-    application_xls = "application/vnd.ms-excel"
-    application_xlsx = (
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    application_ppt = "application/vnd.ms-powerpoint"
-    application_pptx = (
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-    )
-    application_epub = "application/epub+zip"
-    application_exe = "application/x-msdownload"
-    text_plain = "text/plain"
-    text_csv = "text/csv"
-    text_html = "text/html"
-    text_markdown = "text/markdown"
-    text_css = "text/css"
-    application_js = "application/javascript"
-    video_mkv = "video/x-matroska"
-    video_flv = "video/x-flv"
-    video_mpeg = "video/mpeg"
-    audio_ogg = "audio/ogg"
-    audio_flac = "audio/flac"
-    audio_aac = "audio/aac"
-    audio_weba = "audio/webm"
-    font_ttf = "font/ttf"
-    font_woff2 = "font/woff2"
-    audio_mpeg = "audio/mpeg"
-
-    def __str__(self) -> str:
-        return self.value
-
-
 class RawResponse(msgspec.Struct, frozen=True):
     """Null object for the response from the model."""
 
@@ -783,26 +675,25 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
     @classmethod
     def from_image(cls, image: Image) -> ImageFilePart:
         ensure_module_installed("PIL.Image", "pillow")
+        from intellibricks.files.utils import detect_mime_type
 
         buffered = BytesIO()
         image.save(buffered, format="JPEG")
         image_str = base64.b64encode(buffered.getvalue()).decode(
             "utf-8", errors="replace"
         )
+
+        image_bytes = image_str.encode("utf-8")
         return ImageFilePart(
             data=image_str.encode("utf-8"),
-            mime_type=MimeType(
-                {
-                    "JPEG": "image/jpeg",
-                    "PNG": "image/png",
-                }.get(image.format or "PNG", "image/jpeg")
-            ),
+            mime_type=detect_mime_type(image_bytes),
         )
 
     @classmethod
     def from_openai_part(
         cls, openai_part: OpenAIChatCompletionContentPartParam
     ) -> Part:
+        from intellibricks.files.utils import detect_mime_type
         from intellibricks.llms.util import is_url
 
         match openai_part["type"]:
@@ -813,14 +704,16 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                 if is_url(url_or_base_64):
                     return ImageFilePart.from_url(url_or_base_64)
 
+                image_url_bytes = url_or_base_64.encode("utf-8")
                 return ImageFilePart(
-                    data=url_or_base_64.encode("utf-8"),
-                    mime_type=MimeType("image/jpeg"),
+                    data=image_url_bytes,
+                    mime_type=detect_mime_type(image_url_bytes),
                 )
             case "input_audio":
+                input_audio_bytes = base64.b64decode(openai_part["input_audio"]["data"])  # type: ignore
                 return AudioFilePart(
-                    data=base64.b64decode(openai_part["input_audio"]["data"]),  # type: ignore
-                    mime_type=MimeType(f"audio/{openai_part['input_audio']['format']}"),  # type: ignore
+                    data=input_audio_bytes,  # type: ignore
+                    mime_type=f"audio/{openai_part['input_audio']['format']}",  # type: ignore
                 )
 
     @classmethod
@@ -867,13 +760,13 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
                 raise ValueError("Data is required for inline_data")
 
             if mime_type.startswith("image/"):
-                return ImageFilePart(data=data, mime_type=MimeType(mime_type))
+                return ImageFilePart(data=data, mime_type=mime_type)
             elif mime_type.startswith("audio/"):
-                return AudioFilePart(data=data, mime_type=MimeType(mime_type))
+                return AudioFilePart(data=data, mime_type=mime_type)
             elif mime_type.startswith("video/"):
-                return VideoFilePart(data=data, mime_type=MimeType(mime_type))
+                return VideoFilePart(data=data, mime_type=mime_type)
             else:
-                return ImageFilePart(data=data, mime_type=MimeType(mime_type))
+                return ImageFilePart(data=data, mime_type=mime_type)
 
         function_call = google_part.function_call
         # Check if it's a function call part
@@ -1207,7 +1100,7 @@ class FilePart(Part, frozen=True, tag="file"):
     data: bytes
     """bytes file data."""
 
-    mime_type: MimeType
+    mime_type: str
     """The MIME type of the file."""
 
     metadata: Optional[dict[str | Literal["url"], Any]] = None
@@ -1253,7 +1146,7 @@ class FilePart(Part, frozen=True, tag="file"):
         data = response.content
 
         # Instantiate the appropriate subclass
-        return cls(data=data, mime_type=MimeType(mime_type_str), metadata={"url": url})
+        return cls(data=data, mime_type=mime_type_str, metadata={"url": url})
 
 
 class VideoFilePart(FilePart, frozen=True, tag="video"):
