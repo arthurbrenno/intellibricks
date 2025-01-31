@@ -488,7 +488,7 @@ class GenerationConfig(msgspec.Struct, frozen=True, kw_only=True):
     ] = msgspec.field(default=None)
 
     trace_params: Annotated[
-        Optional[TraceParams],
+        TraceParams,
         msgspec.Meta(
             title="Trace parameters",
             description=(
@@ -496,7 +496,7 @@ class GenerationConfig(msgspec.Struct, frozen=True, kw_only=True):
                 "This can be used to trace completions and analyze the model's behavior."
             ),
         ),
-    ] = msgspec.field(default=None)
+    ] = msgspec.field(default_factory=lambda: TraceParams())
 
     tools: Annotated[
         Optional[Sequence[Callable[..., Any]]],
