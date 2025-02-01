@@ -10,5 +10,4 @@ This section provides a high-level API reference for the Intellibricks library. 
 
    intellibricks.agents
    intellibricks.llms
-   intellibricks.files
    intellibricks.rag

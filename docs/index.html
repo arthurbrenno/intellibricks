@@ -204,7 +204,6 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
 <li class="toctree-l1"><a class="reference internal" href="agents.html">Agents: The Core of Intelligent Applications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="files.html">Files Module: Intelligent File Handling</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
@@ -214,7 +213,6 @@
 <p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="agents.html">Agents: The Core of Intelligent Applications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="files.html">Files Module: Intelligent File Handling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="synapses.html">Synapses: Connecting to Language Model Models (LLMs)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
@@ -289,11 +287,10 @@ print<span class="o">(</span>f<span class="s2">&quot;IntelliBricks says: {respon
 </section>
 <section id="core-modules-your-intelligent-toolkit">
 <h2>Core Modules: Your Intelligent Toolkit<a class="headerlink" href="#core-modules-your-intelligent-toolkit" title="Link to this heading">¶</a></h2>
-<p>IntelliBricks is built around three core modules, each designed to be powerful individually and seamlessly integrated for building truly intelligent applications:</p>
+<p>IntelliBricks is built around two core modules, each designed to be powerful individually and seamlessly integrated for building truly intelligent applications:</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="agents.html">Agents: The Core of Intelligent Applications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="files.html">Files Module: Intelligent File Handling</a></li>
 </ul>
 </div>
 <section id="llms-module-llms-speak-fluently-with-ai-models">
@@ -338,25 +335,6 @@ print<span class="o">(</span>f<span class="s2">&quot;IntelliBricks says: {respon
 <span class="p">)</span>
 <span class="n">response</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;Tell me a joke about Python.&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</section>
-<section id="files-module-files-intelligent-file-handling">
-<h3>🗂️ <cite>Files Module &lt;files&gt;</cite>: Intelligent File Handling<a class="headerlink" href="#files-module-files-intelligent-file-handling" title="Link to this heading">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">intellibricks.files</span></code> module provides a robust way to handle and process files within your AI applications. Parse, extract, and understand content from various file types with ease.</p>
-<ul class="simple">
-<li><p>✅ <strong>RawFile Abstraction</strong>: Represent files as <code class="docutils literal notranslate"><span class="pre">RawFile</span></code> objects, encapsulating content, name, and extension for easy manipulation.</p></li>
-<li><p>✅ <strong>Parsed Files</strong>: Foundation for extracting structured information (text, images, tables) from files, making file data accessible to agents.</p></li>
-<li><p>✅ <strong>File Parsing Infrastructure</strong>:  Laying the groundwork for integrating file parsers for diverse file formats in future releases.</p></li>
-</ul>
-<div class="literal-block-wrapper docutils container" id="id3">
-<div class="code-block-caption"><span class="caption-text">Example: Working with RawFile</span><a class="headerlink" href="#id3" title="Link to this code">¶</a></div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">intellibricks.files</span><span class="w"> </span><span class="kn">import</span> <span class="n">RawFile</span>
-
-<span class="n">raw_file</span> <span class="o">=</span> <span class="n">RawFile</span><span class="o">.</span><span class="n">from_file_path</span><span class="p">(</span><span class="s2">&quot;document.pdf&quot;</span><span class="p">)</span> <span class="c1"># Or any file</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File Name: </span><span class="si">{</span><span class="n">raw_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File Extension: </span><span class="si">{</span><span class="n">raw_file</span><span class="o">.</span><span class="n">extension</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -449,7 +427,6 @@ print<span class="o">(</span>f<span class="s2">&quot;IntelliBricks says: {respon
 <li><a class="reference internal" href="#core-modules-your-intelligent-toolkit">Core Modules: Your Intelligent Toolkit</a><ul>
 <li><a class="reference internal" href="#llms-module-llms-speak-fluently-with-ai-models">🧱 <cite>LLMs Module &lt;llms&gt;</cite>: Speak Fluently with AI Models</a></li>
 <li><a class="reference internal" href="#agents-module-agents-craft-autonomous-intelligent-entities">🤖 <cite>Agents Module &lt;agents&gt;</cite>: Craft Autonomous Intelligent Entities</a></li>
-<li><a class="reference internal" href="#files-module-files-intelligent-file-handling">🗂️ <cite>Files Module &lt;files&gt;</cite>: Intelligent File Handling</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#why-choose-intellibricks-the-intelligent-choice">🏆 Why Choose IntelliBricks? The Intelligent Choice</a></li>

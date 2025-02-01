@@ -37,14 +37,13 @@ Get Started Now!
 Core Modules: Your Intelligent Toolkit
 ------------------------------------
 
-IntelliBricks is built around three core modules, each designed to be powerful individually and seamlessly integrated for building truly intelligent applications:
+IntelliBricks is built around two core modules, each designed to be powerful individually and seamlessly integrated for building truly intelligent applications:
 
 .. toctree::
    :maxdepth: 1
 
    llms
    agents
-   files
 
 🧱 `LLMs Module <llms>`: Speak Fluently with AI Models
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,29 +101,6 @@ The ``intellibricks.agents`` module empowers you to build sophisticated, autonom
    :link: agents
 
 
-🗂️ `Files Module <files>`: Intelligent File Handling
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The ``intellibricks.files`` module provides a robust way to handle and process files within your AI applications. Parse, extract, and understand content from various file types with ease.
-
-*   ✅ **RawFile Abstraction**: Represent files as ``RawFile`` objects, encapsulating content, name, and extension for easy manipulation.
-*   ✅ **Parsed Files**: Foundation for extracting structured information (text, images, tables) from files, making file data accessible to agents.
-*   ✅ **File Parsing Infrastructure**:  Laying the groundwork for integrating file parsers for diverse file formats in future releases.
-
-.. code-block:: python
-   :caption: Example: Working with RawFile
-
-   from intellibricks.files import RawFile
-
-   raw_file = RawFile.from_file_path("document.pdf") # Or any file
-   print(f"File Name: {raw_file.name}")
-   print(f"File Extension: {raw_file.extension}")
-
-
-.. button::
-   :text: Learn about the Files Module
-   :link: files
-
 
 🏆 Why Choose IntelliBricks? The Intelligent Choice
 ---------------------------------------------------
@@ -163,7 +139,6 @@ Let's build the future of intelligent applications, together!
 
    agents
    llms
-   files
    synapses
 
 .. toctree::

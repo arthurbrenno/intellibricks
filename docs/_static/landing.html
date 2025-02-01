@@ -271,40 +271,6 @@ print(f"Agent suggests: {agent_response.text}")
                     <a href="docs/agents.html" class="text-brand-secondary hover:underline">Learn more about Agents
                         Module →</a>
                 </div>
-
-                <!-- Files Module -->
-                <div class="feature-card p-8 rounded-xl">
-                    <div class="text-5xl brand-secondary mb-6">🗂️</div>
-                    <h3 class="text-xl font-semibold brand-text-dark mb-4">Files Module: Intelligent File Handling</h3>
-                    <p class="brand-text-light mb-6">Provides a robust way to handle and process files within your AI
-                        applications. Parse, extract, and understand content from various file types with ease, making
-                        file data seamlessly accessible to your agents and workflows.</p>
-                    <ul class="list-disc list-inside brand-text-light mb-6">
-                        <li><strong>RawFile Abstraction:</strong> Represent files as <code>RawFile</code> objects for
-                            easy manipulation.</li>
-                        <li><strong>Parsed Files:</strong> Foundation for extracting structured information (text,
-                            images, tables).</li>
-                        <li><strong>File Parsing Infrastructure:</strong> Laying groundwork for integrating file parsers
-                            for diverse formats.</li>
-                        <li><strong>Intelligent File Workflows:</strong> Process files within your AI pipelines
-                            effortlessly.</li>
-                    </ul>
-                    <div class="mb-4">
-                        <pre class="language-python">
-<code class="language-python">
-from intellibricks.files import RawFile, PdfFileParser
-
-raw_file = RawFile.from_file_path("document.pdf")
-print(f"File Name: {raw_file.name}")
-print(f"File Extension: {raw_file.extension}")
-
-parser = PdfFileParser()
-parsed_file = parser.parse(raw_file) # ParsedFile
-</code></pre>
-                    </div>
-                    <a href="docs/files.html" class="text-brand-secondary hover:underline">Learn more about Files
-                        Module →</a>
-                </div>
             </div>
         </div>
     </section>
