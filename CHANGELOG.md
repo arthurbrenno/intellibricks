@@ -1,5 +1,5 @@
 # Changelog
 
-## v0.7.25
+## v0.8.0
 
-- deps: upgrading `architecture` to a recent version, which does not require anymore the user having to install `magic` when using unrelated functions.
+- `from intellibricks.files` now becomes `from intelliparse`, leaving it easier to maintain and keeping this repository with just one responsibility.

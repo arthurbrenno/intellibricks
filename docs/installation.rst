@@ -38,20 +38,6 @@ Optional Installations (For Extended Functionality)
 
 IntelliBricks is designed to be modular, and some functionalities are provided through optional dependencies. You can install these extras based on your needs:
 
-* **Files Module Extras:** For full file processing capabilities (parsing various document formats), install the ``files`` extra:
-
-  .. code-block:: bash
-
-     pip install intellibricks[files]
-
-   This includes dependencies for handling PDF, DOCX, PPTX, images, audio, and more.
-
-* **Cerebras Integration:** To use Cerebras LLMs, install the ``cerebras`` extra:
-
-  .. code-block:: bash
-
-     pip install intellibricks[cerebras]
-
 * **Development Dependencies:** If you plan to contribute to IntelliBricks or run tests, install the ``dev`` dependencies:
 
   .. code-block:: bash
@@ -60,11 +46,6 @@ IntelliBricks is designed to be modular, and some functionalities are provided t
 
    This includes tools for development, testing, documentation, and more.
 
-* **Install Multiple Extras:** You can install multiple extras at once, for example, to get both file processing and development dependencies:
-
-  .. code-block:: bash
-
-     pip install "intellibricks[files,dev]"
 
 Environment Setup for LLM APIs
 ------------------------------

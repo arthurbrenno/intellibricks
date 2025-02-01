@@ -9,7 +9,7 @@ from intellibricks.rag.types import (
 )
 
 if TYPE_CHECKING:
-    from intellibricks.files.parsed_files import ParsedFile
+    from intelliparse.types import ParsedFile
 
 
 @runtime_checkable

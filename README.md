@@ -148,24 +148,6 @@ Craft agents to perform complex tasks.
     uvicorn.run(app, host="0.0.0.0", port=8000)
     ```
 
-### 🗂️ Files Module:  Intelligent File Handling
-
-Process files within your AI workflows.
-
-**Key Features:**
-
-*   **`RawFile` Abstraction:** Represent files as objects for easy handling.
-
-    ```python
-    from intellibricks.files import RawFile
-
-    raw_file = RawFile.from_file_path("document.pdf")
-    print(f"File Name: {raw_file.name}")
-    print(f"File Extension: {raw_file.extension}")
-    ```
-
-*   **Parsed Files:** Foundation for structured content extraction (text, images, tables).
-
 ---
 
 ## 🏆 Why IntelliBricks? Python Purity & Power.

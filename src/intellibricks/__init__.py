@@ -13,7 +13,6 @@ Say goodbye to the boilerplate and hello to intelligent applications built with 
 *   **`intellbricks.llms`**: Contains modules related to Language Model Models (LLMs), including:
     *   **`synapses`**: Defines the `Synapse` class for interacting with various LLMs and `TextTranscriptionSynapse` for audio transcriptions, along with cascade classes for fault tolerance.
     *   **`types`**: Defines core data types and schema objects used throughout the framework, such as `ChatCompletion`, `Message`, `Part`, `Prompt`, `TraceParams`, and more.
-*   **`intellibricks.files`**: Offers classes for handling files as `RawFile` objects and parsing various file types using modules in `intellibricks.parsers`.
 
 **Key Classes and Exports:**
 
