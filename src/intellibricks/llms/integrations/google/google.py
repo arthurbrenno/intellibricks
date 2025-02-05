@@ -124,6 +124,9 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
         "gemini-1.5-pro-002",
         "gemini-flash-experimental",
         "gemini-pro-experimental",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite-preview-02-05",
+        "gemini-2.0-flash-thinking-exp-01-21"
     ]
 
     vertexai: Optional[bool]
