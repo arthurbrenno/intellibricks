@@ -185,7 +185,7 @@ def get_parsed_response[S](
     rm_decoder: msgspec.json.Decoder[S] = msgspec.json.Decoder(type=response_model)
 
     try:
-        structured: dict[str, Any] = dict_decoder.decode(encoder.encode(text))
+        structured: dict[str, Any] = dict_decoder.decode(text)
     except Exception:
         structured = fix_broken_json(text, decoder=dict_decoder)
 
