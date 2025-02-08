@@ -580,7 +580,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
                 stop_sequences=self.generation_config.stop_sequences,
                 cache_config=self.generation_config.cache_config,
                 trace_params=trace_params or self.generation_config.trace_params,
-                general_web_search=self.generation_config.general_web_search,
+                grounding=self.generation_config.grounding,
                 language=self.generation_config.language,
                 timeout=self.generation_config.timeout,
             )
@@ -603,7 +603,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
             stop_sequences=self.generation_config.stop_sequences,
             cache_config=self.generation_config.cache_config,
             trace_params=trace_params or self.generation_config.trace_params,
-            general_web_search=self.generation_config.general_web_search,
+            grounding=self.generation_config.grounding,
             language=self.generation_config.language,
             timeout=self.generation_config.timeout,
         )
