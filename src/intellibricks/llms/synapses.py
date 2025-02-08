@@ -186,7 +186,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -206,7 +207,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
@@ -230,7 +231,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -250,7 +252,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw response.
@@ -272,7 +274,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -292,7 +295,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
@@ -315,7 +318,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -334,7 +338,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
@@ -357,7 +361,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -376,7 +381,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw chat response.
@@ -398,7 +403,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -417,7 +423,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
@@ -441,7 +447,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -461,7 +468,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
@@ -485,7 +492,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -505,7 +513,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw response (async).
@@ -528,7 +536,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -548,7 +557,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
@@ -571,7 +580,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -590,7 +600,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw chat response (async).
@@ -613,7 +623,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -632,7 +643,7 @@ class SynapseProtocol(Protocol):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
@@ -654,7 +665,8 @@ class SynapseProtocol(Protocol):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]: ...
@@ -765,7 +777,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         *   `cache_config` (Optional[CacheConfig]): Configuration for caching responses.
         *   `trace_params` (Optional[TraceParams]): Parameters for Langfuse tracing.
         *   `tools` (Optional[Sequence[ToolInputType]]): Tools (functions) that the LLM can use.
-        *   `grounding` (Optional[bool]): Whether to enable general web search for the LLM.
+        *   `use_grounding` (Optional[bool]): Whether to enable general web search for the LLM.
         *   `language` (Language):  Language for the LLM interaction. Defaults to `Language.ENGLISH`.
         *   `timeout` (Optional[float]): Request timeout in seconds.
 
@@ -864,7 +876,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -884,7 +897,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
@@ -908,7 +921,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -928,7 +942,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw response.
@@ -951,7 +965,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -971,7 +986,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
@@ -1029,7 +1044,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             cache_config=cache_config,
             trace_params=trace_params,
             tools=tools,
-            grounding=grounding,
+            use_grounding=use_grounding,
             language=language,
             timeout=timeout,
         )
@@ -1050,7 +1065,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -1069,7 +1085,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
@@ -1092,7 +1108,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -1111,7 +1128,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw chat response.
@@ -1133,7 +1150,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -1152,7 +1170,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
@@ -1171,7 +1189,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             cache_config=cache_config,
             trace_params=trace_params,
             tools=tools,
-            grounding=grounding,
+            use_grounding=use_grounding,
             language=language,
             timeout=timeout,
         )
@@ -1193,7 +1211,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -1213,7 +1232,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
@@ -1237,7 +1256,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -1257,7 +1277,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw response (async).
@@ -1280,7 +1300,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -1300,7 +1321,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
@@ -1358,7 +1379,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             cache_config=cache_config,
             trace_params=trace_params,
             tools=tools,
-            grounding=grounding,
+            use_grounding=use_grounding,
             language=language,
             timeout=timeout,
         )
@@ -1379,7 +1400,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -1398,7 +1420,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
@@ -1421,7 +1443,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -1440,7 +1463,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw chat response (async).
@@ -1462,7 +1485,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -1479,7 +1503,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             cache_config=cache_config,
             trace_params=trace_params,
             tools=tools,
-            grounding=grounding,
+            use_grounding=use_grounding,
             language=language,
             timeout=timeout,
         )
@@ -1499,7 +1523,8 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -1559,7 +1584,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
             params={
                 "model_name": ai_model.split("/")[2],
                 "language": language,
-                "grounding": grounding,
+                "use_grounding": use_grounding,
                 "api_key": self.api_key,
                 "max_retries": max_retries,
                 "project": self.cloud_project,
@@ -1776,7 +1801,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -1796,7 +1822,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
@@ -1820,7 +1846,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -1840,7 +1867,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw response.
@@ -1863,7 +1890,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -1883,7 +1911,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
@@ -1915,7 +1943,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                         cache_config=cache_config,
                         trace_params=trace_params,
                         tools=tools,
-                        grounding=grounding,
+                        use_grounding=use_grounding,
                         language=language,
                         timeout=timeout,
                     )
@@ -1934,7 +1962,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     cache_config=cache_config,
                     trace_params=trace_params,
                     tools=tools,
-                    grounding=grounding,
+                    use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
                 )
@@ -1962,7 +1990,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -1981,7 +2010,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
@@ -2004,7 +2033,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -2023,7 +2053,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw chat response.
@@ -2045,7 +2075,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -2064,7 +2095,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
@@ -2094,7 +2125,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     cache_config=cache_config,
                     trace_params=trace_params,
                     tools=tools,
-                    grounding=grounding,
+                    use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
                 )
@@ -2123,7 +2154,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -2143,7 +2175,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
@@ -2167,7 +2199,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -2187,7 +2220,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw response (async).
@@ -2210,7 +2243,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -2230,7 +2264,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
@@ -2262,7 +2296,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                         cache_config=cache_config,
                         trace_params=trace_params,
                         tools=tools,
-                        grounding=grounding,
+                        use_grounding=use_grounding,
                         language=language,
                         timeout=timeout,
                     )
@@ -2281,7 +2315,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     cache_config=cache_config,
                     trace_params=trace_params,
                     tools=tools,
-                    grounding=grounding,
+                    use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
                 )
@@ -2309,7 +2343,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S]:
@@ -2328,7 +2363,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
@@ -2351,7 +2386,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[RawResponse]:
@@ -2370,7 +2406,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's raw chat response (async).
@@ -2392,7 +2428,8 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         cache_config: Optional[CacheConfig] = None,
         trace_params: Optional[TraceParams] = None,
         tools: Optional[Sequence[ToolInputType]] = None,
-        grounding: Optional[bool] = None,
+        use_grounding: Optional[bool] = None,
+        grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
@@ -2411,7 +2448,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
         :param cache_config: Configuration for caching responses.
         :param trace_params: Parameters for Langfuse tracing.
         :param tools: Tools (functions) that the LLM can use.
-        :param grounding: Whether to enable general web search for the LLM.
+        :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
@@ -2441,7 +2478,7 @@ class SynapseCascade(msgspec.Struct, frozen=True):
                     cache_config=cache_config,
                     trace_params=trace_params,
                     tools=tools,
-                    grounding=grounding,
+                    use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
                 )
