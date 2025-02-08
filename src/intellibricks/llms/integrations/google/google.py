@@ -126,7 +126,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
         "gemini-pro-experimental",
         "gemini-2.0-flash",
         "gemini-2.0-flash-lite-preview-02-05",
-        "gemini-2.0-flash-thinking-exp-01-21"
+        "gemini-2.0-flash-thinking-exp-01-21",
     ]
 
     vertexai: Optional[bool]
@@ -238,24 +238,24 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                         else None,
                         safety_settings=[
                             types.SafetySetting(
-                                category="HARM_CATEGORY_HATE_SPEECH",
-                                threshold="BLOCK_NONE",
+                                category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
                             ),
                             types.SafetySetting(
-                                category="HARM_CATEGORY_DANGEROUS_CONTENT",
-                                threshold="BLOCK_NONE",
+                                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
                             ),
                             types.SafetySetting(
-                                category="HARM_CATEGORY_HARASSMENT",
-                                threshold="BLOCK_NONE",
+                                category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
                             ),
                             types.SafetySetting(
-                                category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                                threshold="BLOCK_NONE",
+                                category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
                             ),
                             types.SafetySetting(
-                                category="HARM_CATEGORY_CIVIC_INTEGRITY",
-                                threshold="BLOCK_NONE",
+                                category=types.HarmCategory.HARM_CATEGORY_CIVIC_INTEGRITY,
+                                threshold=types.HarmBlockThreshold.BLOCK_NONE,
                             ),
                         ],
                         automatic_function_calling=types.AutomaticFunctionCallingConfig(

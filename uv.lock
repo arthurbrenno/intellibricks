@@ -677,18 +677,17 @@ wheels = [
 
 [[package]]
 name = "google-genai"
-version = "0.3.0"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "google-auth" },
-    { name = "pillow" },
     { name = "pydantic" },
     { name = "requests" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/39/89/b5cc86832c38af16184f85022a1713f1edb487020de12e85b5c7a24cc969/google_genai-0.3.0.tar.gz", hash = "sha256:1e080ca381268912dacc8e0cb15eb203eb4e38f51f6ae35cc5768e5af323c8cc", size = 105869 }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/c3/fba38ba11a9b97b0a6ca6d46ec0dcd3c7bdf3ecf83eec6e6117ac25106c7/google_genai-1.0.0.tar.gz", hash = "sha256:15712abb808f891a14eafc9edf21b8cf92ea952f627dd0e2e939657efd234acd", size = 122958 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/5c/90a63dbe6846151aa2b47f64ade25754d56ba412195ec0d61a3e29ce442b/google_genai-0.3.0-py3-none-any.whl", hash = "sha256:e45eb1732cf5b1f7c5a4103fe64cc4b577981d7e592e3edfba6d34ec734f56be", size = 111885 },
+    { url = "https://files.pythonhosted.org/packages/24/9d/63dbd2b6c630f44cbbf09c4e04b4c9012da01f6e585d34ae53d07931bb67/google_genai-1.0.0-py3-none-any.whl", hash = "sha256:e9c3abd48f46ecb2b0a51efa7f65c6830b50f9784df603a91019b43918a7531f", size = 129418 },
 ]
 
 [[package]]
