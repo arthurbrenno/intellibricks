@@ -111,7 +111,7 @@ from typing import (
 
 import msgspec
 from architecture import dp, log
-from architecture.data.files import find_extension, ext_to_mime, bytes_to_mime
+from architecture.data.files import bytes_to_mime, ext_to_mime, find_extension
 from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms.util import (
@@ -155,6 +155,7 @@ if TYPE_CHECKING:
     from groq.types.shared_params.function_definition import (
         FunctionDefinition as GroqFunctionDefinition,
     )
+    from ollama._types import Message as OllamaMessage
     from openai.types.chat.chat_completion_content_part_param import (
         ChatCompletionContentPartParam as OpenAIChatCompletionContentPartParam,
     )
@@ -1895,6 +1896,10 @@ class Message(msgspec.Struct, tag_field="role", frozen=True):
 
     # @abstractmethod
     def to_openai_format(self) -> ChatCompletionMessageParam:
+        raise NotImplementedError
+
+    # @abstractmethod
+    def to_ollama_message(self) -> OllamaMessage:
         raise NotImplementedError
 
     # @abstractmethod
