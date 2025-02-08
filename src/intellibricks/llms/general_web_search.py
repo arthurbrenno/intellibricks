@@ -1,11 +1,8 @@
 from abc import abstractmethod
-from dataclasses import dataclass
 from enum import Enum
-from typing import Annotated, Any, Literal, Optional, Protocol, cast
+from typing import Annotated, Any, Literal, Optional, Protocol
 
-from architecture.utils.decorators import ensure_module_installed
 from msgspec import Meta, Struct, field
-from msgspec.json import decode, encode
 
 
 class SearchEngine(str, Enum):
@@ -144,22 +141,3 @@ class WebSearchable(Protocol):
     def search(
         self, query: str, search_params: Optional[SearchParams] = None
     ) -> list[SearchResult]: ...
-
-
-@dataclass
-class SearxngWebSearchEngine(WebSearchable):
-    host: str
-
-    @ensure_module_installed("langchain_community", "langchain-community")
-    def search(
-        self, query: str, search_params: Optional[SearchParams] = None
-    ) -> list[SearchResult]:
-        from langchain_community.utilities import SearxSearchWrapper
-
-        s = SearxSearchWrapper(searx_host=self.host)
-        results: list[dict[str, Any]] = cast(
-            list[dict[str, Any]],
-            s.results("presidente estados unidos 2024", num_results=2),
-        )
-
-        return [decode(encode(result), type=SearchResult) for result in results]
