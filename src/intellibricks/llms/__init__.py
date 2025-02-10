@@ -69,6 +69,7 @@ from .types import (
 from .synapses import (
     Synapse,
     SynapseCascade,
+    SynapseProtocol,
     TextTranscriptionSynapse,
     TextTranscriptionsSynapseCascade,
 )
@@ -77,6 +78,7 @@ __all__ = [
     "Synapse",
     "ChatCompletion",
     "AssistantMessage",
+    "SynapseProtocol",
     "DeveloperMessage",
     "UserMessage",
     "Usage",
