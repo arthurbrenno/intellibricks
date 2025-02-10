@@ -133,6 +133,8 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
     api_key: Optional[str] = None
     project: Optional[str] = None
     location: Optional[str] = None
+    use_grounding: Optional[bool] = None
+    grounding_threshold: Optional[float] = None
 
     @overload
     async def chat_async(
@@ -192,16 +194,26 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
             location=self.location if self.vertexai else None,
         )
 
-        # TODO(arthur): make intellibricks support this kind of integration:
-        # tools = [
-        #     types.Tool(
-        #         retrieval=types.Retrieval(
-        #             vertex_ai_search=types.VertexAISearch(
-        #                 datastore="..."
-        #             )
-        #         )
-        #     ),
-        # ]
+        _tools = (
+            (
+                [tool if callable(tool) else tool.to_google_tool() for tool in tools]
+                if tools
+                else []
+            )
+            + [
+                types.Tool(
+                    google_search_retrieval=types.GoogleSearchRetrieval(
+                        dynamic_retrieval_config=types.DynamicRetrievalConfig(
+                            mode=types.DynamicRetrievalConfigMode.MODE_DYNAMIC,
+                            dynamic_threshold=self.grounding_threshold,
+                        )
+                    )
+                )
+            ]
+            if self.use_grounding
+            else []
+        )
+
         now = timeit.default_timer()
         try:
             generate_response: types.GenerateContentResponse = await asyncio.wait_for(
@@ -213,12 +225,7 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                         top_p=top_p,
                         top_k=top_k,
                         candidate_count=n,
-                        tools=[
-                            tool if callable(tool) else tool.to_google_tool()
-                            for tool in tools
-                        ]
-                        if tools
-                        else None,
+                        tools=_tools,
                         max_output_tokens=max_completion_tokens,
                         stop_sequences=list(stop_sequences) if stop_sequences else None,
                         response_mime_type="application/json"

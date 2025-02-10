@@ -1585,6 +1585,7 @@ class Synapse(msgspec.Struct, frozen=True, omit_defaults=True):
                 "model_name": ai_model.split("/")[2],
                 "language": language,
                 "use_grounding": use_grounding,
+                "grounding_threshold": grounding_threshold,
                 "api_key": self.api_key,
                 "max_retries": max_retries,
                 "project": self.cloud_project,
