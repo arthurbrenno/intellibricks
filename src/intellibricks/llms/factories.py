@@ -46,6 +46,12 @@ class LanguageModelFactory:
             "google/vertexai/gemini-1.5-flash-8b": GoogleLanguageModel,
             "google/vertexai/gemini-1.5-flash-001": GoogleLanguageModel,
             "google/vertexai/gemini-1.5-flash-002": GoogleLanguageModel,
+            "google/genai/gemini-2.0-flash": GoogleLanguageModel,
+            "google/genai/gemini-2.0-flash-lite-preview-02-05": GoogleLanguageModel,
+            "google/genai/gemini-2.0-flash-thinking-exp-01-21": GoogleLanguageModel,
+            "google/vertexai/gemini-2.0-flash": GoogleLanguageModel,
+            "google/vertexai/gemini-2.0-flash-lite-preview-02-05": GoogleLanguageModel,
+            "google/vertexai/gemini-2.0-flash-thinking-exp-01-21": GoogleLanguageModel,
             "google/vertexai/gemini-1.5-pro": GoogleLanguageModel,
             "google/vertexai/gemini-1.5-pro-001": GoogleLanguageModel,
             "google/vertexai/gemini-1.0-pro-002": GoogleLanguageModel,
@@ -197,6 +203,12 @@ class LanguageModelFactory:
             "google/vertexai/gemini-1.5-pro-002": {"vertexai": True},
             "google/vertexai/gemini-flash-experimental": {"vertexai": True},
             "google/vertexai/gemini-pro-experimental": {"vertexai": True},
+            "google/genai/gemini-2.0-flash": {"vertexai": False},
+            "google/genai/gemini-2.0-flash-lite-preview-02-05": {"vertexai": False},
+            "google/genai/gemini-2.0-flash-thinking-exp-01-21": {"vertexai": False},
+            "google/vertexai/gemini-2.0-flash": {"vertexai": True},
+            "google/vertexai/gemini-2.0-flash-lite-preview-02-05": {"vertexai": True},
+            "google/vertexai/gemini-2.0-flash-thinking-exp-01-21": {"vertexai": True},
         }
 
         params = params or {}
