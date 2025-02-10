@@ -1,5 +1,5 @@
 # Changelog
 
-## v0.8.6
+## v0.8.7
 
-- refactor: changing union to interface
+- 
