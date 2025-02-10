@@ -1,5 +1,5 @@
 # Changelog
 
-## v0.8.8
+## v0.8.9
 
-- fix: incorrect method overloading order
+- 
