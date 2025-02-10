@@ -21,8 +21,7 @@ from architecture.utils import run_sync
 from architecture.utils.decorators import ensure_module_installed
 
 from intellibricks.llms import (
-    Synapse,
-    SynapseCascade,
+    SynapseProtocol,
     TextTranscriptionSynapse,
     TextTranscriptionsSynapseCascade,
 )
@@ -144,7 +143,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
     ]
 
     synapse: Annotated[
-        Synapse | SynapseCascade,
+        SynapseProtocol,
         msgspec.Meta(
             title="Synapse",
             description="The synapse to use for the agent.",
@@ -152,7 +151,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
     ]
 
     tool_synapse: Annotated[
-        Optional[Synapse | SynapseCascade],
+        Optional[SynapseProtocol],
         msgspec.Meta(
             title="Tool Synapse",
             description="The synapse to use for the tools calls."
