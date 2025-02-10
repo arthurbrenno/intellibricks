@@ -1,5 +1,5 @@
 # Changelog
 
-## v0.8.5
+## v0.8.6
 
-- adding SynapseProtocol to intellibricks/llms/__init__.py module-level imports
+- refactor: changing union to interface

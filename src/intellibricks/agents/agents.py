@@ -307,7 +307,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
                 return obj.unwrap()
             elif isinstance(obj, type) and issubclass(obj, msgspec.Struct):
                 return {}
-            elif callable(obj):
+            elif callable(obj): # type: ignore
                 # Serialize the function's reference
                 func_info = {
                     "type": "function",
@@ -426,7 +426,7 @@ class Agent[S: msgspec.Struct = RawResponse](msgspec.Struct, frozen=True, kw_onl
                 return obj.unwrap()
             elif isinstance(obj, type) and issubclass(obj, msgspec.Struct):
                 return {}
-            elif callable(obj):
+            elif callable(obj): # type: ignore
                 # Serialize the function's reference
                 func_info = {
                     "type": "function",
