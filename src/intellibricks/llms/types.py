@@ -527,6 +527,15 @@ class GenerationConfig(msgspec.Struct, frozen=True, kw_only=True):
         ),
     ] = msgspec.field(default=None)
 
+    grounding_threshold: Annotated[
+        Optional[float],
+        msgspec.Meta(
+            title="Grounding Threshold",
+            description="Threshold to use in grounding. Will determine the "
+            "chance of searching on the web.",
+        ),
+    ] = msgspec.field(default=None)
+
     language: Annotated[
         Language,
         msgspec.Meta(
@@ -3369,7 +3378,7 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
         Returns:
             GenAIFunctionDeclaration (google.genai.types.FunctionDeclaration)
         """
-        from google.genai.types import FunctionDeclaration, Schema
+        from google.genai import types
 
         openapi_to_genai_type = {
             "string": "STRING",
@@ -3380,33 +3389,16 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
             "object": "OBJECT",
         }
 
-        def property_to_schema(prop: Property) -> Schema:
+        def property_to_schema(prop: Property) -> types.Schema:
             """Convert a Property instance into a google.genai.types.Schema object."""
             # Determine the correct GenAI `Type` from the string type
             # Fallback to 'TYPE_UNSPECIFIED' if the type is not recognized
-            schema_type: Literal[
-                "TYPE_UNSPECIFIED",
-                "STRING",
-                "NUMBER",
-                "INTEGER",
-                "BOOLEAN",
-                "ARRAY",
-                "OBJECT",
-            ] = cast(
-                Literal[
-                    "TYPE_UNSPECIFIED",
-                    "STRING",
-                    "NUMBER",
-                    "INTEGER",
-                    "BOOLEAN",
-                    "ARRAY",
-                    "OBJECT",
-                ],
-                openapi_to_genai_type.get(prop.type, "TYPE_UNSPECIFIED"),
+            schema_type = types.Type(
+                openapi_to_genai_type.get(prop.type, "TYPE_UNSPECIFIED")
             )
 
             # Build the Schema
-            schema = Schema(
+            schema = types.Schema(
                 type=schema_type,
                 description=prop.description,
                 enum=prop.enum if prop.enum else None,
@@ -3425,23 +3417,15 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
 
             return schema
 
-        def parameter_to_schema(param: Parameter) -> Schema:
+        def parameter_to_schema(param: Parameter) -> types.Schema:
             """Convert a Parameter instance into a google.genai.types.Schema object."""
-            schema_type = openapi_to_genai_type.get(param.type, "TYPE_UNSPECIFIED")
 
-            schema = Schema(
-                type=cast(
-                    Literal[
-                        "TYPE_UNSPECIFIED",
-                        "STRING",
-                        "NUMBER",
-                        "INTEGER",
-                        "BOOLEAN",
-                        "ARRAY",
-                        "OBJECT",
-                    ],
-                    schema_type,
-                ),
+            schema_type = types.Type(
+                openapi_to_genai_type.get(param.type, "TYPE_UNSPECIFIED")
+            )
+
+            schema = types.Schema(
+                type=schema_type,
                 description=param.description,
                 enum=param.enum if param.enum else None,
             )
@@ -3458,21 +3442,21 @@ class Function[R = Any](msgspec.Struct, frozen=True, kw_only=True):
             return schema
 
         # Convert all parameters to the appropriate Schema objects
-        properties: dict[str, Schema] = {
+        properties: dict[str, types.Schema] = {
             param.name: parameter_to_schema(param) for param in self.parameters
         }
 
         required_params = [param.name for param in self.parameters if param.required]
 
         # Construct the top-level schema for parameters
-        parameters_schema = Schema(
-            type="OBJECT",
+        parameters_schema = types.Schema(
+            type=types.Type.OBJECT,
             properties=properties if properties else {},
             required=required_params if required_params else None,
         )
 
         # Return the FunctionDeclaration (the GenAI function definition)
-        return FunctionDeclaration(
+        return types.FunctionDeclaration(
             name=self.name,
             description=self.description or "No description provided.",
             parameters=parameters_schema,
