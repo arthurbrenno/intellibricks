@@ -927,7 +927,7 @@ dev = [
 requires-dist = [
     { name = "architecture", specifier = ">=0.5.23" },
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
-    { name = "google-genai", specifier = ">=0.3.0" },
+    { name = "google-genai", specifier = ">=1.0.0" },
     { name = "groq", specifier = ">=0.13.1" },
     { name = "langchain-core", specifier = "==0.3.28" },
     { name = "langfuse", specifier = ">=2.57.0" },
