@@ -1,5 +1,5 @@
 # Changelog
 
-## v0.8.11
+## v0.8.12
 
-- fix: google does not support default values for schema fields, so I removed the "default" field from the final schema.
+- new gemini pro models

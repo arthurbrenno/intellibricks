@@ -49,6 +49,7 @@ class LanguageModelFactory:
             "google/genai/gemini-2.0-flash": GoogleLanguageModel,
             "google/genai/gemini-2.0-flash-lite-preview-02-05": GoogleLanguageModel,
             "google/genai/gemini-2.0-flash-thinking-exp-01-21": GoogleLanguageModel,
+            "google/genai/gemini-2.0-pro-exp-02-05": GoogleLanguageModel,
             "google/vertexai/gemini-2.0-flash": GoogleLanguageModel,
             "google/vertexai/gemini-2.0-flash-lite-preview-02-05": GoogleLanguageModel,
             "google/vertexai/gemini-2.0-flash-thinking-exp-01-21": GoogleLanguageModel,
@@ -58,6 +59,7 @@ class LanguageModelFactory:
             "google/vertexai/gemini-1.5-pro-002": GoogleLanguageModel,
             "google/vertexai/gemini-flash-experimental": GoogleLanguageModel,
             "google/vertexai/gemini-pro-experimental": GoogleLanguageModel,
+            "google/vertexai/gemini-2.0-pro-exp-02-05": GoogleLanguageModel,
             "groq/api/gemma2-9b-it": GroqLanguageModel,
             "groq/api/llama3-groq-70b-8192-tool-use-preview": GroqLanguageModel,
             "groq/api/llama3-groq-8b-8192-tool-use-preview": GroqLanguageModel,
@@ -181,6 +183,8 @@ class LanguageModelFactory:
         async_chat_model_cls: type[LanguageModel] = model_to_model_class[model]
 
         model_extra_params: dict[AIModel, dict[str, Any]] = {
+            "google/genai/gemini-2.0-pro-exp-02-05": {"vertexai": False},
+            "google/vertexai/gemini-2.0-pro-exp-02-05": {"vertexai": True},
             "google/genai/gemini-2.0-flash-exp": {"vertexai": False},
             "google/genai/gemini-1.5-flash": {"vertexai": False},
             "google/genai/gemini-1.5-flash-8b": {"vertexai": False},

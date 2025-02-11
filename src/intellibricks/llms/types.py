@@ -199,6 +199,7 @@ GenAIModelType: TypeAlias = Literal[
     "google/genai/gemini-2.0-flash",
     "google/genai/gemini-2.0-flash-lite-preview-02-05",
     "google/genai/gemini-2.0-flash-thinking-exp-01-21",
+    "google/genai/gemini-2.0-pro-exp-02-05"
 ]
 
 VertexAIModelType: TypeAlias = Literal[
@@ -216,6 +217,7 @@ VertexAIModelType: TypeAlias = Literal[
     "google/vertexai/gemini-2.0-flash",
     "google/vertexai/gemini-2.0-flash-lite-preview-02-05",
     "google/vertexai/gemini-2.0-flash-thinking-exp-01-21",
+    "google/vertexai/gemini-2.0-pro-exp-02-05"
 ]
 
 GoogleModelType: TypeAlias = Literal[
