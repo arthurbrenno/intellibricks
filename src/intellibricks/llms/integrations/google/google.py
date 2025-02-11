@@ -239,7 +239,6 @@ class GoogleLanguageModel(LanguageModel, frozen=True):
                                 "min_length",
                                 "max_length",
                                 "examples",
-                                "default"
                             ],
                             ensure_str_enum=True,
                         )
