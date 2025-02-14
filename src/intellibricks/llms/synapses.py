@@ -1703,7 +1703,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
 
     **Attributes:**
 
-    *   `synapses` (Sequence[Synapse | SynapseCascade]):
+    *   `synapses` (Sequence[SynapseProtocol]):
         A sequence of `Synapse` or `SynapseCascade` objects. These are the Synapses that will be tried in order.
 
         **Example:**
@@ -1728,11 +1728,11 @@ class SynapseCascade(SynapseProtocol, frozen=True):
 
     **Class Methods:**
 
-    *   `of(*synapses: Synapse | SynapseCascade, shuffle: bool = False) -> SynapseCascade`:
+    *   `of(*synapses: SynapseProtocol, shuffle: bool = False) -> SynapseCascade`:
         A class method to create a `SynapseCascade` instance with a more convenient way to pass Synapses as arguments.
 
         **Parameters:**
-        *   `*synapses` (Synapse | SynapseCascade): Variable number of `Synapse` or `SynapseCascade` objects to include in the cascade.
+        *   `*synapses` (SynapseProtocol): Variable number of `Synapse` or `SynapseCascade` objects to include in the cascade.
         *   `shuffle` (bool): Whether to shuffle the synapses.
 
         **Returns:**
@@ -1774,16 +1774,14 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         Asynchronous version of chat for cascade synapse.
     """
 
-    synapses: Sequence[Synapse | SynapseCascade]
+    synapses: Sequence[SynapseProtocol]
     """A sequence of Synapse or SynapseCascade objects"""
 
     shuffle: bool = False
     """Indicates whether the synapses should be shuffled before trying them"""
 
     @classmethod
-    def of(
-        cls, *synapses: Synapse | SynapseCascade, shuffle: bool = False
-    ) -> SynapseCascade:
+    def of(cls, *synapses: SynapseProtocol, shuffle: bool = False) -> SynapseCascade:
         """
         Class method to create a SynapseCascade instance.
 
@@ -1930,7 +1928,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
             self.synapses
             if not self.shuffle
             else cast(
-                Sequence[Synapse | SynapseCascade],
+                Sequence[SynapseProtocol],
                 random.sample(self.synapses, len(self.synapses)),
             )
         )
@@ -2114,7 +2112,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
             self.synapses
             if not self.shuffle
             else cast(
-                Sequence[Synapse | SynapseCascade],
+                Sequence[SynapseProtocol],
                 random.sample(self.synapses, len(self.synapses)),
             )
         )
@@ -2283,7 +2281,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
             self.synapses
             if not self.shuffle
             else cast(
-                Sequence[Synapse | SynapseCascade],
+                Sequence[SynapseProtocol],
                 random.sample(self.synapses, len(self.synapses)),
             )
         )
@@ -2467,7 +2465,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
             self.synapses
             if not self.shuffle
             else cast(
-                Sequence[Synapse | SynapseCascade],
+                Sequence[SynapseProtocol],
                 random.sample(self.synapses, len(self.synapses)),
             )
         )
