@@ -1529,6 +1529,9 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         debug_logger.debug("Entering __achat method.")
 
+        dict_decoder = msgspec.json.Decoder(type=dict)
+        bytes_encoder = msgspec.json.Encoder()
+
         trace_params = trace_params or {
             "name": "chat_completion",
             "user_id": "not_provided",
@@ -1539,7 +1542,9 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
 
         cache_config = cache_config or CacheConfig()
 
-        trace_params["input"] = messages
+        trace_params.update(
+            {"input": [dict_decoder.decode(bytes_encoder.encode(m)) for m in messages]}
+        )
 
         debug_logger.debug("Generating completion ID.")
         completion_id: uuid.UUID = uuid.uuid4()
@@ -1606,6 +1611,10 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
                 stop_sequences=stop_sequences,
                 tools=tools,
                 timeout=timeout,
+            )
+
+            trace_params.update(
+                {"output": dict_decoder.decode(bytes_encoder.encode(completion))}
             )
 
             debug_logger.debug("chat_async method call completed successfully.")
