@@ -4,7 +4,7 @@ from typing import Any, Optional
 from architecture import log
 from architecture.utils.creators import DynamicInstanceCreator
 
-from intellibricks.llms.base import TranscriptionModel
+from intellibricks.llms.base import TranscriptionModel, TtsModel
 from intellibricks.llms.base.contracts import LanguageModel
 from intellibricks.llms.integrations.cerebras.cerebras import CerebrasLanguageModel
 from intellibricks.llms.integrations.deepinfra import DeepInfraLanguageModel
@@ -16,8 +16,9 @@ from intellibricks.llms.integrations.groq import (
 from intellibricks.llms.integrations.openai import (
     OpenAILanguageModel,
     OpenAITranscriptionModel,
+    OpenAITtsModel,
 )
-from intellibricks.llms.types import AIModel, TranscriptionModelType
+from intellibricks.llms.types import AIModel, TranscriptionModelType, TtsModelType
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
@@ -250,3 +251,14 @@ class TranscriptionModelFactory:
             **(params or {})
         )
         return instance
+
+
+class TtsModelFactory:
+    @classmethod
+    def create(
+        cls, model: TtsModelType, params: Optional[dict[str, Any]] = None
+    ) -> TtsModel:
+        return {
+            "openai/api/tts-1": OpenAITtsModel,
+            "openai/api/tts-1-hd": OpenAITtsModel,
+        }[model](**(params or {}))

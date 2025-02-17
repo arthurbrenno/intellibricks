@@ -1,16 +1,28 @@
 import tempfile
 import timeit
 from pathlib import Path
-from typing import Any, Literal, Optional, Sequence, TypeVar, cast, overload, override
+from typing import (
+    Any,
+    Literal,
+    Optional,
+    Sequence,
+    TypeVar,
+    cast,
+    get_args,
+    overload,
+    override,
+)
 
 import msgspec
 from architecture.utils.decorators import ensure_module_installed
+from httpx._config import Timeout
 from langfuse.client import os
 
 from intellibricks.llms.base import (
     FileContent,
     LanguageModel,
     TranscriptionModel,
+    TtsModel,
 )
 from intellibricks.llms.constants import FinishReason
 from intellibricks.llms.types import (
@@ -27,11 +39,13 @@ from intellibricks.llms.types import (
     PromptTokensDetails,
     RawResponse,
     SentenceSegment,
+    Speech,
     ToolCall,
     ToolCallSequence,
     ToolInputType,
     TypeAlias,
     Usage,
+    VoiceType,
 )
 from intellibricks.llms.util import (
     create_function_mapping_by_tools,
@@ -42,6 +56,7 @@ from intellibricks.llms.util import (
     write_content_to_file,
 )
 from openai import NOT_GIVEN, AsyncOpenAI
+from openai._types import NotGiven
 from openai.types.chat.chat_completion import (
     ChatCompletion as OpenAIChatCompletion,
 )
@@ -438,3 +453,106 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
             duration=audio_duration,
             srt=segments_to_srt(segments),
         )
+
+
+class OpenAITtsModel(TtsModel, frozen=True):
+    api_key: str | None = None
+    organization: str | None = None
+    project: str | None = None
+    timeout: float | Timeout | NotGiven | None = NOT_GIVEN
+    model: Literal["tts-1", "tts-1-hd"] = msgspec.field(
+        default_factory=lambda: "tts-1-hd"
+    )
+
+    async def generate_speech_async(
+        self, text: str, *, voice: str | VoiceType | None = None
+    ) -> Speech:
+        client = AsyncOpenAI(
+            api_key=self.api_key,
+            organization=self.organization,
+            project=self.project,
+            timeout=self.timeout,
+        )
+
+        if voice is None:
+            voice = "female_middleaged_neutral"
+
+        possible_voices: dict[
+            str,
+            Literal[
+                "alloy",
+                "ash",
+                "coral",
+                "echo",
+                "fable",
+                "onyx",
+                "nova",
+                "sage",
+                "shimmer",
+            ],
+        ] = {
+            # Female voices
+            "female_young_neutral": "nova",
+            "female_young_cheerful": "shimmer",
+            "female_middleaged_neutral": "alloy",
+            "female_middleaged_authoritative": "nova",
+            # Male voices
+            "male_young_neutral": "echo",
+            "male_young_energetic": "fable",
+            "male_middleaged_neutral": "onyx",
+            "male_middleaged_serious": "onyx",
+            "male_elderly_wise": "onyx",
+            # Neutral styles
+            "neutral_narration": "alloy",
+            "neutral_animated": "fable",
+            "neutral_technical": "echo",
+            # Language variants
+            "en_us_standard": "alloy",
+            "en_gb_formal": "echo",
+            "en_au_casual": "shimmer",
+            "es_mx_neutral": "nova",
+            "fr_fr_elegant": "shimmer",
+        }
+
+        valid_args = get_args(
+            Literal[
+                "alloy",
+                "ash",
+                "coral",
+                "echo",
+                "fable",
+                "onyx",
+                "nova",
+                "sage",
+                "shimmer",
+            ]
+        )
+
+        if voice not in valid_args:
+            raise RuntimeError(
+                f"The provided voice ({voice}) is not present in the list of voices ({valid_args})"
+            )
+
+        speech = await client.audio.speech.create(
+            input=text,
+            model=self.model,
+            voice=possible_voices.get(
+                voice,
+                cast(
+                    Literal[
+                        "alloy",
+                        "ash",
+                        "coral",
+                        "echo",
+                        "fable",
+                        "onyx",
+                        "nova",
+                        "sage",
+                        "shimmer",
+                    ],
+                    voice,
+                ),
+            ),
+        )
+
+        return Speech(contents=await speech.aread(), voice=voice)

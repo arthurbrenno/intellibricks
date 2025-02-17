@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-
-from typing import Optional, Sequence, TypeVar, overload, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Sequence, TypeVar, overload
 
 import msgspec
 from architecture.utils import run_sync
+
 from .types import FileContent, Language
 
 if TYPE_CHECKING:
     from intellibricks.llms.types import (
+        AudioTranscription,
         ChatCompletion,
         Message,
         PartType,
         Prompt,
         RawResponse,
-        ToolInputType,
-        AudioTranscription,
-        MessageType,
         Speech,
+        ToolInputType,
+        VoiceType,
     )
 
 
@@ -176,7 +176,7 @@ class LanguageModel(msgspec.Struct, frozen=True):
         tools: Optional[Sequence[ToolInputType]] = None,
         timeout: Optional[float] = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
-        from intellibricks.llms.types import DeveloperMessage, UserMessage, Part, Prompt
+        from intellibricks.llms.types import DeveloperMessage, Part, Prompt, UserMessage
 
         if system_prompt is None:
             system_prompt = [
@@ -253,10 +253,17 @@ class TranscriptionModel(msgspec.Struct, frozen=True, kw_only=True):
 
 
 class TtsModel(msgspec.Struct, frozen=True):
-    def generate_speech(self, conversation: Sequence[MessageType]) -> Speech:
-        return run_sync(self.generate_speech_async, conversation)
+    """Represents any model that supports transcriptions.
+
+    Args:
+        msgspec (Struct): inherits from struct
+        frozen (bool, optional): Immutability. Defaults to True.
+    """
+
+    def generate_speech(self, text: str, *, voice: str | VoiceType | None = None) -> Speech:
+        return run_sync(self.generate_speech_async, text, voice=voice)
 
     async def generate_speech_async(
-        self, conversation: Sequence[MessageType]
+        self, text: str, *, voice: str | VoiceType | None = None
     ) -> Speech:
         raise NotImplementedError

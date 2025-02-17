@@ -113,6 +113,8 @@ from .types import (
     TraceParams,
     TranscriptionModelType,
     UserMessage,
+    VoiceType,
+    TtsModelType,
 )
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
@@ -3022,3 +3024,8 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
         if last_exception:
             raise last_exception
         raise RuntimeError("All transcription synapses failed")
+
+
+class TtsSynapse(msgspec.Struct, frozen=True):
+    model: TtsModelType | None
+    voice: VoiceType

@@ -869,13 +869,14 @@ wheels = [
 
 [[package]]
 name = "intellibricks"
-version = "0.8.9"
+version = "0.8.15"
 source = { editable = "." }
 dependencies = [
     { name = "architecture" },
     { name = "beautifulsoup4" },
     { name = "google-genai" },
     { name = "groq" },
+    { name = "httpx" },
     { name = "langchain-core" },
     { name = "langfuse" },
     { name = "msgspec" },
@@ -929,6 +930,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
     { name = "google-genai", specifier = ">=1.1.0" },
     { name = "groq", specifier = ">=0.13.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "langchain-core", specifier = "==0.3.28" },
     { name = "langfuse", specifier = ">=2.57.0" },
     { name = "msgspec", git = "https://github.com/jcrist/msgspec.git?rev=main" },

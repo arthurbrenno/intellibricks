@@ -4420,4 +4420,41 @@ class AudioDescription(msgspec.Struct, frozen=True):
         return md_str
 
 
-class Speech(msgspec.Struct, frozen=True): ...
+"""
+.########.########..######.
+....##.......##....##....##
+....##.......##....##......
+....##.......##.....######.
+....##.......##..........##
+....##.......##....##....##
+....##.......##.....######.
+"""
+VoiceType = Literal[
+    # Gender + Age + Tone
+    "female_young_neutral",
+    "female_young_cheerful",
+    "female_middleaged_neutral",
+    "female_middleaged_authoritative",
+    "male_young_neutral",
+    "male_young_energetic",
+    "male_middleaged_neutral",
+    "male_middleaged_serious",
+    "male_elderly_wise",
+    # Gender-neutral/Ageless Styles
+    "neutral_narration",
+    "neutral_animated",
+    "neutral_technical",
+    # Common language variants (ISO 639-1 + modifier)
+    "en_us_standard",
+    "en_gb_formal",
+    "en_au_casual",
+    "es_mx_neutral",
+    "fr_fr_elegant",
+]
+
+TtsModelType: TypeAlias = Literal["openai/api/tts-1", "openai/api/tts-1-hd"]
+
+
+class Speech(msgspec.Struct, frozen=True):
+    contents: bytes
+    voice: str | VoiceType
