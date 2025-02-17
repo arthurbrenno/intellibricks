@@ -16,6 +16,8 @@ if TYPE_CHECKING:
         RawResponse,
         ToolInputType,
         AudioTranscription,
+        MessageType,
+        Speech,
     )
 
 
@@ -247,4 +249,14 @@ class TranscriptionModel(msgspec.Struct, frozen=True, kw_only=True):
         temperature: Optional[float] = None,
         prompt: Optional[str] = None,
     ) -> AudioTranscription:
+        raise NotImplementedError
+
+
+class TtsModel(msgspec.Struct, frozen=True):
+    def generate_speech(self, conversation: Sequence[MessageType]) -> Speech:
+        return run_sync(self.generate_speech_async, conversation)
+
+    async def generate_speech_async(
+        self, conversation: Sequence[MessageType]
+    ) -> Speech:
         raise NotImplementedError
