@@ -65,6 +65,7 @@ from .types import (
     AudioFilePart,
     VideoFilePart,
     WebsitePart,
+    TtsModelType,
 )
 from .synapses import (
     Synapse,
@@ -72,6 +73,7 @@ from .synapses import (
     SynapseProtocol,
     TextTranscriptionSynapse,
     TextTranscriptionsSynapseCascade,
+    TtsSynapse,
 )
 
 __all__ = [
@@ -96,4 +98,6 @@ __all__ = [
     "VideoFilePart",
     "WebsitePart",
     "TextTranscriptionsSynapseCascade",
+    "TtsSynapse",
+    "TtsModelType",
 ]

@@ -460,7 +460,7 @@ class OpenAITtsModel(TtsModel, frozen=True):
     organization: str | None = None
     project: str | None = None
     timeout: float | Timeout | NotGiven | None = NOT_GIVEN
-    model: Literal["tts-1", "tts-1-hd"] = msgspec.field(
+    model_name: Literal["tts-1", "tts-1-hd"] = msgspec.field(
         default_factory=lambda: "tts-1-hd"
     )
 
@@ -535,7 +535,7 @@ class OpenAITtsModel(TtsModel, frozen=True):
 
         speech = await client.audio.speech.create(
             input=text,
-            model=self.model,
+            model=self.model_name,
             voice=possible_voices.get(
                 voice,
                 cast(

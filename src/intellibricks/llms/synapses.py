@@ -3033,16 +3033,15 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
 
 class TtsSynapse(msgspec.Struct, frozen=True):
     model: TtsModelType
-    voice: VoiceType
 
     @classmethod
-    def of(cls, model: TtsModelType, voice: VoiceType) -> TtsSynapse:
-        return cls(model, voice)
+    def of(cls, model: TtsModelType) -> TtsSynapse:
+        return cls(model)
 
     def generate_speech(
         self, text: str, *, voice: str | VoiceType, api_key: str | None = None
     ) -> Speech:
-        return run_sync(self.generate_speech_async, voice=voice, api_key=api_key)
+        return run_sync(self.generate_speech_async, text, voice=voice, api_key=api_key)
 
     async def generate_speech_async(
         self, text: str, *, voice: str | VoiceType, api_key: str | None = None
