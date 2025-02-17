@@ -234,23 +234,16 @@ class TranscriptionModelFactory:
     ) -> TranscriptionModel:
         debug_logger.info(f"Creating transcription model: {model}")
 
-        transcription_model_type_to_transcription_model_class: dict[
-            TranscriptionModelType, type[TranscriptionModel]
-        ] = {
-            "groq/api/whisper-large-v3-turbo": GroqTranscriptionModel,
-            "groq/api/distil-whisper-large-v3-en": GroqTranscriptionModel,
-            "groq/api/whisper-large-v3": GroqTranscriptionModel,
-            "openai/api/whisper-1": OpenAITranscriptionModel,
-        }
-
-        async_chat_model_cls: type[TranscriptionModel] = (
-            transcription_model_type_to_transcription_model_class[model]
-        )
-
-        instance = DynamicInstanceCreator(cls=async_chat_model_cls).create_instance(
-            **(params or {})
-        )
-        return instance
+        return DynamicInstanceCreator(
+            cls=(
+                {
+                    "groq/api/whisper-large-v3-turbo": GroqTranscriptionModel,
+                    "groq/api/distil-whisper-large-v3-en": GroqTranscriptionModel,
+                    "groq/api/whisper-large-v3": GroqTranscriptionModel,
+                    "openai/api/whisper-1": OpenAITranscriptionModel,
+                }[model]
+            )
+        ).create_instance(**(params or {}))
 
 
 class TtsModelFactory:

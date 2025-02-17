@@ -92,7 +92,11 @@ from langfuse.model import ModelUsage
 
 from intellibricks.llms.base import FileContent, LanguageModel, TranscriptionModel
 from intellibricks.llms.base import Language as TranscriptionsLanguage
-from intellibricks.llms.factories import LanguageModelFactory, TranscriptionModelFactory
+from intellibricks.llms.factories import (
+    LanguageModelFactory,
+    TranscriptionModelFactory,
+    TtsModelFactory,
+)
 from intellibricks.llms.general_web_search import WebSearchable
 
 from .constants import (
@@ -109,12 +113,13 @@ from .types import (
     PartType,
     Prompt,
     RawResponse,
+    Speech,
     ToolInputType,
     TraceParams,
     TranscriptionModelType,
+    TtsModelType,
     UserMessage,
     VoiceType,
-    TtsModelType,
 )
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
@@ -3029,3 +3034,19 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
 class TtsSynapse(msgspec.Struct, frozen=True):
     model: TtsModelType | None
     voice: VoiceType
+
+    def generate_speech(
+        self, text: str, *, voice: str | VoiceType, api_key: str | None = None
+    ) -> Speech:
+        return run_sync(self.generate_speech_async, voice=voice, api_key=api_key)
+
+    async def generate_speech_async(
+        self, text: str, *, voice: str | VoiceType, api_key: str | None = None
+    ) -> Speech:
+        _model = self.model or "openai/api/tts-1"
+        tts_model = TtsModelFactory.create(
+            _model,
+            params={"model_name": _model.split("/")[2], "api_key": api_key},
+        )
+
+        return await tts_model.generate_speech_async(text, voice=voice)

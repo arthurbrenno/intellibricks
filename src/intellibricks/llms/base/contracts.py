@@ -260,10 +260,10 @@ class TtsModel(msgspec.Struct, frozen=True):
         frozen (bool, optional): Immutability. Defaults to True.
     """
 
-    def generate_speech(self, text: str, *, voice: str | VoiceType | None = None) -> Speech:
+    def generate_speech(self, text: str, *, voice: str | VoiceType) -> Speech:
         return run_sync(self.generate_speech_async, text, voice=voice)
 
     async def generate_speech_async(
-        self, text: str, *, voice: str | VoiceType | None = None
+        self, text: str, *, voice: str | VoiceType
     ) -> Speech:
         raise NotImplementedError
