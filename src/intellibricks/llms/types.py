@@ -4460,5 +4460,5 @@ class Speech(msgspec.Struct, frozen=True):
     voice: str | VoiceType
 
     def save_to_file(self, file_path: str) -> None:
-        with open(file_path, "w") as f:
-            f.write(self.contents.decode("utf-8"))
+        with open(file_path, "wb") as f:  # Use "wb" for binary writing
+            f.write(self.contents)
