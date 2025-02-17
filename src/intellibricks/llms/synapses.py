@@ -3032,8 +3032,12 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
 
 
 class TtsSynapse(msgspec.Struct, frozen=True):
-    model: TtsModelType | None
+    model: TtsModelType
     voice: VoiceType
+
+    @classmethod
+    def of(cls, model: TtsModelType, voice: VoiceType) -> TtsSynapse:
+        return cls(model, voice)
 
     def generate_speech(
         self, text: str, *, voice: str | VoiceType, api_key: str | None = None
@@ -3043,7 +3047,7 @@ class TtsSynapse(msgspec.Struct, frozen=True):
     async def generate_speech_async(
         self, text: str, *, voice: str | VoiceType, api_key: str | None = None
     ) -> Speech:
-        _model = self.model or "openai/api/tts-1"
+        _model = self.model
         tts_model = TtsModelFactory.create(
             _model,
             params={"model_name": _model.split("/")[2], "api_key": api_key},

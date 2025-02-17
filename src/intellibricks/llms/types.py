@@ -4458,3 +4458,7 @@ TtsModelType: TypeAlias = Literal["openai/api/tts-1", "openai/api/tts-1-hd"]
 class Speech(msgspec.Struct, frozen=True):
     contents: bytes
     voice: str | VoiceType
+
+    def save_to_file(self, file_path: str) -> None:
+        with open(file_path, "w") as f:
+            f.write(self.contents.decode("utf-8"))
