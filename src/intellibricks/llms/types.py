@@ -84,8 +84,6 @@ import datetime
 import inspect
 import logging
 import re
-import subprocess
-import tempfile
 import uuid
 from io import BytesIO
 from itertools import chain
@@ -4465,66 +4463,67 @@ class Speech(msgspec.Struct, frozen=True):
         with open(file_path, "wb") as f:
             f.write(self.contents)
 
-    def __add__(self, other: Speech) -> Speech:
-        """
-        Combines two Speech objects using FFmpeg for proper audio concatenation.
+    # TODO(arthur)
+    # def __add__(self, other: Speech) -> Speech:
+    #     """
+    #     Combines two Speech objects using FFmpeg for proper audio concatenation.
 
-        Args:
-            other (Speech): Another Speech object to combine with this one
+    #     Args:
+    #         other (Speech): Another Speech object to combine with this one
 
-        Returns:
-            Speech: A new Speech object with combined audio
+    #     Returns:
+    #         Speech: A new Speech object with combined audio
 
-        Raises:
-            ValueError: If the voices don't match
-            TypeError: If other is not a Speech object
-            RuntimeError: If FFmpeg operation fails
-        """
-        if self.voice != other.voice:
-            raise ValueError(
-                f"Cannot combine speeches with different voices: {self.voice} and {other.voice}"
-            )
+    #     Raises:
+    #         ValueError: If the voices don't match
+    #         TypeError: If other is not a Speech object
+    #         RuntimeError: If FFmpeg operation fails
+    #     """
+    #     if self.voice != other.voice:
+    #         raise ValueError(
+    #             f"Cannot combine speeches with different voices: {self.voice} and {other.voice}"
+    #         )
 
-        # Create temporary files for processing
-        with (
-            tempfile.NamedTemporaryFile(suffix=".bin") as temp1,
-            tempfile.NamedTemporaryFile(suffix=".bin") as temp2,
-            tempfile.NamedTemporaryFile(suffix=".bin") as output,
-            tempfile.NamedTemporaryFile(mode="w", suffix=".txt") as concat_list,
-        ):
-            # Write audio data to temporary files
-            temp1.write(self.contents)
-            temp2.write(other.contents)
-            temp1.flush()
-            temp2.flush()
+    #     # Create temporary files for processing
+    #     with (
+    #         tempfile.NamedTemporaryFile(suffix=".bin") as temp1,
+    #         tempfile.NamedTemporaryFile(suffix=".bin") as temp2,
+    #         tempfile.NamedTemporaryFile(suffix=".bin") as output,
+    #         tempfile.NamedTemporaryFile(mode="w", suffix=".txt") as concat_list,
+    #     ):
+    #         # Write audio data to temporary files
+    #         temp1.write(self.contents)
+    #         temp2.write(other.contents)
+    #         temp1.flush()
+    #         temp2.flush()
 
-            # Create a concat file for FFmpeg
-            concat_list.write(f"file '{temp1.name}'\nfile '{temp2.name}'")
-            concat_list.flush()
+    #         # Create a concat file for FFmpeg
+    #         concat_list.write(f"file '{temp1.name}'\nfile '{temp2.name}'")
+    #         concat_list.flush()
 
-            # Use FFmpeg to concatenate the files
-            result = subprocess.run(
-                [
-                    "ffmpeg",
-                    "-f",
-                    "concat",
-                    "-safe",
-                    "0",
-                    "-i",
-                    concat_list.name,
-                    "-c",
-                    "copy",  # Try to copy codec without re-encoding
-                    output.name,
-                ],
-                capture_output=True,
-                text=True,
-            )
+    #         # Use FFmpeg to concatenate the files
+    #         result = subprocess.run(
+    #             [
+    #                 "ffmpeg",
+    #                 "-f",
+    #                 "concat",
+    #                 "-safe",
+    #                 "0",
+    #                 "-i",
+    #                 concat_list.name,
+    #                 "-c",
+    #                 "copy",  # Try to copy codec without re-encoding
+    #                 output.name,
+    #             ],
+    #             capture_output=True,
+    #             text=True,
+    #         )
 
-            if result.returncode != 0:
-                raise RuntimeError(f"FFmpeg failed: {result.stderr}")
+    #         if result.returncode != 0:
+    #             raise RuntimeError(f"FFmpeg failed: {result.stderr}")
 
-            # Read the combined audio
-            output.seek(0)
-            combined_contents = output.read()
+    #         # Read the combined audio
+    #         output.seek(0)
+    #         combined_contents = output.read()
 
-        return Speech(contents=combined_contents, voice=self.voice)
+    #     return Speech(contents=combined_contents, voice=self.voice)
