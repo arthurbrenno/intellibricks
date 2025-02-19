@@ -1642,8 +1642,10 @@ class Prompt(msgspec.Struct, frozen=True):
         ),
     ]
 
-    def __add__(self, other: Prompt) -> Prompt:
-        return Prompt(self.content + other.content)
+    def __add__(self, other: Prompt | str) -> Prompt:
+        return Prompt(
+            self.content + other.content if isinstance(other, Prompt) else other
+        )
 
     def compile(self, **replacements: Any) -> Prompt:
         """
