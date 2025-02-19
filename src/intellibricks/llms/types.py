@@ -1642,6 +1642,9 @@ class Prompt(msgspec.Struct, frozen=True):
         ),
     ]
 
+    def __add__(self, other: Prompt) -> Prompt:
+        return Prompt(self.content + other.content)
+
     def compile(self, **replacements: Any) -> Prompt:
         """
         Replace placeholders in the content with provided replacement values.
