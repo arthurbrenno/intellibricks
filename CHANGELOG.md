@@ -1,5 +1,5 @@
 # Changelog
 
-## v0.8.17
+## v0.8.18
 
-- feat: new `__add__` method in Prompt class
+- 
