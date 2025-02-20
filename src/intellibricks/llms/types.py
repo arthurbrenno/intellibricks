@@ -1672,7 +1672,6 @@ class Prompt(msgspec.Struct, frozen=True):
             else:
                 raise KeyError(f"Replacement for '{key}' not provided.")
 
-        # Substitute all placeholders with their replacements
         compiled_content = pattern.sub(replace_match, self.content)
         return Prompt(compiled_content)
 
