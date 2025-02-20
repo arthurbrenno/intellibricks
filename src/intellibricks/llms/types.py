@@ -1651,24 +1651,25 @@ class Prompt(msgspec.Struct, frozen=True):
         """
         Replace placeholders in the content with provided replacement values.
 
-        Placeholders are in the format {{key}}.
+        Placeholders are in the format {{key}}. Replacement values can be strings or Prompt objects.
 
         Args:
             **replacements: Arbitrary keyword arguments corresponding to placeholder keys.
 
         Returns:
-            A string with all placeholders replaced by their respective values.
+            A new Prompt with all placeholders replaced by their respective values.
 
         Raises:
             KeyError: If a placeholder in the content does not have a corresponding replacement.
         """
-        # Regular expression to find all placeholders like {{key}}
         pattern = re.compile(r"\{\{(\w+)\}\}")
 
         def replace_match(match: re.Match[str]) -> str:
             key = match.group(1)
             if key in replacements:
-                return str(replacements[key])
+                value = replacements[key]
+                # If the value is a Prompt object, use its content; otherwise, use the value directly
+                return str(value.content if isinstance(value, Prompt) else value)
             else:
                 raise KeyError(f"Replacement for '{key}' not provided.")
 
