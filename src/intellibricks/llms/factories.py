@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Mapping, Sequence, Final
+from typing import Any, Mapping, Sequence, ClassVar
 
 import msgspec
 from architecture import log
@@ -33,7 +33,7 @@ class ModelRegistry(msgspec.Struct, frozen=True):
     implementation classes, eliminating the need for large dictionaries.
     """
 
-    _language_model_patterns: Final[
+    _language_model_patterns: ClassVar[
         Sequence[tuple[str, type[LanguageModel], dict[str, Any]]]
     ] = [
         # Pattern tuple format: (prefix, model_class, extra_params_dict)
@@ -43,10 +43,10 @@ class ModelRegistry(msgspec.Struct, frozen=True):
         ("openai/api/", OpenAILikeLanguageModel, {}),
         ("deepinfra/api/", DeepInfraLanguageModel, {}),
         ("cerebras/api/", CerebrasLanguageModel, {}),
-        ("ollama/api/", OllamaLanguageModel, {}),
+        ("ollama/api/", OllamaLanguageModel, {}),  # new ollama models
     ]
 
-    _transcription_model_patterns: Final[
+    _transcription_model_patterns: ClassVar[
         Sequence[tuple[str, type[TranscriptionModel]]]
     ] = [
         ("groq/api/whisper", GroqTranscriptionModel),
@@ -54,7 +54,7 @@ class ModelRegistry(msgspec.Struct, frozen=True):
         ("openai/api/whisper", OpenAITranscriptionModel),
     ]
 
-    _tts_model_patterns: Final[Sequence[tuple[str, type[TtsModel]]]] = [
+    _tts_model_patterns: ClassVar[Sequence[tuple[str, type[TtsModel]]]] = [
         ("openai/api/tts", OpenAITtsModel),
     ]
 

@@ -113,6 +113,7 @@ import msgspec
 from architecture import dp, log
 from architecture.data.files import bytes_to_mime, ext_to_mime, find_extension
 from architecture.utils.decorators import ensure_module_installed
+from ollama._types import Message as OllamaMessage
 
 from intellibricks.llms.util import (
     get_parts_llm_described_text,
@@ -358,6 +359,21 @@ DeepInfraModelType: TypeAlias = Literal[
     "deepinfra/api/openchat/openchat_3.5",
 ]
 
+OllamaModelType: TypeAlias = Literal[
+    "ollama/api/gemma3:1b",
+    "ollama/api/gemma3:4b",
+    "ollama/api/gemma3:12b",
+    "ollama/api/gemma3:27b",
+    "ollama/api/qwq:32b",
+    "ollama/api/deepseek-r1:1.5b",
+    "ollama/api/deepseek-r1:7b",
+    "ollama/api/deepseek-r1:8b",
+    "ollama/api/deepseek-r1:14b",
+    "ollama/api/deepseek-r1:32b",
+    "ollama/api/deepseek-r1:70b",
+    "ollama/api/phi4:14b",
+]
+
 AIModel: TypeAlias = Literal[
     # -- Google --
     GoogleModelType,
@@ -369,6 +385,8 @@ AIModel: TypeAlias = Literal[
     GroqModelType,
     # -- DeepInfra --
     DeepInfraModelType,
+    # -- Ollama --
+    OllamaModelType,
 ]
 
 GroqTranscriptionModelType: TypeAlias = Literal[
@@ -1139,7 +1157,7 @@ class FilePart(Part, frozen=True, tag="file"):
     def from_url(cls: type[_FP], url: str) -> _FP:
         """Create a FilePart from a URL by downloading the file and detecting its type."""
 
-        if cls.__name__ is "FilePart":
+        if cls.__name__ == "FilePart":
             raise RuntimeError(
                 '`from_url` cannot be called directly from "FilePart"'
                 "class. and must be called by subclasses."
@@ -2020,9 +2038,6 @@ class Message(msgspec.Struct, tag_field="role", frozen=True):
     def to_openai_format(self) -> ChatCompletionMessageParam:
         raise NotImplementedError
 
-    def to_ollama_message(self) -> OllamaMessage:
-        raise NotImplementedError
-
     def to_groq_format(self) -> GroqChatCompletionMessageParam:
         raise NotImplementedError
 
@@ -2181,6 +2196,7 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
         return OllamaMessage(
             role="system", content=content, images=images, tool_calls=tool_calls
         )
+
 
 
 class SystemMessage(DeveloperMessage, frozen=True, tag="system"):
