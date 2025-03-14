@@ -54,10 +54,10 @@ MODEL_PRICING: dict[
 class CerebrasLanguageModel(LanguageModel, frozen=True):
     """Cerebras is the WORLD's fastest"""
 
-    model_name: CerebrasModel = msgspec.field(default_factory=lambda: "llama3.1-8b")
-    api_key: Optional[str] = None
-    max_retries: int = 2
-    parallel_tool_calls: bool = True
+    model_name: CerebrasModel = msgspec.field(default="llama3.1-8b")
+    api_key: Optional[str] = msgspec.field(default=None)
+    max_retries: int = msgspec.field(default=2)
+    parallel_tool_calls: bool = msgspec.field(default=True)
 
     @overload
     async def chat_async(

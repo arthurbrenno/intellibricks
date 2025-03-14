@@ -112,23 +112,26 @@ MODEL_PRICING = {
 
 
 class GoogleLanguageModel(LanguageModel, frozen=True):
-    model_name: Literal[
-        "gemini-2.0-flash-exp",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-8b",
-        "gemini-1.5-flash-001",
-        "gemini-1.5-flash-002",
-        "gemini-1.5-pro",
-        "gemini-1.5-pro-001",
-        "gemini-1.0-pro-002",
-        "gemini-1.5-pro-002",
-        "gemini-flash-experimental",
-        "gemini-pro-experimental",
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite-preview-02-05",
-        "gemini-2.0-flash-thinking-exp-01-21",
-        "gemini-2.0-pro-exp-02-05",
-    ]
+    model_name: (
+        Literal[
+            "gemini-2.0-flash-exp",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b",
+            "gemini-1.5-flash-001",
+            "gemini-1.5-flash-002",
+            "gemini-1.5-pro",
+            "gemini-1.5-pro-001",
+            "gemini-1.0-pro-002",
+            "gemini-1.5-pro-002",
+            "gemini-flash-experimental",
+            "gemini-pro-experimental",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite-preview-02-05",
+            "gemini-2.0-flash-thinking-exp-01-21",
+            "gemini-2.0-pro-exp-02-05",
+        ]
+        | str
+    )
 
     vertexai: Optional[bool]
     api_key: Optional[str] = None

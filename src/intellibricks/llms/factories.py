@@ -1,6 +1,7 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Mapping, Sequence
 
+import msgspec
 from architecture import log
 from architecture.utils.creators import DynamicInstanceCreator
 
@@ -14,7 +15,7 @@ from intellibricks.llms.integrations.groq import (
     GroqTranscriptionModel,
 )
 from intellibricks.llms.integrations.openai import (
-    OpenAILanguageModel,
+    OpenAILikeLanguageModel,
     OpenAITranscriptionModel,
     OpenAITtsModel,
 )
@@ -23,235 +24,190 @@ from intellibricks.llms.types import AIModel, TranscriptionModelType, TtsModelTy
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 
 
+class ModelRegistry(msgspec.Struct, frozen=True):
+    """
+    Registry for managing model mappings and provider-specific settings.
+
+    Provides pattern-based registration of models to their respective
+    implementation classes, eliminating the need for large dictionaries.
+    """
+
+    _language_model_patterns: Sequence[
+        tuple[str, type[LanguageModel], dict[str, Any]]
+    ] = [
+        # Pattern tuple format: (prefix, model_class, extra_params_dict)
+        ("google/genai/", GoogleLanguageModel, {"vertexai": False}),
+        ("google/vertexai/", GoogleLanguageModel, {"vertexai": True}),
+        ("groq/api/", GroqLanguageModel, {}),
+        ("openai/api/", OpenAILikeLanguageModel, {}),
+        ("deepinfra/api/", DeepInfraLanguageModel, {}),
+        ("cerebras/api/", CerebrasLanguageModel, {}),
+    ]
+
+    _transcription_model_patterns = [
+        ("groq/api/whisper", GroqTranscriptionModel),
+        ("groq/api/distil-whisper", GroqTranscriptionModel),
+        ("openai/api/whisper", OpenAITranscriptionModel),
+    ]
+
+    _tts_model_patterns = [
+        ("openai/api/tts", OpenAITtsModel),
+    ]
+
+    @classmethod
+    def get_language_model_class(
+        cls, model_id: str
+    ) -> tuple[type[LanguageModel], Mapping[str, Any]]:
+        """
+        Find the appropriate language model class based on model ID pattern matching.
+
+        Args:
+            model_id: The model identifier string
+
+        Returns:
+            tuple: (model_class, extra_params)
+
+        Raises:
+            ValueError: If no matching pattern is found
+        """
+        for prefix, model_class, extra_params in cls._language_model_patterns:
+            if model_id.startswith(prefix):
+                return model_class, extra_params
+
+        raise ValueError(f"No model class found for model ID: {model_id}")
+
+    @classmethod
+    def get_transcription_model_class(cls, model_id: str) -> type[TranscriptionModel]:
+        """
+        Find the appropriate transcription model class based on model ID pattern matching.
+
+        Args:
+            model_id: The model identifier string
+
+        Returns:
+            TranscriptionModel class
+
+        Raises:
+            ValueError: If no matching pattern is found
+        """
+        for prefix, model_class in cls._transcription_model_patterns:
+            if model_id.startswith(prefix):
+                return model_class
+
+        raise ValueError(f"No transcription model class found for model ID: {model_id}")
+
+    @classmethod
+    def get_tts_model_class(cls, model_id: str) -> type[TtsModel]:
+        """
+        Find the appropriate TTS model class based on model ID pattern matching.
+
+        Args:
+            model_id: The model identifier string
+
+        Returns:
+            TtsModel class
+
+        Raises:
+            ValueError: If no matching pattern is found
+        """
+        for prefix, model_class in cls._tts_model_patterns:
+            if model_id.startswith(prefix):
+                return model_class
+
+        raise ValueError(f"No TTS model class found for model ID: {model_id}")
+
+
 class LanguageModelFactory:
+    """
+    Factory for creating language model instances based on model identifiers.
+
+    Uses pattern matching from ModelRegistry to determine the appropriate
+    model class and configuration.
+    """
+
     @classmethod
     def create(
-        cls, model: AIModel, params: Optional[dict[str, Any]] = None
+        cls, model: AIModel | str, params: dict[str, Any] | None = None
     ) -> LanguageModel:
+        """
+        Create a language model instance based on the model identifier.
+
+        Args:
+            model: The model identifier
+            params: Optional parameters to pass to the model constructor
+
+        Returns:
+            LanguageModel: An instance of the appropriate language model
+        """
         debug_logger.debug(f"Creating model: {model}")
 
-        model_to_model_class: dict[AIModel, type[LanguageModel]] = {
-            "google/genai/gemini-2.0-flash-exp": GoogleLanguageModel,
-            "google/genai/gemini-1.5-flash": GoogleLanguageModel,
-            "google/genai/gemini-1.5-flash-8b": GoogleLanguageModel,
-            "google/genai/gemini-1.5-flash-001": GoogleLanguageModel,
-            "google/genai/gemini-1.5-flash-002": GoogleLanguageModel,
-            "google/genai/gemini-1.5-pro": GoogleLanguageModel,
-            "google/genai/gemini-1.5-pro-001": GoogleLanguageModel,
-            "google/genai/gemini-1.0-pro-002": GoogleLanguageModel,
-            "google/genai/gemini-1.5-pro-002": GoogleLanguageModel,
-            "google/genai/gemini-flash-experimental": GoogleLanguageModel,
-            "google/genai/gemini-pro-experimental": GoogleLanguageModel,
-            "google/vertexai/gemini-2.0-flash-exp": GoogleLanguageModel,
-            "google/vertexai/gemini-1.5-flash": GoogleLanguageModel,
-            "google/vertexai/gemini-1.5-flash-8b": GoogleLanguageModel,
-            "google/vertexai/gemini-1.5-flash-001": GoogleLanguageModel,
-            "google/vertexai/gemini-1.5-flash-002": GoogleLanguageModel,
-            "google/genai/gemini-2.0-flash": GoogleLanguageModel,
-            "google/genai/gemini-2.0-flash-lite-preview-02-05": GoogleLanguageModel,
-            "google/genai/gemini-2.0-flash-thinking-exp-01-21": GoogleLanguageModel,
-            "google/genai/gemini-2.0-pro-exp-02-05": GoogleLanguageModel,
-            "google/vertexai/gemini-2.0-flash": GoogleLanguageModel,
-            "google/vertexai/gemini-2.0-flash-lite-preview-02-05": GoogleLanguageModel,
-            "google/vertexai/gemini-2.0-flash-thinking-exp-01-21": GoogleLanguageModel,
-            "google/vertexai/gemini-1.5-pro": GoogleLanguageModel,
-            "google/vertexai/gemini-1.5-pro-001": GoogleLanguageModel,
-            "google/vertexai/gemini-1.0-pro-002": GoogleLanguageModel,
-            "google/vertexai/gemini-1.5-pro-002": GoogleLanguageModel,
-            "google/vertexai/gemini-flash-experimental": GoogleLanguageModel,
-            "google/vertexai/gemini-pro-experimental": GoogleLanguageModel,
-            "google/vertexai/gemini-2.0-pro-exp-02-05": GoogleLanguageModel,
-            "groq/api/gemma2-9b-it": GroqLanguageModel,
-            "groq/api/llama3-groq-70b-8192-tool-use-preview": GroqLanguageModel,
-            "groq/api/llama3-groq-8b-8192-tool-use-preview": GroqLanguageModel,
-            "groq/api/llama-3.1-70b-specdec": GroqLanguageModel,
-            "groq/api/llama-3.2-1b-preview": GroqLanguageModel,
-            "groq/api/llama-3.2-3b-preview": GroqLanguageModel,
-            "groq/api/llama-3.2-11b-vision-preview": GroqLanguageModel,
-            "groq/api/llama-3.2-90b-vision-preview": GroqLanguageModel,
-            "groq/api/llama-3.3-70b-specdec": GroqLanguageModel,
-            "groq/api/llama-3.3-70b-versatile": GroqLanguageModel,
-            "groq/api/llama-3.1-8b-instant": GroqLanguageModel,
-            "groq/api/llama-guard-3-8b": GroqLanguageModel,
-            "groq/api/llama3-70b-8192": GroqLanguageModel,
-            "groq/api/llama3-8b-8192": GroqLanguageModel,
-            "groq/api/mixtral-8x7b-32768": GroqLanguageModel,
-            "openai/api/o1": OpenAILanguageModel,
-            "openai/api/o1-2024-12-17": OpenAILanguageModel,
-            "openai/api/o1-preview": OpenAILanguageModel,
-            "openai/api/o1-preview-2024-09-12": OpenAILanguageModel,
-            "openai/api/o1-mini": OpenAILanguageModel,
-            "openai/api/o1-mini-2024-09-12": OpenAILanguageModel,
-            "openai/api/gpt-4o": OpenAILanguageModel,
-            "openai/api/gpt-4o-2024-11-20": OpenAILanguageModel,
-            "openai/api/gpt-4o-2024-08-06": OpenAILanguageModel,
-            "openai/api/gpt-4o-2024-05-13": OpenAILanguageModel,
-            "openai/api/gpt-4o-audio-preview": OpenAILanguageModel,
-            "openai/api/gpt-4o-audio-preview-2024-10-01": OpenAILanguageModel,
-            "openai/api/gpt-4o-audio-preview-2024-12-17": OpenAILanguageModel,
-            "openai/api/gpt-4o-mini-audio-preview": OpenAILanguageModel,
-            "openai/api/gpt-4o-mini-audio-preview-2024-12-17": OpenAILanguageModel,
-            "openai/api/chatgpt-4o-latest": OpenAILanguageModel,
-            "openai/api/gpt-4o-mini": OpenAILanguageModel,
-            "openai/api/gpt-4o-mini-2024-07-18": OpenAILanguageModel,
-            "openai/api/gpt-4-turbo": OpenAILanguageModel,
-            "openai/api/gpt-4-turbo-2024-04-09": OpenAILanguageModel,
-            "openai/api/gpt-4-0125-preview": OpenAILanguageModel,
-            "openai/api/gpt-4-turbo-preview": OpenAILanguageModel,
-            "openai/api/gpt-4-1106-preview": OpenAILanguageModel,
-            "openai/api/gpt-4-vision-preview": OpenAILanguageModel,
-            "openai/api/gpt-4": OpenAILanguageModel,
-            "openai/api/gpt-4-0314": OpenAILanguageModel,
-            "openai/api/gpt-4-0613": OpenAILanguageModel,
-            "openai/api/gpt-4-32k": OpenAILanguageModel,
-            "openai/api/gpt-4-32k-0314": OpenAILanguageModel,
-            "openai/api/gpt-4-32k-0613": OpenAILanguageModel,
-            "openai/api/gpt-3.5-turbo": OpenAILanguageModel,
-            "openai/api/gpt-3.5-turbo-16k": OpenAILanguageModel,
-            "openai/api/gpt-3.5-turbo-0301": OpenAILanguageModel,
-            "openai/api/gpt-3.5-turbo-0613": OpenAILanguageModel,
-            "openai/api/gpt-3.5-turbo-1106": OpenAILanguageModel,
-            "openai/api/gpt-3.5-turbo-0125": OpenAILanguageModel,
-            "openai/api/gpt-3.5-turbo-16k-0613": OpenAILanguageModel,
-            "deepinfra/api/meta-llama/Llama-3.3-70B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-3.3-70B-Instruct-Turbo": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Meta-Llama-3.1-70B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Meta-Llama-3.1-8B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Meta-Llama-3.1-405B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/QwQ-32B-Preview": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/Qwen2.5-Coder-32B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/nvidia/Llama-3.1-Nemotron-70B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/Qwen2.5-72B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-3.2-90B-Vision-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-3.2-11B-Vision-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/microsoft/WizardLM-2-8x22B": DeepInfraLanguageModel,
-            "deepinfra/api/01-ai/Yi-34B-Chat": DeepInfraLanguageModel,
-            "deepinfra/api/Austism/chronos-hermes-13b-v2": DeepInfraLanguageModel,
-            "deepinfra/api/Gryphe/MythoMax-L2-13b": DeepInfraLanguageModel,
-            "deepinfra/api/Gryphe/MythoMax-L2-13b-turbo": DeepInfraLanguageModel,
-            "deepinfra/api/HuggingFaceH4/zephyr-orpo-141b-A35b-v0.1": DeepInfraLanguageModel,
-            "deepinfra/api/NousResearch/Hermes-3-Llama-3.1-405B": DeepInfraLanguageModel,
-            "deepinfra/api/Phind/Phind-CodeLlama-34B-v2": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/QVQ-72B-Preview": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/Qwen2-72B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/Qwen2-7B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/Qwen2.5-7B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/Qwen/Qwen2.5-Coder-7B": DeepInfraLanguageModel,
-            "deepinfra/api/Sao10K/L3-70B-Euryale-v2.1": DeepInfraLanguageModel,
-            "deepinfra/api/Sao10K/L3-8B-Lunaris-v1": DeepInfraLanguageModel,
-            "deepinfra/api/Sao10K/L3.1-70B-Euryale-v2.2": DeepInfraLanguageModel,
-            "deepinfra/api/bigcode/starcoder2-15b": DeepInfraLanguageModel,
-            "deepinfra/api/bigcode/starcoder2-15b-instruct-v0.1": DeepInfraLanguageModel,
-            "deepinfra/api/codellama/CodeLlama-34b-Instruct-hf": DeepInfraLanguageModel,
-            "deepinfra/api/codellama/CodeLlama-70b-Instruct-hf": DeepInfraLanguageModel,
-            "deepinfra/api/cognitivecomputations/dolphin-2.6-mixtral-8x7b": DeepInfraLanguageModel,
-            "deepinfra/api/cognitivecomputations/dolphin-2.9.1-llama-3-70b": DeepInfraLanguageModel,
-            "deepinfra/api/databricks/dbrx-instruct": DeepInfraLanguageModel,
-            "deepinfra/api/airoboros-70b": DeepInfraLanguageModel,
-            "deepinfra/api/google/codegemma-7b-it": DeepInfraLanguageModel,
-            "deepinfra/api/google/gemma-1.1-7b-it": DeepInfraLanguageModel,
-            "deepinfra/api/google/gemma-2-27b-it": DeepInfraLanguageModel,
-            "deepinfra/api/google/gemma-2-9b-it": DeepInfraLanguageModel,
-            "deepinfra/api/lizpreciatior/lzlv_70b_fp16_hf": DeepInfraLanguageModel,
-            "deepinfra/api/mattshumer/Reflection-Llama-3.1-70B": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-2-13b-chat-hf": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-2-70b-chat-hf": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-2-7b-chat-hf": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-3.2-1B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Llama-3.2-3B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Meta-Llama-3-70B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/meta-llama/Meta-Llama-3-8B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/microsoft/Phi-3-medium-4k-instruct": DeepInfraLanguageModel,
-            "deepinfra/api/microsoft/WizardLM-2-7B": DeepInfraLanguageModel,
-            "deepinfra/api/mistralai/Mistral-7B-Instruct-v0.1": DeepInfraLanguageModel,
-            "deepinfra/api/mistralai/Mistral-7B-Instruct-v0.2": DeepInfraLanguageModel,
-            "deepinfra/api/mistralai/Mistral-7B-Instruct-v0.3": DeepInfraLanguageModel,
-            "deepinfra/api/mistralai/Mistral-Nemo-Instruct-2407": DeepInfraLanguageModel,
-            "deepinfra/api/mistralai/Mixtral-8x22B-Instruct-v0.1": DeepInfraLanguageModel,
-            "deepinfra/api/mistralai/Mixtral-8x22B-v0.1": DeepInfraLanguageModel,
-            "deepinfra/api/mistralai/Mixtral-8x7B-Instruct-v0.1": DeepInfraLanguageModel,
-            "deepinfra/api/nvidia/Nemotron-4-340B-Instruct": DeepInfraLanguageModel,
-            "deepinfra/api/openbmb/MiniCPM-Llama3-V-2_5": DeepInfraLanguageModel,
-            "deepinfra/api/openchat/openchat-3.6-8b": DeepInfraLanguageModel,
-            "deepinfra/api/openchat/openchat_3.5": DeepInfraLanguageModel,
-            "cerebras/api/llama3.1-8b": CerebrasLanguageModel,
-            "cerebras/api/llama3.1-70b": CerebrasLanguageModel,
-            "cerebras/api/llama-3.3-70b": CerebrasLanguageModel,
-        }
-
-        async_chat_model_cls: type[LanguageModel] = model_to_model_class[model]
-
-        model_extra_params: dict[AIModel, dict[str, Any]] = {
-            "google/genai/gemini-2.0-pro-exp-02-05": {"vertexai": False},
-            "google/vertexai/gemini-2.0-pro-exp-02-05": {"vertexai": True},
-            "google/genai/gemini-2.0-flash-exp": {"vertexai": False},
-            "google/genai/gemini-1.5-flash": {"vertexai": False},
-            "google/genai/gemini-1.5-flash-8b": {"vertexai": False},
-            "google/genai/gemini-1.5-flash-001": {"vertexai": False},
-            "google/genai/gemini-1.5-flash-002": {"vertexai": False},
-            "google/genai/gemini-1.5-pro": {"vertexai": False},
-            "google/genai/gemini-1.5-pro-001": {"vertexai": False},
-            "google/genai/gemini-1.0-pro-002": {"vertexai": False},
-            "google/genai/gemini-1.5-pro-002": {"vertexai": False},
-            "google/genai/gemini-flash-experimental": {"vertexai": False},
-            "google/genai/gemini-pro-experimental": {"vertexai": False},
-            "google/vertexai/gemini-2.0-flash-exp": {"vertexai": True},
-            "google/vertexai/gemini-1.5-flash": {"vertexai": True},
-            "google/vertexai/gemini-1.5-flash-8b": {"vertexai": True},
-            "google/vertexai/gemini-1.5-flash-001": {"vertexai": True},
-            "google/vertexai/gemini-1.5-flash-002": {"vertexai": True},
-            "google/vertexai/gemini-1.5-pro": {"vertexai": True},
-            "google/vertexai/gemini-1.5-pro-001": {"vertexai": True},
-            "google/vertexai/gemini-1.0-pro-002": {"vertexai": True},
-            "google/vertexai/gemini-1.5-pro-002": {"vertexai": True},
-            "google/vertexai/gemini-flash-experimental": {"vertexai": True},
-            "google/vertexai/gemini-pro-experimental": {"vertexai": True},
-            "google/genai/gemini-2.0-flash": {"vertexai": False},
-            "google/genai/gemini-2.0-flash-lite-preview-02-05": {"vertexai": False},
-            "google/genai/gemini-2.0-flash-thinking-exp-01-21": {"vertexai": False},
-            "google/vertexai/gemini-2.0-flash": {"vertexai": True},
-            "google/vertexai/gemini-2.0-flash-lite-preview-02-05": {"vertexai": True},
-            "google/vertexai/gemini-2.0-flash-thinking-exp-01-21": {"vertexai": True},
-        }
-
-        params = params or {}
-        params.update(model_extra_params.get(model, {}))
-
-        instance = DynamicInstanceCreator(cls=async_chat_model_cls).create_instance(
-            **params
+        model_class, model_extra_params = ModelRegistry.get_language_model_class(
+            str(model)
         )
-        return instance
+
+        # Merge params, with passed params taking precedence
+        effective_params: dict[str, Any] = {}
+        if model_extra_params:
+            effective_params.update(model_extra_params)
+        if params:
+            effective_params.update(params)
+
+        return DynamicInstanceCreator(cls=model_class).create_instance(
+            **effective_params
+        )
 
 
 class TranscriptionModelFactory:
+    """
+    Factory for creating transcription model instances based on model identifiers.
+
+    Uses pattern matching from ModelRegistry to determine the appropriate model class.
+    """
+
     @classmethod
     def create(
         cls,
         model: TranscriptionModelType,
-        params: Optional[dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
     ) -> TranscriptionModel:
+        """
+        Create a transcription model instance based on the model identifier.
+
+        Args:
+            model: The transcription model identifier
+            params: Optional parameters to pass to the model constructor
+
+        Returns:
+            TranscriptionModel: An instance of the appropriate transcription model
+        """
         debug_logger.info(f"Creating transcription model: {model}")
 
-        return DynamicInstanceCreator(
-            cls=(
-                {
-                    "groq/api/whisper-large-v3-turbo": GroqTranscriptionModel,
-                    "groq/api/distil-whisper-large-v3-en": GroqTranscriptionModel,
-                    "groq/api/whisper-large-v3": GroqTranscriptionModel,
-                    "openai/api/whisper-1": OpenAITranscriptionModel,
-                }[model]
-            )
-        ).create_instance(**(params or {}))
+        model_class = ModelRegistry.get_transcription_model_class(str(model))
+        return DynamicInstanceCreator(cls=model_class).create_instance(**(params or {}))
 
 
 class TtsModelFactory:
+    """
+    Factory for creating text-to-speech model instances based on model identifiers.
+
+    Uses pattern matching from ModelRegistry to determine the appropriate model class.
+    """
+
     @classmethod
     def create(
-        cls, model: TtsModelType, params: Optional[dict[str, Any]] = None
+        cls, model: TtsModelType, params: dict[str, Any] | None = None
     ) -> TtsModel:
-        return {
-            "openai/api/tts-1": OpenAITtsModel,
-            "openai/api/tts-1-hd": OpenAITtsModel,
-        }[model](**(params or {}))
+        """
+        Create a text-to-speech model instance based on the model identifier.
+
+        Args:
+            model: The TTS model identifier
+            params: Optional parameters to pass to the model constructor
+
+        Returns:
+            TtsModel: An instance of the appropriate TTS model
+        """
+        debug_logger.info(f"Creating TTS model: {model}")
+
+        model_class = ModelRegistry.get_tts_model_class(str(model))
+        return DynamicInstanceCreator(cls=model_class).create_instance(**(params or {}))

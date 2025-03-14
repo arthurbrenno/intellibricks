@@ -137,10 +137,11 @@ MODEL_PRICING: dict[ChatModel, dict[Literal["input_cost", "output_cost"], float]
 }
 
 
-class OpenAILanguageModel(LanguageModel, frozen=True):
+class OpenAILikeLanguageModel(LanguageModel, frozen=True):
     model_name: ChatModel
-    api_key: Optional[str] = None
-    max_retries: int = 2
+    api_key: Optional[str] = msgspec.field(default=None)
+    max_retries: int = msgspec.field(default=2)
+    base_url: str = msgspec.field(default="https://api.openai.com/v1")
 
     @overload
     async def chat_async(

@@ -88,6 +88,7 @@ from langfuse.client import (
     StatefulSpanClient,
     StatefulTraceClient,
 )
+import httpx
 from langfuse.model import ModelUsage
 
 from intellibricks.llms.base import FileContent, LanguageModel, TranscriptionModel
@@ -194,6 +195,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Synchronously performs a text completion operation with a specified response model.
@@ -214,6 +216,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param: base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
         """
         raise NotImplementedError("Not implemented.")
@@ -825,14 +828,12 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         Asynchronous version of the `chat` method.
     """
 
-    model: AIModel = msgspec.field(
-        default_factory=lambda: "google/genai/gemini-2.0-flash-exp"
-    )
-    api_key: Optional[str] = None
-    cloud_project: Optional[str] = None
-    cloud_location: Optional[str] = None
+    model: AIModel | str = msgspec.field(default="google/genai/gemini-2.0-flash")
+    api_key: Optional[str] = msgspec.field(default=None)
+    cloud_project: Optional[str] = msgspec.field(default=None)
+    cloud_location: Optional[str] = msgspec.field(default=None)
     langfuse: Maybe[Langfuse] = Maybe(None)
-    web_searcher: Optional[WebSearchable] = None
+    web_searcher: Optional[WebSearchable] = msgspec.field(default=None)
 
     @classmethod
     def of(
@@ -1561,8 +1562,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
             lambda langfuse: langfuse.trace(**trace_params)  # type: ignore
         )
 
-        ai_model: AIModel = self.model or "google/genai/gemini-2.0-flash-exp"
-        debug_logger.debug(f"Using AI model: {ai_model}")
+        debug_logger.debug(f"Using AI model: {self.model}")
 
         max_retries = max_retries or 2
         debug_logger.debug(f"Maximum retries set to: {max_retries}")
@@ -1580,7 +1580,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         debug_logger.debug("Creating Langfuse generation (if span is available).")
         generation: Maybe[StatefulGenerationClient] = maybe_span.map(
             lambda span: span.generation(  # type: ignore
-                model=ai_model,
+                model=self.model,
                 input=messages,
                 model_parameters={
                     "max_tokens": max_tokens,
@@ -1591,9 +1591,9 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
 
         debug_logger.debug("Creating Language Model instance.")
         chat_model: LanguageModel = LanguageModelFactory.create(
-            model=ai_model,
+            model=self.model,
             params={
-                "model_name": ai_model.split("/")[2],
+                "model_name": self.model.split("/")[2],
                 "language": language,
                 "use_grounding": use_grounding,
                 "grounding_threshold": grounding_threshold,
