@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, Final
 
 import msgspec
 from architecture import log
@@ -14,6 +14,7 @@ from intellibricks.llms.integrations.groq import (
     GroqLanguageModel,
     GroqTranscriptionModel,
 )
+from intellibricks.llms.integrations.ollama import OllamaLanguageModel
 from intellibricks.llms.integrations.openai import (
     OpenAILikeLanguageModel,
     OpenAITranscriptionModel,
@@ -32,8 +33,8 @@ class ModelRegistry(msgspec.Struct, frozen=True):
     implementation classes, eliminating the need for large dictionaries.
     """
 
-    _language_model_patterns: Sequence[
-        tuple[str, type[LanguageModel], dict[str, Any]]
+    _language_model_patterns: Final[
+        Sequence[tuple[str, type[LanguageModel], dict[str, Any]]]
     ] = [
         # Pattern tuple format: (prefix, model_class, extra_params_dict)
         ("google/genai/", GoogleLanguageModel, {"vertexai": False}),
@@ -42,15 +43,18 @@ class ModelRegistry(msgspec.Struct, frozen=True):
         ("openai/api/", OpenAILikeLanguageModel, {}),
         ("deepinfra/api/", DeepInfraLanguageModel, {}),
         ("cerebras/api/", CerebrasLanguageModel, {}),
+        ("ollama/api/", OllamaLanguageModel, {}),
     ]
 
-    _transcription_model_patterns = [
+    _transcription_model_patterns: Final[
+        Sequence[tuple[str, type[TranscriptionModel]]]
+    ] = [
         ("groq/api/whisper", GroqTranscriptionModel),
         ("groq/api/distil-whisper", GroqTranscriptionModel),
         ("openai/api/whisper", OpenAITranscriptionModel),
     ]
 
-    _tts_model_patterns = [
+    _tts_model_patterns: Final[Sequence[tuple[str, type[TtsModel]]]] = [
         ("openai/api/tts", OpenAITtsModel),
     ]
 
