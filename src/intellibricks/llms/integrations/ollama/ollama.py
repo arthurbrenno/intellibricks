@@ -85,11 +85,10 @@ class OllamaLanguageModel(LanguageModel, frozen=True):
 
         choices: list[MessageChoice[S]] = []
         for i in range(n):
-
             chat_response: OllamaChatResponse = await client.chat(  # type: ignore TODO(arthur): fix type errors.
                 model=self.model_name,
                 messages=[m.to_ollama_message() for m in messages],
-                format=ms_type_to_schema(response_model) if response_model else None
+                format=ms_type_to_schema(response_model) if response_model else None,
             )
 
             choice = MessageChoice(
@@ -99,9 +98,11 @@ class OllamaLanguageModel(LanguageModel, frozen=True):
                     refusal=None,
                     parsed=get_parsed_response(
                         contents=chat_response.message.content,
-                        response_model=response_model
-                    ) if response_model and chat_response.message.content else cast(S, RawResponse())
-                )
+                        response_model=response_model,
+                    )
+                    if response_model and chat_response.message.content
+                    else cast(S, RawResponse()),
+                ),
             )
 
             choices.append(choice)
@@ -115,5 +116,5 @@ class OllamaLanguageModel(LanguageModel, frozen=True):
                 completion_tokens=None,
                 total_tokens=None,
                 input_cost=0.0,
-            )
+            ),
         )
