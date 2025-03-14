@@ -75,6 +75,7 @@ from typing import (
     TypeVar,
     cast,
     overload,
+    override
 )
 
 import msgspec
@@ -122,6 +123,7 @@ from .types import (
     UserMessage,
     VoiceType,
 )
+
 
 debug_logger = log.create_logger(__name__, level=logging.DEBUG)
 error_logger = log.create_logger(__name__, level=logging.ERROR)
@@ -242,6 +244,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Synchronously performs a text completion operation with a raw response.
@@ -262,6 +265,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's raw response.
         """
         raise NotImplementedError("Not implemented.")
@@ -286,6 +290,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Synchronously performs a text completion operation with a specified response model.
@@ -306,6 +311,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
         """
         raise NotImplementedError("Not implemented.")
@@ -330,6 +336,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Synchronously conducts a chat-based interaction with a specified response model.
@@ -349,6 +356,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
         """
         raise NotImplementedError("Not implemented.")
@@ -373,6 +381,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Synchronously conducts a chat-based interaction with a raw response.
@@ -392,6 +401,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's raw chat response.
         """
         raise NotImplementedError("Not implemented.")
@@ -415,6 +425,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Synchronously conducts a chat-based interaction with a specified response model.
@@ -434,6 +445,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
         """
         raise NotImplementedError("Not implemented.")
@@ -459,6 +471,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Asynchronously performs a text completion operation with a specified response model.
@@ -479,6 +492,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
         """
         raise NotImplementedError("Not implemented.")
@@ -504,6 +518,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Asynchronously performs a text completion operation with a raw response.
@@ -524,6 +539,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's raw response (async).
         """
         raise NotImplementedError("Not implemented.")
@@ -548,6 +564,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Asynchronously performs a text completion operation with a specified response model.
@@ -568,6 +585,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
         """
         raise NotImplementedError("Not implemented.")
@@ -592,6 +610,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Asynchronously conducts a chat-based interaction with a raw response.
@@ -611,6 +630,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's raw chat response (async).
         """
         raise NotImplementedError("Not implemented.")
@@ -635,6 +655,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Asynchronously conducts a chat-based interaction with a specified response model.
@@ -654,6 +675,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for openai-like models
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
         """
         raise NotImplementedError("Not implemented.")
@@ -677,6 +699,7 @@ class SynapseProtocol(msgspec.Struct, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         raise NotImplementedError("Not implemented.")
 
@@ -887,6 +910,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Synchronously performs a text completion operation with a specified response model.
@@ -907,6 +931,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
         """
         ...
@@ -932,6 +957,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Synchronously performs a text completion operation with a raw response.
@@ -952,10 +978,12 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw response.
         """
         ...
 
+    @override
     def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
@@ -976,6 +1004,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Synchronously performs a text completion operation with a specified response model.
@@ -996,6 +1025,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
         """
         if system_prompt is None:
@@ -1054,6 +1084,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
             use_grounding=use_grounding,
             language=language,
             timeout=timeout,
+            base_url=base_url,
         )
 
     @overload
@@ -1076,6 +1107,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Synchronously conducts a chat-based interaction with a specified response model.
@@ -1095,6 +1127,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
         """
         ...
@@ -1119,6 +1152,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Synchronously conducts a chat-based interaction with a raw response.
@@ -1138,10 +1172,12 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw chat response.
         """
         ...
 
+    @override
     def chat(
         self,
         messages: Sequence[Message],
@@ -1161,6 +1197,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Synchronously conducts a chat-based interaction with a specified response model.
@@ -1180,6 +1217,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
         """
         return run_sync(
@@ -1199,6 +1237,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
             use_grounding=use_grounding,
             language=language,
             timeout=timeout,
+            base_url=base_url,
         )
 
     @overload
@@ -1222,6 +1261,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Asynchronously performs a text completion operation with a specified response model.
@@ -1242,6 +1282,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
         """
         ...
@@ -1267,6 +1308,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Asynchronously performs a text completion operation with a raw response.
@@ -1287,10 +1329,12 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw response (async).
         """
         ...
 
+    @override
     async def complete_async(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
@@ -1311,6 +1355,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Asynchronously performs a text completion operation with a specified response model.
@@ -1331,6 +1376,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
         """
         if system_prompt is None:
@@ -1389,6 +1435,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
             use_grounding=use_grounding,
             language=language,
             timeout=timeout,
+            base_url=base_url,
         )
 
     @overload
@@ -1411,6 +1458,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Asynchronously conducts a chat-based interaction with a raw response.
@@ -1430,6 +1478,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw chat response (async).
         """
         ...
@@ -1454,6 +1503,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Asynchronously conducts a chat-based interaction with a specified response model.
@@ -1473,10 +1523,12 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
         """
         ...
 
+    @override
     async def chat_async(
         self,
         messages: Sequence[Message],
@@ -1496,6 +1548,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         return await self.__achat(
             messages=messages,
@@ -1513,6 +1566,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
             use_grounding=use_grounding,
             language=language,
             timeout=timeout,
+            base_url=base_url,
         )
 
     async def __achat(
@@ -1534,6 +1588,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         debug_logger.debug("Entering __achat method.")
 
@@ -1601,6 +1656,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
                 "max_retries": max_retries,
                 "project": self.cloud_project,
                 "location": self.cloud_location,
+                "base_url": base_url,
             },
         )
         debug_logger.debug("Language Model instance created.")
@@ -1819,6 +1875,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Synchronously attempts text completion using the Synapses in the cascade with a specified response model.
@@ -1839,6 +1896,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
         """
         ...
@@ -1864,6 +1922,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Synchronously attempts text completion using the Synapses in the cascade with a raw response.
@@ -1884,10 +1943,12 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw response.
         """
         ...
 
+    @override
     def complete(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
@@ -1908,6 +1969,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Synchronously attempts text completion using the Synapses in the cascade with a specified response model.
@@ -1928,6 +1990,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model.
         """
         last_exception = None
@@ -1960,6 +2023,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
                         use_grounding=use_grounding,
                         language=language,
                         timeout=timeout,
+                        base_url=base_url,
                     )
 
                 return synapse.complete(
@@ -1979,6 +2043,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
                     use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
+                    base_url=base_url,
                 )
             except Exception as e:
                 debug_logger.warning(f"Synapse failed on complete: {e}")
@@ -2008,6 +2073,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Synchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
@@ -2027,6 +2093,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
         """
         ...
@@ -2051,6 +2118,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Synchronously conducts a chat-based interaction using the Synapses in the cascade with a raw response.
@@ -2070,10 +2138,12 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw chat response.
         """
         ...
 
+    @override
     def chat(
         self,
         messages: Sequence[Message],
@@ -2093,6 +2163,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Synchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
@@ -2112,6 +2183,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model.
         """
         last_exception = None
@@ -2142,6 +2214,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
                     use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
+                    base_url=base_url,
                 )
             except Exception as e:
                 debug_logger.warning(f"Synapse failed on chat: {e}")
@@ -2172,6 +2245,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Asynchronously attempts text completion using the Synapses in the cascade with a specified response model.
@@ -2192,6 +2266,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
         """
         ...
@@ -2217,6 +2292,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Asynchronously attempts text completion using the Synapses in the cascade with a raw response.
@@ -2237,10 +2313,12 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw response (async).
         """
         ...
 
+    @override
     async def complete_async(
         self,
         prompt: str | Prompt | PartType | Sequence[PartType],
@@ -2261,6 +2339,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Asynchronously attempts text completion using the Synapses in the cascade with a specified response model.
@@ -2281,6 +2360,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's response structured by response_model (async).
         """
         last_exception = None
@@ -2313,6 +2393,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
                         use_grounding=use_grounding,
                         language=language,
                         timeout=timeout,
+                        base_url=base_url,
                     )
 
                 return await synapse.complete_async(
@@ -2332,6 +2413,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
                     use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
+                    base_url=base_url,
                 )
             except Exception as e:
                 debug_logger.warning(f"Synapse failed on complete_async: {e}")
@@ -2361,6 +2443,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[RawResponse]:
         """
         Asynchronously conducts a chat-based interaction using the Synapses in the cascade with a raw response.
@@ -2380,6 +2463,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's raw chat response (async).
         """
         ...
@@ -2404,6 +2488,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S]:
         """
         Asynchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
@@ -2423,10 +2508,12 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
         """
         ...
 
+    @override
     async def chat_async(
         self,
         messages: Sequence[Message],
@@ -2446,6 +2533,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         grounding_threshold: Optional[float] = None,
         language: Language = Language.ENGLISH,
         timeout: Optional[float] = None,
+        base_url: str | httpx.URL | None = None,
     ) -> ChatCompletion[S] | ChatCompletion[RawResponse]:
         """
         Asynchronously conducts a chat-based interaction using the Synapses in the cascade with a specified response model.
@@ -2465,6 +2553,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
         :param use_grounding: Whether to enable general web search for the LLM.
         :param language: Language for the LLM interaction.
         :param timeout: Request timeout in seconds.
+        :param base_url: Base URL for the LLM service.
         :return: A ChatCompletion object containing the LLM's chat response structured by response_model (async).
         """
         last_exception = None
@@ -2495,6 +2584,7 @@ class SynapseCascade(SynapseProtocol, frozen=True):
                     use_grounding=use_grounding,
                     language=language,
                     timeout=timeout,
+                    base_url=base_url,
                 )
             except Exception as e:
                 debug_logger.warning(f"Synapse failed on chat_async: {e}")
