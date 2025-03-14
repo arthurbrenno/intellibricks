@@ -502,9 +502,6 @@ def get_struct_from_schema(
     fields: list[tuple[str, Any, Any]] = []
 
     for prop_name, prop_schema_any in raw_properties.items():
-        if not isinstance(prop_name, str):
-            raise TypeError(f"Property name must be a string, got {prop_name!r}")
-
         if not isinstance(prop_schema_any, dict):
             raise TypeError(
                 f"Each property schema must be a dict, got {type(cast(object, prop_schema_any))!r} for '{prop_name}'"
@@ -544,7 +541,7 @@ def get_struct_from_schema(
                                 if len(sub_union) == 1:
                                     items_type_val = sub_union[0]
                                 else:
-                                    items_type_val = Union[tuple(sub_union)]
+                                    items_type_val = Union[tuple(sub_union), Any]
                             else:
                                 items_type_val = Any
                         else:
@@ -585,7 +582,7 @@ def get_struct_from_schema(
                                             )
                                         else:
                                             sub_union2.append(Any)
-                                    arr_item_type = Union[tuple(sub_union2)]
+                                    arr_item_type = Union[tuple(sub_union2), Any]
                     union_members.append(list[arr_item_type])
                 elif t_ in basic_type_map:
                     union_members.append(basic_type_map[t_])
@@ -597,7 +594,7 @@ def get_struct_from_schema(
             if len(union_members) == 1:
                 field_type = union_members[0]
             else:
-                field_type = Union[tuple(union_members)]
+                field_type = Union[tuple(union_members), Any]
         else:
             field_type = Any
 

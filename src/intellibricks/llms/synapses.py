@@ -68,15 +68,7 @@ from __future__ import annotations
 import logging
 import random
 import uuid
-from typing import (
-    Literal,
-    Optional,
-    Sequence,
-    TypeVar,
-    cast,
-    overload,
-    override
-)
+from typing import Literal, Optional, Sequence, TypeVar, cast, overload, override
 
 import msgspec
 from architecture import log

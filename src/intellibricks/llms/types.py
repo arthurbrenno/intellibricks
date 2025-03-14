@@ -156,6 +156,9 @@ if TYPE_CHECKING:
         FunctionDefinition as GroqFunctionDefinition,
     )
     from ollama._types import Message as OllamaMessage
+    from ollama._types import Image as OllamaImage
+    from ollama._types import Tool as OllamaTool
+
     from openai.types.chat.chat_completion_content_part_param import (
         ChatCompletionContentPartParam as OpenAIChatCompletionContentPartParam,
     )
@@ -853,31 +856,27 @@ class Part(msgspec.Struct, tag_field="type", frozen=True):
             case _:
                 raise ValueError("Not supported yet.")
 
-    # @abstractmethod
     def to_anthropic_part(self) -> ContentBlockParam:
         raise NotImplementedError
 
-    # @abstractmethod
+    def to_ollama_part(self) -> str:
+        raise NotImplementedError
+
     def to_openai_part(self) -> OpenAIChatCompletionContentPartParam:
         raise NotImplementedError
 
-    # @abstractmethod
     def to_google_part(self) -> GenAIPart:
         raise NotImplementedError
 
-    # @abstractmethod
     def to_groq_part(self) -> GroqChatCompletionContentPartParam:
         raise NotImplementedError
 
-    # @abstractmethod
     def to_cerebras_part(self) -> MessageUserMessageRequestContentUnionMember1:
         raise NotImplementedError
 
-    # @abstractmethod
     def __str__(self) -> str:
         raise NotImplementedError
 
-    # @abstractmethod
     def to_llm_described_text(self) -> str:
         raise NotImplementedError
 
@@ -953,6 +952,11 @@ class WebsitePart(Part, frozen=True, tag="website"):
             text=self.get_md_contents(), type="text"
         )
 
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def to_ollama_part(self) -> str:
+        return self.get_md_contents()
+
     @override
     def __str__(self) -> str:
         return self.get_md_contents()
@@ -1013,6 +1017,11 @@ class TextPart(Part, frozen=True, tag="text"):
         return MessageUserMessageRequestContentUnionMember1Typed(
             text=self.text, type="text"
         )
+
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def to_ollama_part(self) -> str:
+        return self.text
 
     @override
     def to_llm_described_text(self) -> str:
@@ -1080,6 +1089,11 @@ class ToolResponsePart(Part, frozen=True, tag="tool_response"):
             text=self.to_llm_described_text(), type="text"
         )
 
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def to_ollama_part(self) -> str:
+        return self.to_llm_described_text()
+
     @override
     def to_llm_described_text(self) -> str:
         return (
@@ -1124,6 +1138,13 @@ class FilePart(Part, frozen=True, tag="file"):
     @classmethod
     def from_url(cls: type[_FP], url: str) -> _FP:
         """Create a FilePart from a URL by downloading the file and detecting its type."""
+
+        if cls.__name__ is "FilePart":
+            raise RuntimeError(
+                '`from_url` cannot be called directly from "FilePart"'
+                "class. and must be called by subclasses."
+            )
+
         import requests
         from requests.exceptions import RequestException
 
@@ -1162,7 +1183,8 @@ class FilePart(Part, frozen=True, tag="file"):
         data = response.content
 
         # Instantiate the appropriate subclass
-        return cls(data=data, mime_type=mime_type_str, metadata={"url": url})
+        file_part = cls(data=data, mime_type=mime_type_str, metadata={"url": url})
+        return cast(_FP, file_part)
 
 
 class VideoFilePart(FilePart, frozen=True, tag="video"):
@@ -1224,6 +1246,11 @@ class VideoFilePart(FilePart, frozen=True, tag="video"):
             f"Data length: {len(self.data) if self.data else 0}\n"
             f"<|end_video_part|>"
         )
+
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def to_ollama_part(self) -> str:
+        return self.to_llm_described_text()
 
     @override
     def __str__(self) -> str:
@@ -1296,6 +1323,11 @@ class AudioFilePart(FilePart, frozen=True, tag="audio"):
         return MessageUserMessageRequestContentUnionMember1Typed(
             text=self.to_llm_described_text(), type="text"
         )
+
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def to_ollama_part(self) -> str:
+        return self.to_llm_described_text()
 
     @override
     def to_llm_described_text(self) -> str:
@@ -1445,6 +1477,11 @@ class ImageFilePart(FilePart, frozen=True, tag="image"):
             text=self.to_llm_described_text(), type="text"
         )
 
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def to_ollama_part(self) -> str:
+        return self.to_llm_described_text()
+
     @override
     def to_llm_described_text(self) -> str:
         return (
@@ -1506,6 +1543,11 @@ class ToolCallPart(Part, frozen=True, tag="tool_call"):
         return MessageUserMessageRequestContentUnionMember1Typed(
             text=self.to_llm_described_text(), type="text"
         )
+
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def to_ollama_part(self) -> str:
+        return self.to_llm_described_text()
 
     @override
     def to_llm_described_text(self) -> str:
@@ -1701,6 +1743,10 @@ class Tool(msgspec.Struct, frozen=True):
         >>> Tool(name="calculator", description="A simple calculator tool")
     """
 
+    name: str
+    description: str
+    parameters: Sequence[Parameter]
+
     def to_callable(self) -> Callable[..., Any]:
         raise NotImplementedError
 
@@ -1743,6 +1789,68 @@ class Tool(msgspec.Struct, frozen=True):
         return GroqTool(
             function=Function.from_callable(self.to_callable()).to_groq_function(),
             type="function",
+        )
+
+    @ensure_module_installed("ollama", "ollama")
+    def to_ollama_tool(self) -> OllamaTool:
+        """
+        Convert the Tool instance into an Ollama-compatible tool format.
+
+        Returns:
+            OllamaTool: The Ollama-compatible tool object
+        """
+        from ollama._types import Tool as OllamaTool
+
+        # Convert parameters to Ollama Property format
+        properties: dict[str, dict[str, Any]] = {}
+        required_params: list[str] = []
+
+        for param in self.parameters:
+            # Create property for this parameter
+            prop: dict[str, Any] = {"type": param.type}
+
+            if param.description:
+                prop["description"] = param.description
+
+            if param.enum:
+                prop["enum"] = param.enum
+
+            # Add to properties dict
+            properties[param.name] = prop
+
+            # Track required parameters
+            if param.required:
+                required_params.append(param.name)
+
+        # Create the function object
+        function = {
+            "name": self.name,
+            "description": self.description or "",
+            "parameters": {"type": "object", "properties": properties},
+        }
+
+        # Add required parameters if there are any
+        if required_params:
+            function["parameters"]["required"] = required_params  # type: ignore TODO(arthur) fix subscription error.
+
+        # Create and return the complete OllamaTool object
+        return OllamaTool(
+            type="function",
+            function=OllamaTool.Function(
+                name=self.name,
+                description=self.description or None,
+                parameters=OllamaTool.Function.Parameters(
+                    type="object",
+                    required=required_params if required_params else None,
+                    properties={
+                        name: OllamaTool.Function.Parameters.Property(
+                            type=prop["type"],
+                            description=prop.get("description"),
+                        )
+                        for name, prop in properties.items()
+                    },
+                ),
+            ),
         )
 
     def to_deepinfra_tool(self) -> OpenAITool:
@@ -1907,22 +2015,43 @@ class Message(msgspec.Struct, tag_field="role", frozen=True):
         ),
     ]
 
-    # @abstractmethod
     def to_google_format(self) -> GenaiContent: ...
 
-    # @abstractmethod
     def to_openai_format(self) -> ChatCompletionMessageParam:
         raise NotImplementedError
 
-    # @abstractmethod
     def to_ollama_message(self) -> OllamaMessage:
         raise NotImplementedError
 
-    # @abstractmethod
     def to_groq_format(self) -> GroqChatCompletionMessageParam:
         raise NotImplementedError
 
-    # @abstractmethod
+    @ensure_module_installed("ollama", "ollama")
+    def to_ollama_format(self) -> OllamaMessage:
+        from ollama._types import Image as OllamaImage
+
+        images: Sequence[OllamaImage] = []
+        contents: list[str] = []
+        tool_calls: Sequence[OllamaMessage.ToolCall] = []
+
+        for part in self.contents:
+            if isinstance(part, ImageFilePart):
+                images.append(OllamaImage(value=part.data))
+                continue
+
+            contents.append(str(part))
+
+        return self._to_ollama_format("".join(contents), images, tool_calls)
+
+    @ensure_module_installed("ollama", "ollama")
+    def _to_ollama_format(
+        self,
+        content: str,
+        images: Sequence[OllamaImage],
+        tool_calls: Sequence[OllamaMessage.ToolCall],
+    ) -> OllamaMessage:
+        raise NotImplementedError
+
     def to_cerebras_format(self) -> CerebrasMessage:
         raise NotImplementedError
 
@@ -2039,6 +2168,20 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
 
         return message
 
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def _to_ollama_format(
+        self,
+        content: str,
+        images: Sequence[OllamaImage],
+        tool_calls: Sequence[OllamaMessage.ToolCall],
+    ) -> OllamaMessage:
+        from ollama._types import Message as OllamaMessage
+
+        return OllamaMessage(
+            role="system", content=content, images=images, tool_calls=tool_calls
+        )
+
 
 class SystemMessage(DeveloperMessage, frozen=True, tag="system"):
     """Represents a system message in a conversation.
@@ -2137,6 +2280,20 @@ class UserMessage(Message, frozen=True, tag="user"):
             content=[part.to_cerebras_part() for part in self.contents],
             role="user",
             name=self.name,
+        )
+
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def _to_ollama_format(
+        self,
+        content: str,
+        images: Sequence[OllamaImage],
+        tool_calls: Sequence[OllamaMessage.ToolCall],
+    ) -> OllamaMessage:
+        from ollama._types import Message as OllamaMessage
+
+        return OllamaMessage(
+            role="user", content=content, images=images, tool_calls=tool_calls
         )
 
 
@@ -2314,6 +2471,20 @@ class AssistantMessage[R = Any](Message, frozen=True, kw_only=True, tag="assista
             ],
         )
 
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def _to_ollama_format(
+        self,
+        content: str,
+        images: Sequence[OllamaImage],
+        tool_calls: Sequence[OllamaMessage.ToolCall],
+    ) -> OllamaMessage:
+        from ollama._types import Message as OllamaMessage
+
+        return OllamaMessage(
+            role="assistant", content=content, images=images, tool_calls=tool_calls
+        )
+
 
 class GeneratedAssistantMessage[T = RawResponse, R = Any](
     AssistantMessage[R], frozen=True, kw_only=True, tag="generated_assistant"
@@ -2410,6 +2581,20 @@ class ToolMessage(Message, frozen=True, tag="tool"):
             name=self.name,
         )
 
+    @ensure_module_installed("ollama", "ollama")
+    @override
+    def _to_ollama_format(
+        self,
+        content: str,
+        images: Sequence[OllamaImage],
+        tool_calls: Sequence[OllamaMessage.ToolCall],
+    ) -> OllamaMessage:
+        from ollama._types import Message as OllamaMessage
+
+        return OllamaMessage(
+            role="tool", content=content, images=images, tool_calls=tool_calls
+        )
+
 
 class MessageSequence(msgspec.Struct, frozen=True):
     """Ordered collection of conversation messages.
@@ -2472,6 +2657,35 @@ class MessageSequence(msgspec.Struct, frozen=True):
 
     def __iter__(self) -> Iterator[Message]:
         return iter(self.messages)
+
+    def __len__(self) -> int:
+        return len(self.messages)
+
+    def __getitem__(self, index: int) -> Message:
+        return self.messages[index]
+
+    def __contains__(self, item: Message) -> bool:
+        return item in self.messages
+
+    def __reversed__(self) -> Iterator[Message]:
+        return reversed(self.messages)
+
+    def __repr__(self) -> str:
+        return f"MessageSequence(messages={self.messages})"
+
+    def __str__(self) -> str:
+        return str(self.messages)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MessageSequence):
+            return False
+        return self.messages == other.messages
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.messages))
 
 
 MessageType: TypeAlias = (
@@ -2910,7 +3124,7 @@ class ChatCompletion[T = RawResponse](msgspec.Struct, kw_only=True, frozen=True)
     ] = msgspec.field(default_factory=lambda: int(datetime.datetime.now().timestamp()))
 
     model: Annotated[
-        AIModel,
+        AIModel | str,
         msgspec.Meta(
             title="Model",
             description="The AI model used to generate the completion.",

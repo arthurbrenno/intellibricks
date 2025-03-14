@@ -141,9 +141,7 @@ class LanguageModelFactory:
         """
         debug_logger.debug(f"Creating model: {model}")
 
-        model_class, model_extra_params = ModelRegistry.get_language_model_class(
-            str(model)
-        )
+        model_class, model_extra_params = ModelRegistry.get_language_model_class(model)
 
         # Merge params, with passed params taking precedence
         effective_params: dict[str, Any] = {}
