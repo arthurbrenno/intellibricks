@@ -6,7 +6,7 @@ from architecture.utils.decorators import ensure_module_installed
 from intellibricks.llms.base import (
     LanguageModel,
 )
-from intellibricks.llms.util import get_parsed_response
+from intellibricks.llms.util import get_parsed_response, ms_type_to_schema
 from intellibricks.llms.types import (
     ChatCompletion,
     GeneratedAssistantMessage,
@@ -89,6 +89,7 @@ class OllamaLanguageModel(LanguageModel, frozen=True):
             chat_response: OllamaChatResponse = await client.chat(  # type: ignore TODO(arthur): fix type errors.
                 model=self.model_name,
                 messages=[m.to_ollama_message() for m in messages],
+                format=ms_type_to_schema(response_model) if response_model else None
             )
 
             choice = MessageChoice(
