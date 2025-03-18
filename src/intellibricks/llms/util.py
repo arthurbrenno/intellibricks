@@ -53,7 +53,8 @@ import logging
 import mimetypes
 import os
 import re
-from io import BytesIO
+import tempfile
+from contextlib import ExitStack
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -65,7 +66,6 @@ from typing import (
     Sequence,
     Union,
     cast,
-    BinaryIO,
 )
 
 import msgspec
@@ -80,8 +80,8 @@ if TYPE_CHECKING:
         Message,
         Part,
         PartType,
-        TextPart,
         SentenceSegment,
+        TextPart,
         ToolInputType,
     )
 
@@ -308,8 +308,8 @@ def create_function_mapping_by_tools(tools: Sequence[ToolInputType]):
 
 def get_audio_duration(file_content: FileContent) -> float:
     """
-    Attempts to determine the duration of an audio file (WAV or basic MP3)
-    without using external audio libraries. Guarantees a float return.
+    Determines the duration of an audio file using mutagen.
+    Supports various audio formats including MP3, WAV, FLAC, etc.
 
     Args:
         file_content: The audio file content (path, bytes, or file object).
@@ -317,28 +317,65 @@ def get_audio_duration(file_content: FileContent) -> float:
     Returns:
         The duration in seconds, or 0.0 if the duration cannot be determined.
     """
-    from pydub import AudioSegment
+    import mutagen
 
-    try:
-        if isinstance(file_content, (str, os.PathLike)):
-            path = os.fspath(file_content)
-            audio = AudioSegment.from_file(path)
-        elif isinstance(file_content, bytes):
-            audio = AudioSegment.from_file(BytesIO(file_content))
-        else:
-            # Handle file-like objects
-            try:
-                if file_content.seekable():
-                    file_content.seek(0)
-            except AttributeError:
-                pass
+    with ExitStack() as stack:
+        try:
+            # Process different input types using match statement
+            match file_content:
+                case os.PathLike():
+                    filepath = os.fspath(file_content)
+                    audio = mutagen.File(filepath)  # type: ignore[reportPrivateImportUsage]
 
-            # Type narrowing: cast to BinaryIO to match pydub's expected type
-            audio = AudioSegment.from_file(cast(BinaryIO, file_content))
+                case bytes():
+                    # For bytes, create a temporary file
+                    temp_file = stack.enter_context(
+                        tempfile.NamedTemporaryFile(delete=False)
+                    )
+                    temp_file.write(file_content)
+                    temp_file.close()
 
-        return len(audio) / 1000.0
-    except Exception:
-        return 0.0
+                    # Register cleanup callback
+                    stack.callback(os.unlink, temp_file.name)
+
+                    audio = mutagen.File(temp_file.name)  # type: ignore[reportPrivateImportUsage]
+
+                case _:
+                    # Handle file-like objects
+                    try:
+                        if (
+                            hasattr(file_content, "seekable")
+                            and file_content.seekable()
+                        ):
+                            file_content.seek(0)
+                    except AttributeError:
+                        pass
+
+                    # Read data from file-like object
+                    data = file_content.read()
+
+                    temp_file = stack.enter_context(
+                        tempfile.NamedTemporaryFile(delete=False)
+                    )
+                    temp_file.write(data)
+                    temp_file.close()
+
+                    # Register cleanup callback
+                    stack.callback(os.unlink, temp_file.name)
+
+                    audio = mutagen.File(temp_file.name)  # type: ignore[reportPrivateImportUsage]
+
+            # Extract duration from audio metadata
+            if (
+                audio is not None
+                and hasattr(audio, "info")
+                and hasattr(audio.info, "length")  # type: ignore[reportUnknownArgumentType]
+            ):
+                return float(audio.info.length)  # type: ignore[reportUnknownArgumentType]
+
+            return 0.0
+        except Exception:
+            return 0.0
 
 
 def get_struct_from_schema(
@@ -607,7 +644,7 @@ def get_struct_from_schema(
             else:
                 default_val = msgspec.NODEFAULT
 
-        fields.append((prop_name, field_type, default_val))
+        fields.append((prop_name, field_type, default_val))  # type: ignore[reportUnknownArgumentType]
 
     struct_type = msgspec.defstruct(
         name=name,

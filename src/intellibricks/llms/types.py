@@ -1849,7 +1849,8 @@ class Tool(msgspec.Struct, frozen=True):
 
         # Add required parameters if there are any
         if required_params:
-            function["parameters"]["required"] = required_params  # type: ignore TODO(arthur) fix subscription error.
+            # TODO(arthur) fix subscription error.
+            function["parameters"]["required"] = required_params  # type: ignore
 
         # Create and return the complete OllamaTool object
         return OllamaTool(
@@ -2045,7 +2046,7 @@ class Message(msgspec.Struct, tag_field="role", frozen=True):
     def to_ollama_format(self) -> OllamaMessage:
         from ollama._types import Image as OllamaImage
 
-        images: Sequence[OllamaImage] = []
+        images: list[OllamaImage] = []
         contents: list[str] = []
         tool_calls: Sequence[OllamaMessage.ToolCall] = []
 
@@ -2196,7 +2197,6 @@ class DeveloperMessage(Message, frozen=True, tag="developer"):
         return OllamaMessage(
             role="system", content=content, images=images, tool_calls=tool_calls
         )
-
 
 
 class SystemMessage(DeveloperMessage, frozen=True, tag="system"):
