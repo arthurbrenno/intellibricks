@@ -287,11 +287,24 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
     async def transcribe_async(
         self,
         audio: FileContent,
-        temperature: Optional[float] = None,
-        prompt: Optional[str] = None,
+        temperature: float | None = None,
+        prompt: str | None = None,
     ) -> AudioTranscription:
+        """
+        Transcribes audio asynchronously using the Groq API.
+        For longer audio files (>10 minutes), splits into chunks and processes separately.
+
+        Args:
+            audio: The audio file content (path, bytes, or file object)
+            temperature: Optional sampling temperature for the model
+            prompt: Optional prompt to guide the transcription
+
+        Returns:
+            AudioTranscription: The complete audio transcription with metadata
+        """
         from groq import AsyncGroq
         from groq._types import NOT_GIVEN
+        import subprocess
 
         client = AsyncGroq(api_key=self.api_key, max_retries=self.max_retries)
         now = timeit.default_timer()
@@ -299,63 +312,131 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         audio_duration = get_audio_duration(audio)
 
         if audio_duration > 600:
-            from pydub import AudioSegment
-            from pydub.utils import make_chunks
-
             with tempfile.TemporaryDirectory() as temp_dir:
+                # Write the input audio to a file
                 original_file_path = write_content_to_file(audio, temp_dir)
-                audio_segment = AudioSegment.from_file(original_file_path)
+                chunk_length_seconds = 10 * 60  # 10 minutes in seconds
 
-                chunk_length_ms = 10 * 60 * 1000  # 10 minutes in milliseconds
-                chunks = make_chunks(audio_segment, chunk_length_ms)
+                # Calculate number of chunks needed
+                num_chunks = int(audio_duration / chunk_length_seconds) + 1
 
-                for i, chunk in enumerate(chunks):
-                    if len(chunk) == 0:
-                        continue  # Skip empty chunks
+                # Create chunks using ffmpeg
+                for i in range(num_chunks):
+                    start_time = i * chunk_length_seconds
                     chunk_path = os.path.join(temp_dir, f"chunk_{i}.mp3")
-                    chunk.export(chunk_path, format="mp3")
 
-                    chunk_start_time = timeit.default_timer()
-                    transcription = await client.audio.transcriptions.create(
-                        file=Path(chunk_path),
-                        model=self.model_name,
-                        language=self.language or NOT_GIVEN,
-                        temperature=temperature or NOT_GIVEN,
-                        prompt=prompt or NOT_GIVEN,
-                        response_format="verbose_json",
-                    )
-                    chunk_elapsed_time = timeit.default_timer() - chunk_start_time
-
-                    dict_transcription = transcription.model_dump()
-                    segments: list[SentenceSegment] = []
-                    for seg in dict_transcription.get("segments", []):
-                        segments.append(
-                            SentenceSegment(
-                                id=seg.get("id"),
-                                sentence=seg.get("text"),
-                                start=seg.get("start"),
-                                end=seg.get("end"),
-                                no_speech_prob=seg.get("no_speech_prob"),
-                            )
+                    try:
+                        # Use ffmpeg to extract chunk
+                        # -ss: start time, -t: duration, -c:a: audio codec
+                        subprocess.run(
+                            [
+                                "ffmpeg",
+                                "-y",
+                                "-i",
+                                original_file_path,
+                                "-ss",
+                                str(start_time),
+                                "-t",
+                                str(chunk_length_seconds),
+                                "-c:a",
+                                "libmp3lame",
+                                "-q:a",
+                                "4",
+                                chunk_path,
+                            ],
+                            check=True,
+                            capture_output=True,
                         )
 
-                    chunk_duration = (
-                        len(chunk) / 1000
-                    )  # Convert milliseconds to seconds
-                    chunk_transcription = AudioTranscription(
-                        elapsed_time=round(chunk_elapsed_time, 2),
-                        text=transcription.text,
-                        segments=segments,
-                        cost=0.0,
-                        duration=chunk_duration,
-                        srt=segments_to_srt(segments),
-                    )
-                    audio_transcriptions.append(chunk_transcription)
+                        # Skip processing if chunk creation failed or is empty
+                        chunk_duration = get_audio_duration(chunk_path)  # type: ignore
+                        if chunk_duration == 0:
+                            continue
 
-                merged_transcription = audio_transcriptions[0].merge(
-                    *audio_transcriptions[1:]
-                )
-                return merged_transcription
+                        # Process the chunk
+                        chunk_start_time = timeit.default_timer()
+                        transcription = await client.audio.transcriptions.create(
+                            file=Path(chunk_path),
+                            model=self.model_name,
+                            language=self.language or NOT_GIVEN,
+                            temperature=temperature or NOT_GIVEN,
+                            prompt=prompt or NOT_GIVEN,
+                            response_format="verbose_json",
+                        )
+                        chunk_elapsed_time = timeit.default_timer() - chunk_start_time
+
+                        # Process the transcription result
+                        dict_transcription = transcription.model_dump()
+                        segments: list[SentenceSegment] = []
+                        for seg in dict_transcription.get("segments", []):
+                            segments.append(
+                                SentenceSegment(
+                                    id=seg.get("id"),
+                                    sentence=seg.get("text"),
+                                    start=seg.get("start")
+                                    + start_time,  # Adjust timestamps
+                                    end=seg.get("end")
+                                    + start_time,  # Adjust timestamps
+                                    no_speech_prob=seg.get("no_speech_prob"),
+                                )
+                            )
+
+                        chunk_transcription = AudioTranscription(
+                            elapsed_time=round(chunk_elapsed_time, 2),
+                            text=transcription.text,
+                            segments=segments,
+                            cost=0.0,
+                            duration=chunk_duration,
+                            srt=segments_to_srt(segments),
+                        )
+                        audio_transcriptions.append(chunk_transcription)
+
+                    except Exception as e:
+                        # Log error and continue with next chunk
+                        print(f"Error processing chunk {i}: {str(e)}")
+                        continue
+
+                # Merge all transcriptions
+                if audio_transcriptions:
+                    merged_transcription = audio_transcriptions[0].merge(
+                        *audio_transcriptions[1:]
+                    )
+                    return merged_transcription
+                else:
+                    # Fallback to process as a single file if chunking failed
+                    return await self._process_single_file(
+                        client, audio, temperature, prompt, now, audio_duration
+                    )
+
+        # For shorter files, process directly
+        return await self._process_single_file(
+            client, audio, temperature, prompt, now, audio_duration
+        )
+
+    async def _process_single_file(
+        self,
+        client: Any,
+        audio: FileContent,
+        temperature: float | None,
+        prompt: str | None,
+        start_time: float,
+        audio_duration: float,
+    ) -> AudioTranscription:
+        """
+        Process a single audio file without chunking.
+
+        Args:
+            client: The Groq API client
+            audio: The audio file content
+            temperature: Optional sampling temperature
+            prompt: Optional transcription prompt
+            start_time: Time when processing started
+            audio_duration: Duration of the audio file
+
+        Returns:
+            AudioTranscription: The complete transcription
+        """
+        from groq._types import NOT_GIVEN
 
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = write_content_to_file(audio, temp_dir)
@@ -369,7 +450,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
             )
 
         dict_transcription = transcription.model_dump()
-        segments = []
+        segments: list[SentenceSegment] = []
         for segment in dict_transcription.get("segments", []):
             segments.append(
                 SentenceSegment(
@@ -382,7 +463,7 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
             )
 
         return AudioTranscription(
-            elapsed_time=round(timeit.default_timer() - now, 2),
+            elapsed_time=round(timeit.default_timer() - start_time, 2),
             text=transcription.text,
             segments=segments,
             cost=0.0,
