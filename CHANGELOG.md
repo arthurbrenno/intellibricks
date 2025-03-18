@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.1
+## v0.9.2
 
-- deps: replacing pydub with mutagen
+- refactor: new way of processing long files
 
