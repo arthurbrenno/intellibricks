@@ -81,11 +81,14 @@ class OllamaLanguageModel(LanguageModel, frozen=True):
 
         past = timeit.default_timer()
 
-        client = AsyncClient(host=str(self.base_url) if self.base_url else None, timeout=timeout)
+        client = AsyncClient(
+            host=str(self.base_url) if self.base_url else None, timeout=timeout
+        )
 
         choices: list[MessageChoice[S]] = []
         for i in range(n):
-            chat_response: OllamaChatResponse = await client.chat(  # type: ignore TODO(arthur): fix type errors.
+            #  TODO(arthur): fix type errors.
+            chat_response: OllamaChatResponse = await client.chat(  # type: ignore
                 model=self.model_name,
                 messages=[m.to_ollama_format() for m in messages],
                 format=ms_type_to_schema(response_model) if response_model else None,
