@@ -350,6 +350,8 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
     async def transcribe_async(
         self,
         audio: FileContent,
+        *,
+        filename: Optional[str] = None,
         temperature: Optional[float] = None,
         prompt: Optional[str] = None,
     ) -> AudioTranscription:
@@ -368,7 +370,9 @@ class OpenAITranscriptionModel(TranscriptionModel, frozen=True):
             from pydub.utils import make_chunks
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                original_file_path = write_content_to_file(audio, temp_dir)
+                original_file_path = write_content_to_file(
+                    audio, temp_dir, filename=filename
+                )
                 audio_segment = AudioSegment.from_file(original_file_path)
 
                 chunk_length_ms = 10 * 60 * 1000  # 10 minutes in milliseconds

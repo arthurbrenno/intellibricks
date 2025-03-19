@@ -287,8 +287,10 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
     async def transcribe_async(
         self,
         audio: FileContent,
-        temperature: float | None = None,
-        prompt: str | None = None,
+        *,
+        filename: Optional[str] = None,
+        temperature: Optional[float] = None,
+        prompt: Optional[str] = None,
     ) -> AudioTranscription:
         """
         Transcribes audio asynchronously using the Groq API.
@@ -314,7 +316,9 @@ class GroqTranscriptionModel(TranscriptionModel, frozen=True):
         if audio_duration > 600:
             with tempfile.TemporaryDirectory() as temp_dir:
                 # Write the input audio to a file
-                original_file_path = write_content_to_file(audio, temp_dir)
+                original_file_path = write_content_to_file(
+                    audio, temp_dir, filename=filename
+                )
                 chunk_length_seconds = 10 * 60  # 10 minutes in seconds
 
                 # Calculate number of chunks needed

@@ -48,6 +48,7 @@ This module enhances the functionality of `intellibricks.llms` by providing a su
 
 from __future__ import annotations
 
+import io
 import json
 import logging
 import mimetypes
@@ -59,6 +60,7 @@ from typing import (
     IO,
     TYPE_CHECKING,
     Any,
+    BinaryIO,
     Callable,
     Literal,
     Mapping,
@@ -1091,66 +1093,82 @@ def ms_type_to_schema(
 
 
 def guess_extension(
-    file_content: Union[IO[bytes], bytes, os.PathLike[str]],
-) -> Union[
-    Literal[
-        "jpeg",
-        "png",
-        "gif",
-        "webp",
-        "bmp",
-        "tiff",
-        "svg",
-        "pdf",
-        "zip",
-        "tar",
-        "gzip",
-        "bz2",
-        "7z",
-        "rar",
-        "txt",
-        "csv",
-        "json",
-        "html",
-        "xml",
-        "mp4",
-        "mov",
-        "avi",
-        "mkv",
-        "mp3",
-        "wav",
-        "ogg",
-        "flac",
-        "aac",
-    ],
-    str,
-]:
+    file_content: bytes | IO[bytes] | os.PathLike[str],
+    filename: str | None = None,
+) -> str:
     """
-    Guesses the file extension based on the file content.
+    Guesses the file extension based on the file content, with fallbacks for ambiguous types.
 
     Args:
-        file_content: The file content as bytes, an IO stream, or a file path.
+        file_content: The file content as bytes, a binary IO stream, or a file path.
+        filename: Optional filename to use as a fallback for extension detection.
 
     Returns:
         The file extension as a string (e.g., "jpg", "png").
 
     Raises:
         ValueError: If the file type cannot be determined or no suitable extension is found.
+
+    Examples:
+        >>> with open("myfile.mp4", "rb") as f:
+        >>>     ext = guess_extension(f)
+        >>> print(ext)
+        'mp4'
+
+        >>> # With fallback to filename
+        >>> ext = guess_extension(unknown_binary_data, filename="video.mp4")
+        >>> print(ext)
+        'mp4'
     """
     import magic
 
+    if filename:
+        _, file_ext = os.path.splitext(filename)
+        if file_ext:
+            extension: str | None = file_ext.lstrip(".")
+            return extension
+
+    # Function to read content if needed
+    def get_content(content: bytes | BinaryIO | os.PathLike[str]) -> bytes:
+        if isinstance(content, (str, os.PathLike)):
+            with open(content, "rb") as f:
+                return f.read()
+        elif isinstance(content, bytes):
+            return content
+        elif hasattr(content, "read"):
+            # Save the current position
+            try:
+                pos = content.tell()
+                data = content.read()
+                content.seek(pos)  # Restore position
+                return data
+            except (AttributeError, io.UnsupportedOperation):
+                # If seeking is not supported, just read
+                return content.read()
+        else:
+            raise ValueError("Unsupported file content type")
+
+    # First attempt with magic library
     try:
         if isinstance(file_content, (str, os.PathLike)):
             mime_type = magic.from_file(str(file_content), mime=True)  # type: ignore
         elif isinstance(file_content, bytes):
             mime_type = magic.from_buffer(file_content, mime=True)
         elif hasattr(file_content, "read"):
-            mime_type = magic.from_buffer(file_content.read(), mime=True)
+            pos = None  # type: ignore
+            try:
+                pos = file_content.tell()
+                mime_type = magic.from_buffer(file_content.read(8192), mime=True)
+                file_content.seek(pos)  # Reset position
+            except (AttributeError, io.UnsupportedOperation):
+                # If seeking is not supported, read a small portion
+                mime_type = magic.from_buffer(file_content.read(8192), mime=True)
         else:
             raise ValueError("Unsupported file content type")
     except magic.MagicException as e:
         raise ValueError(f"Error during file type detection: {e}") from e
 
+    # Primary MIME type to extension mapping
     mime_to_ext = {
         "image/jpeg": "jpeg",
         "image/png": "png",
@@ -1225,8 +1243,103 @@ def guess_extension(
         "application/vnd.amazon.ebook": "azw",
         "video/x-m4v": "m4v",
     }
+
+    # Check if we have a direct match
     extension = mime_to_ext.get(mime_type)
 
+    # Handle application/octet-stream specially
+    if extension is None and mime_type == "application/octet-stream":
+        # Get the binary data for analysis
+        binary_data = get_content(file_content)  # type: ignore
+
+        # Check file signatures for common formats
+        file_signatures = {
+            # Video formats
+            b"\x00\x00\x00\x18ftypmp42": "mp4",  # MP4
+            b"\x00\x00\x00\x1cftypisom": "mp4",  # MP4 (ISO Base Media)
+            b"\x00\x00\x00\x20ftyp": "mp4",  # Generic MP4
+            b"\x1a\x45\xdf\xa3": "mkv",  # Matroska video
+            b"RIFF": "avi",  # AVI
+            b"\x00\x00\x01\xba": "mpg",  # MPEG
+            b"\x00\x00\x01\xb3": "mpg",  # MPEG
+            # Audio formats
+            b"ID3": "mp3",  # MP3 with ID3 tag
+            b"\xff\xfb": "mp3",  # MP3 without ID3 tag
+            b"RIFF....WAVE": "wav",  # WAV (checking for "WAVE" at offset 8)
+            b"OggS": "ogg",  # OGG
+            b"fLaC": "flac",  # FLAC
+            # Common document formats
+            b"%PDF": "pdf",  # PDF
+            b"PK\x03\x04": "zip",  # ZIP and Office docs
+            b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1": "doc",  # Old Office formats
+            # Image formats
+            b"\xff\xd8\xff": "jpeg",  # JPEG
+            b"\x89PNG\r\n\x1a\n": "png",  # PNG
+            b"GIF87a": "gif",  # GIF87a
+            b"GIF89a": "gif",  # GIF89a
+            b"RIFF....WEBP": "webp",  # WEBP
+            b"BM": "bmp",  # BMP
+            b"II*\x00": "tiff",  # TIFF
+            b"MM\x00*": "tiff",  # TIFF
+        }
+
+        # Check file signatures
+        for signature, ext in file_signatures.items():
+            if len(signature) <= len(binary_data):
+                # Handle special case for signatures with wildcards (represented by '.')
+                if b"." in signature:
+                    parts: list[bytes] = signature.split(b".")
+                    found: bool = True
+                    pos = 0
+
+                    for part in parts:
+                        if part:  # Skip empty parts from consecutive dots
+                            if pos + len(part) > len(binary_data):
+                                found = False
+                                break
+
+                            if binary_data[pos : pos + len(part)] != part:
+                                found = False
+                                break
+
+                            pos += len(part) + 1  # +1 for the skipped wildcard
+
+                    if found:
+                        extension = ext
+                        break
+                # Regular signature match
+                elif binary_data.startswith(signature):
+                    extension = ext
+                    break
+                # Some signatures might be at specific offsets
+                elif (
+                    signature == b"RIFF....WAVE"
+                    and binary_data.startswith(b"RIFF")
+                    and len(binary_data) > 11
+                ):
+                    if binary_data[8:12] == b"WAVE":
+                        extension = "wav"
+                        break
+                elif (
+                    signature == b"RIFF....WEBP"
+                    and binary_data.startswith(b"RIFF")
+                    and len(binary_data) > 11
+                ):
+                    if binary_data[8:12] == b"WEBP":
+                        extension = "webp"
+                        break
+
+    # If still no extension, try to use a non-magic method as fallback
+    if (
+        extension is None
+        and hasattr(file_content, "name")
+        and isinstance(file_content.name, str)  # type: ignore
+    ):
+        _, file_ext = os.path.splitext(file_content.name)
+        if file_ext:
+            extension = file_ext.lstrip(".")
+
+    # If still no extension found, raise an error
     if extension is None:
         raise ValueError(f"No suitable extension found for mime type: {mime_type}")
 
@@ -1237,6 +1350,7 @@ def write_content_to_file(
     file_content: Union[IO[bytes], bytes, os.PathLike[str]],
     output_dir: str,
     mode: Optional[str] = None,
+    filename: Optional[str] = None,
 ) -> str:
     """
     Writes file content to a file in the specified output directory, guessing the extension from content.
@@ -1263,7 +1377,7 @@ def write_content_to_file(
         >>> print(file_path) # Output: output_files/file.txt
     """
     _mode = mode or "wb"
-    extension = guess_extension(file_content)
+    extension = guess_extension(file_content, filename=filename)
     if isinstance(file_content, bytes):
         file_path: str = f"{output_dir}/file.{extension}"
         with open(file_path, _mode) as f:

@@ -2718,6 +2718,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
     def transcribe(
         self,
         audio: FileContent,
+        *,
+        filename: Optional[str] = None,
         temperature: Optional[float] = None,
         language: Optional[TranscriptionsLanguage] = None,
         prompt: Optional[str] = None,
@@ -2743,11 +2745,14 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
             prompt=prompt,
             trace_params=trace_params,
             max_retries=max_retries,
+            filename=filename,
         )
 
     async def transcribe_async(
         self,
         audio: FileContent,
+        *,
+        filename: Optional[str] = None,
         temperature: Optional[float] = None,
         language: Optional[TranscriptionsLanguage] = None,
         prompt: Optional[str] = None,
@@ -2824,6 +2829,7 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                     audio=audio,
                     temperature=temperature,
                     prompt=prompt,
+                    filename=filename,
                 )
             )
             debug_logger.debug("transcribe_async method call completed successfully.")
@@ -3023,6 +3029,8 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
     def transcribe(
         self,
         audio: FileContent,
+        *,
+        filename: Optional[str] = None,
         temperature: Optional[float] = None,
         language: Optional[TranscriptionsLanguage] = None,
         prompt: Optional[str] = None,
@@ -3056,6 +3064,7 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
                     prompt=prompt,
                     trace_params=trace_params,
                     max_retries=max_retries,
+                    filename=filename,
                 )
             except Exception as e:
                 debug_logger.warning(f"Transcription synapse failed: {e}")
@@ -3069,6 +3078,8 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
     async def transcribe_async(
         self,
         audio: FileContent,
+        *,
+        filename: Optional[str] = None,
         temperature: Optional[float] = None,
         language: Optional[TranscriptionsLanguage] = None,
         prompt: Optional[str] = None,
@@ -3102,6 +3113,7 @@ class TextTranscriptionsSynapseCascade(msgspec.Struct, frozen=True):
                     prompt=prompt,
                     trace_params=trace_params,
                     max_retries=max_retries,
+                    filename=filename,
                 )
             except Exception as e:
                 debug_logger.warning(f"Transcription synapse failed: {e}")

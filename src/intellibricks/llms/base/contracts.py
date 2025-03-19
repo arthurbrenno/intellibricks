@@ -238,14 +238,24 @@ class TranscriptionModel(msgspec.Struct, frozen=True, kw_only=True):
     def transcribe(
         self,
         audio: FileContent,
+        *,
+        filename: Optional[str] = None,
         temperature: Optional[float] = None,
         prompt: Optional[str] = None,
     ) -> AudioTranscription:
-        return run_sync(self.transcribe_async, audio, temperature, prompt)
+        return run_sync(
+            self.transcribe_async,
+            audio=audio,
+            filename=filename,
+            temperature=temperature,
+            prompt=prompt,
+        )
 
     async def transcribe_async(
         self,
         audio: FileContent,
+        *,
+        filename: Optional[str] = None,
         temperature: Optional[float] = None,
         prompt: Optional[str] = None,
     ) -> AudioTranscription:
