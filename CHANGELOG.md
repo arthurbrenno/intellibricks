@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.9.2
+## v0.9.3
 
-- refactor: new way of processing long files
+- feat: adding "filename" parameter to help identify extension
 
