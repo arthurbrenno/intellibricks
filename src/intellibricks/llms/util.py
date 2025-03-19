@@ -1125,7 +1125,7 @@ def guess_extension(
     if filename:
         _, file_ext = os.path.splitext(filename)
         if file_ext:
-            extension: str | None = file_ext.lstrip(".")
+            extension = file_ext.lstrip(".")
             return extension
 
     # Function to read content if needed
