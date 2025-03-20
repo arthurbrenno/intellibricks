@@ -1245,10 +1245,10 @@ def guess_extension(
     }
 
     # Check if we have a direct match
-    extension = mime_to_ext.get(mime_type)
+    extension = mime_to_ext[mime_type]
 
     # Handle application/octet-stream specially
-    if extension is None and mime_type == "application/octet-stream":
+    if mime_type == "application/octet-stream":
         # Get the binary data for analysis
         binary_data = get_content(file_content)  # type: ignore
 
@@ -1331,17 +1331,11 @@ def guess_extension(
 
     # If still no extension, try to use a non-magic method as fallback
     if (
-        extension is None
-        and hasattr(file_content, "name")
-        and isinstance(file_content.name, str)  # type: ignore
+        hasattr(file_content, "name") and isinstance(file_content.name, str)  # type: ignore
     ):
         _, file_ext = os.path.splitext(file_content.name)
         if file_ext:
             extension = file_ext.lstrip(".")
-
-    # If still no extension found, raise an error
-    if extension is None:
-        raise ValueError(f"No suitable extension found for mime type: {mime_type}")
 
     return extension
 
