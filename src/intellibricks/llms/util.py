@@ -943,10 +943,12 @@ def ms_type_to_schema(
         nullable_style: How to handle nullable fields:
             - "remove_null": Remove null types entirely (default)
             - "standard_nullable": Add standard "nullable": true flag
-            - "openapi_nullable": Add OpenAPI-style "x-nullable": true flag
+            - "openapi_nullable": Add OpenAI-style "x-nullable": true flag
             - "custom_schema_nullable": Add custom schema property "schema-nullable": true
             If None, defaults to "remove_null"
     """
+    # Initialize a set to track logged warnings
+    logged_warnings: set[str] = set()
     schemas, components = msgspec.json.schema_components([struct])
     main_schema = schemas[0]
     memo: dict[str, Any] = {}
@@ -957,12 +959,15 @@ def ms_type_to_schema(
         if not ensure_str_enum:
             return schema
 
-        debug_logger.warning(
-            "WARNING: ENSURING ENUMS ARE STRINGS FOR PROVIDER COMPATIBILITY!"
-            "THE PROVIDER MAY NOT SUPPORT ENUMS WITH NON-STRING VALUES!"
-            "IT WILL RETURN AN ENUM WITH STRING VALUES!"
-        )
         if "enum" in schema:
+            # Log enum conversion warning only once
+            if "enum_conversion" not in logged_warnings:
+                debug_logger.warning(
+                    "WARNING: ENSURING ENUMS ARE STRINGS FOR PROVIDER COMPATIBILITY! "
+                    "THE PROVIDER MAY NOT SUPPORT ENUMS WITH NON-STRING VALUES! "
+                    "IT WILL RETURN AN ENUM WITH STRING VALUES!"
+                )
+                logged_warnings.add("enum_conversion")
             schema["type"] = "string"
             schema["enum"] = [str(value) for value in schema["enum"]]
         return schema
@@ -1051,9 +1056,12 @@ def ms_type_to_schema(
             new_data: dict[str, Any] = {}
             for key, value in data.items():
                 if remove_parameters and key in remove_parameters:
-                    debug_logger.warning(
-                        f"WARNING: REMOVING PARAMETER: {key} BECAUSE THE PROVIDER DOES NOT SUPPORT IT IN JSON SCHEMAS!"
-                    )
+                    # Log parameter removal warning only once
+                    if "parameter_removal" not in logged_warnings:
+                        debug_logger.warning(
+                            "WARNING: REMOVING UNSUPPORTED PARAMETERS FROM THE SCHEMA FOR PROVIDER COMPATIBILITY!"
+                        )
+                        logged_warnings.add("parameter_removal")
                     continue
                 new_data[key] = _dereference_recursive(value)
 
@@ -1090,7 +1098,6 @@ def ms_type_to_schema(
 
     dereferenced_schema = dereference(main_schema)
     return dereferenced_schema
-
 
 def guess_extension(
     file_content: bytes | IO[bytes] | os.PathLike[str],
