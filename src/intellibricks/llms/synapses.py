@@ -1606,7 +1606,8 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
 
         debug_logger.debug("Initializing Langfuse trace (if available).")
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
-            lambda langfuse: langfuse.trace(**trace_params)  # type: ignore
+            lambda langfuse: langfuse.trace(**trace_params),  # type: ignore
+            ignore_exceptions=True,
         )
 
         debug_logger.debug(f"Using AI model: {self.model}")
@@ -1621,7 +1622,8 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
                     id=f"sp-{completion_id}",
                     input=messages,
                     name="Response Generation",
-                )
+                ),
+                ignore_exceptions=True,
             ).unwrap()
         )
         debug_logger.debug("Creating Langfuse generation (if span is available).")
@@ -1633,7 +1635,8 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
                     "max_tokens": max_tokens,
                     "temperature": str(temperature),
                 },
-            )
+            ),
+            ignore_exceptions=True,
         )
 
         debug_logger.debug("Creating Language Model instance.")
@@ -1732,7 +1735,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
 
         debug_logger.debug("Scoring Langfuse span as successful.")
         maybe_span.score(
-            id=f"sc-{maybe_span.map(lambda span: span.id).unwrap()}",
+            id=f"sc-{maybe_span.map(lambda span: span.id, ignore_exceptions=True).unwrap()}",
             name="Success",
             value=1.0,
             comment="Choices generated successfully!",
@@ -2789,7 +2792,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
 
         # Step 3: Initialize Langfuse Trace (if available)
         trace: Maybe[StatefulTraceClient] = self.langfuse.map(
-            lambda lf: lf.trace(**trace_params)  # type: ignore
+            lambda lf: lf.trace(**trace_params),  # type: ignore
+            ignore_exceptions=True,
         )
         debug_logger.debug("Initialized Langfuse trace.")
 
@@ -2801,7 +2805,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                     "audio": "FileContent"
                 },  # You can provide more detailed input if available
                 name="Transcription Process",
-            )
+            ),
+            ignore_exceptions=True,
         )
         debug_logger.debug("Created Langfuse span for transcription.")
 
@@ -2855,7 +2860,10 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         transcription_result: AudioTranscription,
     ) -> None:
         debug_logger.debug("Ending Langfuse span.")
-        span.map(lambda s: s.end(output={"text": transcription_result.text}))  # type: ignore
+        span.map(
+            lambda s: s.end(output={"text": transcription_result.text}),  # type: ignore
+            ignore_exceptions=True,
+        )
         debug_logger.debug("Langfuse span ended.")
 
         debug_logger.debug("Updating Langfuse span usage.")
@@ -2872,7 +2880,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                     output_cost=0.0,  # No output cost if not applicable
                     total_cost=transcription_result.cost,
                 )
-            )
+            ),
+            ignore_exceptions=True,
         )
         debug_logger.debug("Langfuse span usage updated.")
 
@@ -2883,7 +2892,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 name="Success",
                 value=1.0,
                 comment="Transcription completed successfully!",
-            )
+            ),
+            ignore_exceptions=True,
         )
         debug_logger.debug("Langfuse span scored as successful.")
 
@@ -2895,7 +2905,10 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
         debug_logger.debug("Handling error in observability logic.")
 
         debug_logger.debug("Ending Langfuse span due to error.")
-        span.map(lambda s: s.end(output={"error": str(exception)}))  # type: ignore
+        span.map(
+            lambda s: s.end(output={"error": str(exception)}),  # type: ignore
+            ignore_exceptions=True,
+        )
         debug_logger.debug("Langfuse span ended with error.")
 
         debug_logger.debug("Updating Langfuse span status due to error.")
@@ -2903,7 +2916,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
             lambda s: s.update(  # type: ignore
                 status_message="Error in transcription",
                 level="ERROR",
-            )
+            ),
+            ignore_exceptions=True,
         )
         debug_logger.debug("Langfuse span status updated to ERROR.")
 
@@ -2914,7 +2928,8 @@ class TextTranscriptionSynapse(msgspec.Struct, frozen=True):
                 name="Failure",
                 value=0.0,
                 comment=f"Error during transcription: {exception}",
-            )
+            ),
+            ignore_exceptions=True,
         )
         debug_logger.debug("Langfuse span scored as failed.")
 
