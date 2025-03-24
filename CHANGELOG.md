@@ -1,5 +1,5 @@
 # Changelog
 
-## v0.10.0
+## v0.10.1
 
-- feat: as_string method in ChainOfThought
+- deps: removing unecessary deps
