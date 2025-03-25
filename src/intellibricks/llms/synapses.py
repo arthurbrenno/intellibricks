@@ -853,7 +853,7 @@ class Synapse(SynapseProtocol, frozen=True, omit_defaults=True):
     @classmethod
     def of(
         cls,
-        model: AIModel,
+        model: AIModel | str,
         *,
         api_key: Optional[str] = None,
         langfuse: Optional[Langfuse] = None,
