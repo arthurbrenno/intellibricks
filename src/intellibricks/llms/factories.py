@@ -49,9 +49,8 @@ class ModelRegistry(msgspec.Struct, frozen=True):
     _transcription_model_patterns: ClassVar[
         Sequence[tuple[str, type[TranscriptionModel]]]
     ] = [
-        ("groq/api/whisper", GroqTranscriptionModel),
-        ("groq/api/distil-whisper", GroqTranscriptionModel),
-        ("openai/api/whisper", OpenAITranscriptionModel),
+        ("groq/api", GroqTranscriptionModel),
+        ("openai/api", OpenAITranscriptionModel),
     ]
 
     _tts_model_patterns: ClassVar[Sequence[tuple[str, type[TtsModel]]]] = [
