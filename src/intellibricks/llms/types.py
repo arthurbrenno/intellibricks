@@ -6,7 +6,7 @@ It enables type-safe interactions with various LLM providers while supporting mu
 and response handling across different platforms.
 
 Key Components:
-1. Core Message Structures:
+1. Core Message Structures: 
    - Parts: Fundamental content units (TextPart, ImageFilePart, AudioFilePart, ToolCallPart)
    - Messages: Conversation components (UserMessage, AssistantMessage, SystemMessage)
    - Sequences: Ordered collections (MessageSequence, PartSequence)
