@@ -1,3 +1,5 @@
+
+
 <p align="center">
   <img src="/docs/_static/logo.png" alt="Logo" width="400" />
 </p>
@@ -44,7 +46,7 @@ pip install intellibricks
 
 IntelliBricks is built around three core modules, designed for power and seamless integration:
 
-### 🧠 LLMs Module: Integrate easilly with AI providers
+### 🧠 LLMs Module: Integrate easily with AI providers
 
 Interact with Language Models in pure Python.
 
